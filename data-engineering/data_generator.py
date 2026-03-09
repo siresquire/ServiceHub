@@ -1,6 +1,7 @@
 ﻿import random
 import csv
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
 # --- Base Data ---
@@ -172,20 +173,22 @@ def generate_ticket(ticket_id):
     }
 
 
-def generate_dataset(n=100):
+def generate_dataset(n=800):
     """Generate n tickets and return as a list of dicts."""
     # Shuffle starting ID to avoid predictable sequences
     start_id = random.randint(1000, 9000)
     return [generate_ticket(start_id + i) for i in range(n)]
 
-def save_csv(tickets, path="tickets.csv"):
+def save_csv(tickets, path=None):
     if not tickets:
         return
-    with open(path, "w", newline="") as f:
+    output = Path(path) if path else Path(__file__).parent / "data" / "tickets.csv"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=tickets[0].keys())
         writer.writeheader()
         writer.writerows(tickets)
-    print(f"[✓] Saved {len(tickets)} tickets → {path}")
+    print(f"[✓] Saved {len(tickets)} tickets → {output}")
 
 
 def print_summary(tickets):
@@ -208,7 +211,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate realistic support ticket test data.")
     parser.add_argument("-n", "--count", type=int, default=100, help="Number of tickets to generate (default: 100)")
-    parser.add_argument("--csv", type=str, default="tickets.csv", help="Output CSV file path")
+    parser.add_argument("--csv", type=str, default=None, help="Output CSV file path (default: data-engineering/data/tickets.csv)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument("--no-csv", action="store_true", help="Skip CSV output")
     args = parser.parse_args()

@@ -1,0 +1,32 @@
+# =============================================================================
+# Backend Docker Build Exclusions
+# =============================================================================
+# These files are excluded from the Docker build context to:
+# 1. Speed up builds by reducing context size sent to the Docker daemon
+# 2. Prevent unnecessary cache invalidation
+# 3. Avoid leaking sensitive files into the image
+# =============================================================================
+
+# Build artifacts (already compiled locally, will be rebuilt inside Docker)
+target/
+
+# Version control
+.git/
+.gitignore
+
+# IDE configurations
+.idea/
+.vscode/
+*.iml
+
+# Documentation (not needed in the runtime image)
+*.md
+LICENSE
+
+# Docker files (prevent recursive inclusion)
+Dockerfile
+docker-compose*.yml
+
+# OS-generated files
+.DS_Store
+Thumbs.db

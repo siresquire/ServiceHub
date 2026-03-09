@@ -1,0 +1,49 @@
+# =============================================================================
+# ServiceHub — Code Owners
+# =============================================================================
+# GitHub automatically requests reviews from code owners when a PR touches
+# files in their domain. This ensures the right people review the right code.
+#
+# Format: <pattern> @github-username
+# Replace the @placeholders below with actual GitHub usernames.
+# =============================================================================
+
+# --- DevOps (Prince Tetteh Ayiku) ---
+# Owns all infrastructure, CI/CD, Docker, and deployment configuration.
+/.github/                          @prince-ayiku
+/docker-compose*.yml               @prince-ayiku
+/Makefile                          @prince-ayiku
+/.env.example                      @prince-ayiku
+/.pre-commit-config.yaml           @prince-ayiku
+/.gitignore                        @prince-ayiku
+/devops/                           @prince-ayiku
+/backend/Dockerfile                @prince-ayiku
+/backend/.dockerignore             @prince-ayiku
+
+# --- Backend Dev A: Request Management (Ange Buhendwa) ---
+# Owns request CRUD, category system, priority management, validation.
+/backend/src/main/java/com/servicehub/controller/ServiceRequestController.java  @ange-buhendwa
+/backend/src/main/java/com/servicehub/service/ServiceRequestService.java        @ange-buhendwa
+/backend/src/main/java/com/servicehub/dto/ServiceRequest*.java                  @ange-buhendwa
+/backend/src/main/java/com/servicehub/model/ServiceRequest.java                 @ange-buhendwa
+
+# --- Backend Dev B: Workflow & SLA (Fiifi Akyer Yawson) ---
+# Owns status workflow, SLA engine, response/resolution time tracking.
+/backend/src/main/java/com/servicehub/model/SlaPolicy.java                     @fiifi-yawson
+/backend/src/main/java/com/servicehub/repository/SlaPolicyRepository.java      @fiifi-yawson
+
+# --- Backend Dev C: Auth & Dashboard (Shema Alphonse) ---
+# Owns JWT auth, role-based access, dashboard APIs, reporting endpoints.
+/backend/src/main/java/com/servicehub/config/                                  @alphonse-shema
+/backend/src/main/java/com/servicehub/controller/AuthController.java           @alphonse-shema
+/backend/src/main/java/com/servicehub/service/AuthService.java                 @alphonse-shema
+/backend/src/main/java/com/servicehub/dto/Auth*.java                           @alphonse-shema
+/backend/src/main/java/com/servicehub/dto/DashboardStatsResponse.java          @alphonse-shema
+
+# --- QA Engineer (Zakaria Osman) ---
+# Owns all test code: API tests, UI tests, test plans.
+/qa/                                                                           @zakaria-osman
+
+# --- Data Engineer (Richard Anane Sarfo) ---
+# Owns the Python ETL pipeline, analytics, and data documentation.
+/data-engineering/                                                             @richard-sarfo

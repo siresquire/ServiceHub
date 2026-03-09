@@ -1,0 +1,123 @@
+# =============================================================================
+# ServiceHub — Docker Compose Configuration
+# =============================================================================
+# Orchestrates all services needed to run ServiceHub locally:
+#   - postgres:           PostgreSQL 16 database
+#   - backend:            Spring Boot 3.2 API + Thymeleaf UI
+#   - data-engineering:   Python ETL pipeline for analytics
+#
+# Quick Start:
+#   cp .env.example .env
+#   docker-compose up --build
+#
+# Access Points:
+#   - Application:  http://localhost:8080
+#   - Swagger UI:   http://localhost:8080/swagger-ui.html
+#   - Health Check: http://localhost:8080/actuator/health
+#   - Prometheus:   http://localhost:8080/actuator/prometheus
+#   - Database:     localhost:5432 (user: servicehub / pass: servicehub_pass)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  # Stores all ServiceHub data: users, service requests, SLA policies, etc.
+  # Data is persisted in a named volume so it survives container restarts.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: servicehub-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-servicehub}
+      POSTGRES_USER: ${POSTGRES_USER:-servicehub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-servicehub} -d ${POSTGRES_DB:-servicehub}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - servicehub-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Spring Boot Backend
+  # ---------------------------------------------------------------------------
+  # The main application: REST API, Thymeleaf UI, JWT auth, SLA engine.
+  # Waits for PostgreSQL to be healthy before starting.
+  # Environment variables override application.yml values.
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: servicehub-backend
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      # Spring profile determines which application-{profile}.yml is loaded
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # Database connection — uses Docker DNS name "postgres" to reach the DB container
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-servicehub}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-servicehub}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+      # Security — JWT signing key (override in production via .env or CI secrets)
+      JWT_SECRET: ${JWT_SECRET:-localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION_1234567890}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - servicehub-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Data Engineering — Python ETL Pipeline
+  # ---------------------------------------------------------------------------
+  # Extracts ticket data from PostgreSQL, computes SLA metrics and analytics,
+  # and writes results back to analytics tables.
+  # Designed to run as a one-shot job (exits after completion).
+  # ---------------------------------------------------------------------------
+  data-engineering:
+    build:
+      context: ./data-engineering
+      dockerfile: Dockerfile
+    container_name: servicehub-etl
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:-servicehub}
+      DB_USER: ${POSTGRES_USER:-servicehub}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - servicehub-network
+    # ETL runs once and exits — do not restart automatically.
+    restart: "no"
+
+# =============================================================================
+# Volumes: Persistent storage that survives container restarts.
+# =============================================================================
+volumes:
+  pgdata:
+    driver: local
+
+# =============================================================================
+# Networks: Custom bridge network for inter-container communication.
+# Containers resolve each other by service name (e.g., "postgres", "backend").
+# =============================================================================
+networks:
+  servicehub-network:
+    driver: bridge
+    name: servicehub-network

@@ -1,0 +1,107 @@
+# =============================================================================
+# ServiceHub — Pre-commit Configuration
+# =============================================================================
+# Pre-commit runs checks BEFORE your code is committed. If any check fails,
+# the commit is blocked until you fix the issue.
+#
+# Setup (one-time per developer):
+#   pip install pre-commit
+#   pre-commit install
+#   pre-commit install --hook-type commit-msg
+#
+# Manual run on all files:
+#   pre-commit run --all-files
+# =============================================================================
+
+repos:
+  # ---------------------------------------------------------------------------
+  # General file quality checks
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Remove trailing whitespace from all files
+      - id: trailing-whitespace
+
+      # Ensure every file ends with a newline
+      - id: end-of-file-fixer
+
+      # Validate YAML syntax (catches docker-compose and CI workflow errors)
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+
+      # Validate JSON syntax
+      - id: check-json
+
+      # Block files larger than 500KB from being committed
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+      # Prevent direct commits to main or develop
+      - id: no-commit-to-branch
+        args: ["--branch", "main", "--branch", "develop"]
+
+      # Detect broken symlinks
+      - id: check-symlinks
+
+      # Detect merge conflict markers left in files
+      - id: check-merge-conflict
+
+  # ---------------------------------------------------------------------------
+  # Secret detection — prevents passwords, API keys, tokens from being committed
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+
+  # ---------------------------------------------------------------------------
+  # Conventional commit message enforcement
+  # ---------------------------------------------------------------------------
+  # Commit messages MUST follow this format:
+  #   <type>: <description>
+  #
+  # Valid types: feat, fix, docs, chore, ci, refactor, test, style, perf, build
+  # Example:    feat: add SLA breach detection endpoint
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          [
+            "feat",
+            "fix",
+            "docs",
+            "chore",
+            "ci",
+            "refactor",
+            "test",
+            "style",
+            "perf",
+            "build",
+          ]
+
+  # ---------------------------------------------------------------------------
+  # Branch naming convention enforcement
+  # ---------------------------------------------------------------------------
+  # Branches MUST follow one of these patterns:
+  #   feature/<description>
+  #   bugfix/<description>
+  #   hotfix/<description>
+  #   release/<version>
+  #   chore/<description>
+  #   docs/<description>
+  #
+  # Example: feature/request-management
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: branch-naming
+        name: Enforce branch naming convention
+        entry: >-
+          bash -c 'branch=$(git rev-parse --abbrev-ref HEAD) && [[ "$branch" =~ ^(main|develop|feature/|bugfix/|hotfix/|release/|chore/|docs/) ]] || (echo ""; echo "ERROR: Branch name \"$branch\" does not follow naming convention."; echo "Valid prefixes: feature/, bugfix/, hotfix/, release/, chore/, docs/"; echo "Example: feature/request-management"; echo ""; exit 1)'
+        language: system
+        pass_filenames: false

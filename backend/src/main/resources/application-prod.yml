@@ -1,0 +1,48 @@
+# =============================================================================
+# ServiceHub — Production Profile (application-prod.yml)
+# =============================================================================
+# Activated when: SPRING_PROFILES_ACTIVE=prod
+# Used for: Production deployment
+#
+# IMPORTANT: All sensitive values MUST be provided via environment variables.
+# There are NO fallback defaults in this profile — the app will fail to start
+# if required env vars are missing. This is intentional to prevent deploying
+# with insecure defaults.
+#
+# Required Environment Variables:
+#   - SPRING_DATASOURCE_URL
+#   - SPRING_DATASOURCE_USERNAME
+#   - SPRING_DATASOURCE_PASSWORD
+#   - JWT_SECRET
+# =============================================================================
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  sql:
+    init:
+      mode: never
+  thymeleaf:
+    cache: true
+
+# Production: Only expose health. Do NOT expose prometheus publicly without auth.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.servicehub: INFO
+    org.springframework.security: WARN

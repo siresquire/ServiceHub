@@ -1,0 +1,30 @@
+# =============================================================================
+# ServiceHub — Test Profile (application-test.yml)
+# =============================================================================
+# Activated when: SPRING_PROFILES_ACTIVE=test
+# Used for: CI/CD pipeline, unit tests, integration tests
+#
+# Overrides from base application.yml:
+#   - Uses separate test database (or CI-provided Postgres)
+#   - Disables SQL logging to keep test output clean
+#   - Uses create-drop for a clean DB on each test run
+#   - Disables data.sql seed data (tests manage their own fixtures)
+# =============================================================================
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/servicehub_test}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    root: WARN
+    com.servicehub: INFO

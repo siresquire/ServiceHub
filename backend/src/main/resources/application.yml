@@ -1,0 +1,100 @@
+# =============================================================================
+# ServiceHub — Base Application Configuration
+# =============================================================================
+# This is the SHARED base configuration loaded by all Spring profiles.
+# Profile-specific overrides are in:
+#   - application-dev.yml   (local Docker development)
+#   - application-test.yml  (CI/CD pipeline and unit tests)
+#   - application-prod.yml  (production deployment)
+#
+# Values use ${ENV_VAR:default} syntax so they can be overridden by
+# environment variables in Docker Compose, CI, or production deployments.
+# =============================================================================
+
+spring:
+  application:
+    name: servicehub
+
+  # --- Database ---
+  # Default connection for local development.
+  # Overridden by SPRING_DATASOURCE_* env vars in Docker Compose.
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/servicehub}
+    username: ${SPRING_DATASOURCE_USERNAME:servicehub}
+    password: ${SPRING_DATASOURCE_PASSWORD:servicehub_pass}
+    driver-class-name: org.postgresql.Driver
+
+  # --- JPA / Hibernate ---
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # --- Data Initialization ---
+  # Seed data (data.sql) is loaded on startup.
+  # Set to "never" in production if using Flyway/Liquibase.
+  sql:
+    init:
+      mode: always
+
+  # --- Thymeleaf Template Engine ---
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+server:
+  port: ${SERVER_PORT:8080}
+
+# =============================================================================
+# JWT Configuration
+# =============================================================================
+# IMPORTANT: Override JWT_SECRET in production via environment variable.
+# The default value is ONLY for local development convenience.
+jwt:
+  secret: ${JWT_SECRET:localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION_1234567890}
+  expiration: 86400000 # 24 hours in milliseconds
+
+# =============================================================================
+# API Documentation (Swagger / OpenAPI)
+# =============================================================================
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# =============================================================================
+# Actuator & Monitoring
+# =============================================================================
+# Expose health, info, and Prometheus endpoints for monitoring.
+# Health check is used by Docker HEALTHCHECK and load balancers.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# =============================================================================
+# Logging
+# =============================================================================
+# Default log level. Override per-package in profile-specific configs.
+logging:
+  level:
+    root: INFO
+    com.servicehub: INFO
+    org.springframework.security: WARN

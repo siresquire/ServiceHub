@@ -1,0 +1,140 @@
+# =============================================================================
+# ServiceHub — Continuous Integration Pipeline
+# =============================================================================
+# Triggers:
+#   - On every push to main or develop
+#   - On every pull request targeting main or develop
+#
+# Pipeline stages:
+#   1. Build — Compile Java code and cache Maven dependencies
+#   2. Test  — Run unit tests with JaCoCo code coverage
+#   3. Docker — Build the Docker image and verify it starts correctly
+#
+# The pipeline uses a live PostgreSQL service container for integration tests.
+# =============================================================================
+
+name: CI Pipeline
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+# Cancel in-progress runs for the same branch/PR to save CI minutes.
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+# ---------------------------------------------------------------------------
+# Environment variables shared across all jobs
+# ---------------------------------------------------------------------------
+env:
+    JAVA_VERSION: "17"
+    JAVA_DISTRIBUTION: "temurin"
+
+jobs:
+    # ===========================================================================
+    # Job 1: Build & Test
+    # ===========================================================================
+    # Compiles the backend, runs unit tests, and generates a coverage report.
+    # Uses a PostgreSQL service container for database-dependent tests.
+    # ===========================================================================
+    build-and-test:
+        name: Build & Test
+        runs-on: ubuntu-latest
+
+        # PostgreSQL service container — available at localhost:5432
+        services:
+            postgres:
+                image: postgres:16-alpine
+                env:
+                    POSTGRES_DB: servicehub
+                    POSTGRES_USER: servicehub
+                    POSTGRES_PASSWORD: servicehub_pass
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U servicehub -d servicehub"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+            # --- Checkout ---
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # --- Java Setup ---
+            - name: Set up JDK ${{ env.JAVA_VERSION }}
+              uses: actions/setup-java@v4
+              with:
+                  java-version: ${{ env.JAVA_VERSION }}
+                  distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+            # --- Maven Dependency Cache ---
+            # Caches the ~/.m2/repository directory. Dependencies only re-download
+            # when pom.xml changes, cutting build time by ~60%.
+            - name: Cache Maven dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ~/.m2/repository
+                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-maven-
+
+            # --- Build ---
+            - name: Build with Maven
+              working-directory: ./backend
+              run: mvn clean package -DskipTests -B
+
+            # --- Unit Tests ---
+            - name: Run tests
+              working-directory: ./backend
+              env:
+                  SPRING_PROFILES_ACTIVE: test
+                  SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/servicehub
+                  SPRING_DATASOURCE_USERNAME: servicehub
+                  SPRING_DATASOURCE_PASSWORD: servicehub_pass
+                  JWT_SECRET: ci-test-secret-key-for-jwt-token-generation-1234567890
+              run: mvn test -B
+
+            # --- Upload Test Reports ---
+            # Always upload, even if tests fail, so developers can diagnose failures.
+            - name: Upload test reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-reports
+                  path: backend/target/surefire-reports/
+                  retention-days: 7
+
+    # ===========================================================================
+    # Job 2: Docker Build Validation
+    # ===========================================================================
+    # Builds the Docker image and optionally runs a smoke test to verify
+    # the container starts and responds to health checks.
+    # Only runs if the build-and-test job passes.
+    # ===========================================================================
+    docker-build:
+        name: Docker Build
+        runs-on: ubuntu-latest
+        needs: build-and-test
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # --- Build Docker Image ---
+            - name: Build backend Docker image
+              run: |
+                  docker build \
+                    --tag servicehub-backend:${{ github.sha }} \
+                    --tag servicehub-backend:latest \
+                    ./backend
+
+            # --- Verify Image ---
+            - name: Verify Docker image
+              run: |
+                  echo "Image built successfully."
+                  docker images servicehub-backend

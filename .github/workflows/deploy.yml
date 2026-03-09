@@ -1,0 +1,103 @@
+# =============================================================================
+# ServiceHub — Continuous Deployment Pipeline
+# =============================================================================
+# Triggers:
+#   - Only on push to main (after a PR is merged)
+#
+# Pipeline stages:
+#   1. Build and tag the Docker image
+#   2. Push to GitHub Container Registry (GHCR)
+#   3. Deploy (placeholder — extend with your deployment target)
+#
+# Required GitHub Secrets:
+#   - None for GHCR (uses GITHUB_TOKEN automatically)
+#   - Add SSH_KEY, DEPLOY_HOST, etc. if deploying to a remote server
+# =============================================================================
+
+name: Deploy Pipeline
+
+on:
+    push:
+        branches: [main]
+
+# Only one deployment at a time.
+concurrency:
+    group: deploy-${{ github.ref }}
+    cancel-in-progress: false
+
+env:
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}/servicehub-backend
+
+jobs:
+    # ===========================================================================
+    # Job 1: Build & Push Docker Image
+    # ===========================================================================
+    build-and-push:
+        name: Build & Push Image
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+            packages: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # --- Login to GitHub Container Registry ---
+            - name: Login to GHCR
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            # --- Extract metadata for Docker tags ---
+            - name: Extract metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=sha
+                      type=raw,value=latest
+
+            # --- Build and Push ---
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: ./backend
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+
+    # ===========================================================================
+    # Job 2: Deploy (Placeholder)
+    # ===========================================================================
+    # Extend this job for your specific deployment target.
+    # Examples:
+    #   - SSH into EC2 and run docker-compose pull && docker-compose up -d
+    #   - Deploy to Kubernetes
+    #   - Deploy to AWS ECS
+    # ===========================================================================
+    deploy:
+        name: Deploy
+        runs-on: ubuntu-latest
+        needs: build-and-push
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Deploy notification
+              run: |
+                  echo "========================================="
+                  echo " Deployment triggered for ServiceHub"
+                  echo " Commit: ${{ github.sha }}"
+                  echo " Branch: ${{ github.ref_name }}"
+                  echo " Actor:  ${{ github.actor }}"
+                  echo "========================================="
+                  echo ""
+                  echo "TODO: Add your deployment steps here."
+                  echo "Example: SSH to server, pull new image, restart containers."

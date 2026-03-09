@@ -1,0 +1,63 @@
+# =============================================================================
+# ServiceHub — Observability Stack (Optional)
+# =============================================================================
+# Adds Prometheus (metrics) and Grafana (dashboards) to the ServiceHub stack.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+#
+# Access Points:
+#   - Prometheus: http://localhost:9090
+#   - Grafana:    http://localhost:3000 (admin / admin)
+#
+# NOTE: This is OPTIONAL for local development. The main docker-compose.yml
+#       runs the application without the monitoring stack.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Prometheus — Metrics Collection & Storage
+  # ---------------------------------------------------------------------------
+  # Scrapes metrics from the Spring Boot Actuator /actuator/prometheus endpoint
+  # every 10 seconds and stores them in a time-series database.
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: servicehub-prometheus
+    volumes:
+      - ./devops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - servicehub-network
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana — Metrics Visualization & Dashboards
+  # ---------------------------------------------------------------------------
+  # Auto-provisions the Prometheus datasource on startup.
+  # Default credentials: admin / admin
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: servicehub-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./devops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - servicehub-network
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

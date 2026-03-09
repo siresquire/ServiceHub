@@ -1,0 +1,26 @@
+# =============================================================================
+# ServiceHub — Development Profile (application-dev.yml)
+# =============================================================================
+# Activated when: SPRING_PROFILES_ACTIVE=dev
+# Used for: Local Docker development via docker-compose
+#
+# Overrides from base application.yml:
+#   - Enables SQL logging for debugging
+#   - Disables Thymeleaf caching for live template reloading
+#   - Sets verbose logging for ServiceHub classes
+# =============================================================================
+
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    com.servicehub: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG

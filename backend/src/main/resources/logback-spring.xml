@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- =========================================================================
+     ServiceHub — Logback Logging Configuration
+     =========================================================================
+     This configures structured JSON logging for all environments.
+
+     In Docker: Logs go to stdout → collected by Docker → viewable via
+                docker-compose logs -f backend
+
+     Profile-specific behavior:
+       - dev:  Console logs with colors + JSON (for local debugging)
+       - prod: JSON-only (for log aggregation tools like ELK, Loki, CloudWatch)
+     ========================================================================= -->
+<configuration>
+
+    <!-- Import Spring Boot defaults for profile-aware configuration -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ===================================================================
+         Property: Application Name
+         =================================================================== -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="servicehub"/>
+
+    <!-- ===================================================================
+         Console Appender (Human-readable, colored output)
+         Used in: dev profile
+         =================================================================== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ===================================================================
+         JSON Console Appender (Structured JSON output)
+         Used in: all profiles (production log aggregation)
+         =================================================================== -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>{"timestamp":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","level":"%level","logger":"%logger{36}","thread":"%thread","message":"%msg","app":"${APP_NAME}"}%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ===================================================================
+         Profile: dev — Use colored console output for developer readability
+         =================================================================== -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ===================================================================
+         Profile: test — Minimal logging to keep test output clean
+         =================================================================== -->
+    <springProfile name="test">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.servicehub" level="INFO"/>
+    </springProfile>
+
+    <!-- ===================================================================
+         Profile: prod — JSON structured logging for log aggregation
+         =================================================================== -->
+    <springProfile name="prod">
+        <root level="WARN">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+        <logger name="com.servicehub" level="INFO"/>
+    </springProfile>
+
+    <!-- ===================================================================
+         Default (no profile) — Use colored console
+         =================================================================== -->
+    <springProfile name="default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>

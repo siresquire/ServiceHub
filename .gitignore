@@ -49,8 +49,7 @@ node_modules/
 docker-compose.override.yml
 
 # --- Pre-commit ---
-# The secrets baseline is unique per machine.
-.secrets.baseline
+# (Baseline intentionally tracked so the team shares the same secret rules)
 
 # --- Agent / AI Generated Files ---
 # Prevent generated prompt artifacts from cluttering the repo

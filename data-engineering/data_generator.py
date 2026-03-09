@@ -103,3 +103,71 @@ def random_date(start_days_ago=90, end_days_ago=0):
     end = datetime.now() - timedelta(days=end_days_ago)
     delta = end - start
     return start + timedelta(seconds=random.randint(0, int(delta.total_seconds())))
+
+
+def generate_ticket(ticket_id):
+    """Generate a single realistic support ticket."""
+    category = random.choice(categories)
+    priority = random.choices(priorities, weights=[30, 40, 20, 10])[0]
+    status = random.choices(statuses, weights=[15, 20, 25, 25, 15])[0]
+
+    title, description = random.choice(TICKET_TEMPLATES[category])
+
+    first = random.choice(FIRST_NAMES)
+    last = random.choice(LAST_NAMES)
+    submitter_name = f"{first} {last}"
+    submitter_email = f"{first.lower()}.{last.lower()}@company.com"
+    department = random.choice(DEPARTMENTS)
+
+    created_at = random_date(start_days_ago=90)
+
+    # Timestamps that follow logical order
+    updated_at = created_at + timedelta(hours=random.randint(1, 48))
+    assigned_at = None
+    resolved_at = None
+    closed_at = None
+    assigned_to = None
+    resolution_note = None
+
+    if status in ('ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'):
+        assigned_at = created_at + timedelta(minutes=random.randint(10, 120))
+        assigned_to = random.choice(AGENTS)
+
+    if status in ('RESOLVED', 'CLOSED'):
+        resolved_at = assigned_at + timedelta(hours=random.randint(1, 72))
+        resolution_note = random.choice(RESOLUTION_NOTES[category])
+        updated_at = resolved_at
+
+    if status == 'CLOSED':
+        closed_at = resolved_at + timedelta(hours=random.randint(1, 24))
+        updated_at = closed_at
+
+    # SLA breach logic based on priority
+    sla_hours = {'LOW': 72, 'MEDIUM': 48, 'HIGH': 24, 'CRITICAL': 4}
+    sla_deadline = created_at + timedelta(hours=sla_hours[priority])
+    sla_breached = False
+    if resolved_at and resolved_at > sla_deadline:
+        sla_breached = True
+    elif not resolved_at and datetime.now() > sla_deadline:
+        sla_breached = True
+
+    return {
+        "ticket_id": f"TKT-{ticket_id:05d}",
+        "title": title,
+        "description": description,
+        "category": category,
+        "priority": priority,
+        "status": status,
+        "submitter_name": submitter_name,
+        "submitter_email": submitter_email,
+        "department": department,
+        "assigned_to": assigned_to,
+        "created_at": created_at.isoformat(),
+        "updated_at": updated_at.isoformat(),
+        "assigned_at": assigned_at.isoformat() if assigned_at else None,
+        "resolved_at": resolved_at.isoformat() if resolved_at else None,
+        "closed_at": closed_at.isoformat() if closed_at else None,
+        "resolution_note": resolution_note,
+        "sla_breached": sla_breached,
+        "satisfaction_score": random.randint(1, 5) if status in ('RESOLVED', 'CLOSED') else None,
+    }

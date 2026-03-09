@@ -97,3 +97,9 @@ RESOLUTION_NOTES = {
     ],
 }
 
+def random_date(start_days_ago=90, end_days_ago=0):
+    """Generate a random datetime within the past N days."""
+    start = datetime.now() - timedelta(days=start_days_ago)
+    end = datetime.now() - timedelta(days=end_days_ago)
+    delta = end - start
+    return start + timedelta(seconds=random.randint(0, int(delta.total_seconds())))

@@ -1,0 +1,11 @@
+title = "ServiceHub GitLeaks Config"
+
+[extend]
+# Inherit all default rules
+useDefault = true
+
+[allowlist]
+# Ignore the detect-secrets baseline file from being scanned by gitleaks
+paths = [
+    '''\.secrets\.baseline'''
+]

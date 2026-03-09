@@ -193,7 +193,7 @@ def save_csv(tickets, path=None):
     if not tickets:
         log.warning("No tickets to save — skipping CSV write.")
         return
-    output = Path(path) if path else Path(__file__).parent / "data" / "tickets.csv"
+    output = Path(path) if path else Path(__file__).parent / "data" / "sample_data.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
     log.info("Writing CSV to %s", output)
     with output.open("w", newline="") as f:
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Generate realistic support ticket test data.")
-    parser.add_argument("-n", "--count", type=int, default=100, help="Number of tickets to generate (default: 100)")
+    parser.add_argument("-n", "--count", type=int, default=800, help="Number of tickets to generate (default: 800)")
     parser.add_argument("--csv", type=str, default=None, help="Output CSV file path (default: data-engineering/data/tickets.csv)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument("--no-csv", action="store_true", help="Skip CSV output")

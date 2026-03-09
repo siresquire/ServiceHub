@@ -1,5 +1,4 @@
 ﻿import random
-import json
 import csv
 from datetime import datetime, timedelta
 
@@ -179,11 +178,6 @@ def generate_dataset(n=100):
     start_id = random.randint(1000, 9000)
     return [generate_ticket(start_id + i) for i in range(n)]
 
-def save_json(tickets, path="tickets.json"):
-    with open(path, "w") as f:
-        json.dump(tickets, f, indent=2)
-    print(f"[✓] Saved {len(tickets)} tickets → {path}")
-
 def save_csv(tickets, path="tickets.csv"):
     if not tickets:
         return
@@ -214,11 +208,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate realistic support ticket test data.")
     parser.add_argument("-n", "--count", type=int, default=100, help="Number of tickets to generate (default: 100)")
-    parser.add_argument("--json", type=str, default="tickets.json", help="Output JSON file path")
     parser.add_argument("--csv", type=str, default="tickets.csv", help="Output CSV file path")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument("--no-csv", action="store_true", help="Skip CSV output")
-    parser.add_argument("--no-json", action="store_true", help="Skip JSON output")
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -228,8 +220,6 @@ if __name__ == "__main__":
     print(f"[i] Generating {args.count} tickets...")
     tickets = generate_dataset(args.count)
 
-    if not args.no_json:
-        save_json(tickets, args.json)
     if not args.no_csv:
         save_csv(tickets, args.csv)
 

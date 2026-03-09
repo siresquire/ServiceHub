@@ -1,7 +1,15 @@
-﻿import random
+﻿import logging
+import random
 import csv
 from datetime import datetime, timedelta
 from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+log = logging.getLogger(__name__)
 
 
 # --- Base Data ---
@@ -175,35 +183,41 @@ def generate_ticket(ticket_id):
 
 def generate_dataset(n=800):
     """Generate n tickets and return as a list of dicts."""
-    # Shuffle starting ID to avoid predictable sequences
+    log.info("Generating %d tickets...", n)
     start_id = random.randint(1000, 9000)
-    return [generate_ticket(start_id + i) for i in range(n)]
+    tickets = [generate_ticket(start_id + i) for i in range(n)]
+    log.info("Generation complete: %d tickets created.", len(tickets))
+    return tickets
 
 def save_csv(tickets, path=None):
     if not tickets:
+        log.warning("No tickets to save — skipping CSV write.")
         return
     output = Path(path) if path else Path(__file__).parent / "data" / "tickets.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
+    log.info("Writing CSV to %s", output)
     with output.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=tickets[0].keys())
         writer.writeheader()
         writer.writerows(tickets)
-    print(f"[✓] Saved {len(tickets)} tickets → {output}")
+    log.info("Saved %d tickets to %s", len(tickets), output)
 
 
 def print_summary(tickets):
     from collections import Counter
-    print("\n── Dataset Summary ──────────────────────────")
-    print(f"  Total tickets     : {len(tickets)}")
-    print(f"  Categories        : {dict(Counter(t['category'] for t in tickets))}")
-    print(f"  Priorities        : {dict(Counter(t['priority'] for t in tickets))}")
-    print(f"  Statuses          : {dict(Counter(t['status'] for t in tickets))}")
-    print(f"  SLA breached      : {sum(1 for t in tickets if t['sla_breached'])}")
+    breached = sum(1 for t in tickets if t['sla_breached'])
     resolved = [t for t in tickets if t['satisfaction_score']]
-    if resolved:
-        avg_sat = sum(t['satisfaction_score'] for t in resolved) / len(resolved)
-        print(f"  Avg satisfaction  : {avg_sat:.2f}/5.0 (n={len(resolved)})")
-    print("─────────────────────────────────────────────\n")
+    avg_sat = sum(t['satisfaction_score'] for t in resolved) / len(resolved) if resolved else None
+
+    log.info("── Dataset Summary ─────────────────────────")
+    log.info("  Total tickets     : %d", len(tickets))
+    log.info("  Categories        : %s", dict(Counter(t['category'] for t in tickets)))
+    log.info("  Priorities        : %s", dict(Counter(t['priority'] for t in tickets)))
+    log.info("  Statuses          : %s", dict(Counter(t['status'] for t in tickets)))
+    log.info("  SLA breached      : %d", breached)
+    if avg_sat is not None:
+        log.info("  Avg satisfaction  : %.2f/5.0 (n=%d)", avg_sat, len(resolved))
+    log.info("────────────────────────────────────────────")
 
 
 if __name__ == "__main__":
@@ -218,9 +232,8 @@ if __name__ == "__main__":
 
     if args.seed is not None:
         random.seed(args.seed)
-        print(f"[i] Using random seed: {args.seed}")
+        log.info("Using random seed: %d", args.seed)
 
-    print(f"[i] Generating {args.count} tickets...")
     tickets = generate_dataset(args.count)
 
     if not args.no_csv:

@@ -183,3 +183,54 @@ def save_json(tickets, path="tickets.json"):
     with open(path, "w") as f:
         json.dump(tickets, f, indent=2)
     print(f"[✓] Saved {len(tickets)} tickets → {path}")
+
+def save_csv(tickets, path="tickets.csv"):
+    if not tickets:
+        return
+    with open(path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=tickets[0].keys())
+        writer.writeheader()
+        writer.writerows(tickets)
+    print(f"[✓] Saved {len(tickets)} tickets → {path}")
+
+
+def print_summary(tickets):
+    from collections import Counter
+    print("\n── Dataset Summary ──────────────────────────")
+    print(f"  Total tickets     : {len(tickets)}")
+    print(f"  Categories        : {dict(Counter(t['category'] for t in tickets))}")
+    print(f"  Priorities        : {dict(Counter(t['priority'] for t in tickets))}")
+    print(f"  Statuses          : {dict(Counter(t['status'] for t in tickets))}")
+    print(f"  SLA breached      : {sum(1 for t in tickets if t['sla_breached'])}")
+    resolved = [t for t in tickets if t['satisfaction_score']]
+    if resolved:
+        avg_sat = sum(t['satisfaction_score'] for t in resolved) / len(resolved)
+        print(f"  Avg satisfaction  : {avg_sat:.2f}/5.0 (n={len(resolved)})")
+    print("─────────────────────────────────────────────\n")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate realistic support ticket test data.")
+    parser.add_argument("-n", "--count", type=int, default=100, help="Number of tickets to generate (default: 100)")
+    parser.add_argument("--json", type=str, default="tickets.json", help="Output JSON file path")
+    parser.add_argument("--csv", type=str, default="tickets.csv", help="Output CSV file path")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
+    parser.add_argument("--no-csv", action="store_true", help="Skip CSV output")
+    parser.add_argument("--no-json", action="store_true", help="Skip JSON output")
+    args = parser.parse_args()
+
+    if args.seed is not None:
+        random.seed(args.seed)
+        print(f"[i] Using random seed: {args.seed}")
+
+    print(f"[i] Generating {args.count} tickets...")
+    tickets = generate_dataset(args.count)
+
+    if not args.no_json:
+        save_json(tickets, args.json)
+    if not args.no_csv:
+        save_csv(tickets, args.csv)
+
+    print_summary(tickets)

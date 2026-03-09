@@ -26,9 +26,9 @@ spring:
 
   # --- JPA / Hibernate ---
   jpa:
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -40,13 +40,17 @@ spring:
   # Set to "never" in production if using Flyway/Liquibase.
   sql:
     init:
-      mode: always
+      mode: never
 
   # --- Thymeleaf Template Engine ---
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     cache: false
+
+  flyway:
+    enabled: true
+
 
 # =============================================================================
 # Server Configuration

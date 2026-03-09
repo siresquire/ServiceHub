@@ -6,7 +6,7 @@ import com.servicehub.model.enums.RequestCategory;
 import lombok.*;
 
 @Getter @Setter
-@NoArgsConstructor @RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor @Builder
 public class SlaPolicyDto {
   private Long id;

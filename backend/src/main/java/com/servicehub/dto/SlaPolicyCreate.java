@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 @Getter @Setter
-@NoArgsConstructor @RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor @Builder
 public class SlaPolicyCreate {
   @NotNull

@@ -171,3 +171,15 @@ def generate_ticket(ticket_id):
         "sla_breached": sla_breached,
         "satisfaction_score": random.randint(1, 5) if status in ('RESOLVED', 'CLOSED') else None,
     }
+
+
+def generate_dataset(n=100):
+    """Generate n tickets and return as a list of dicts."""
+    # Shuffle starting ID to avoid predictable sequences
+    start_id = random.randint(1000, 9000)
+    return [generate_ticket(start_id + i) for i in range(n)]
+
+def save_json(tickets, path="tickets.json"):
+    with open(path, "w") as f:
+        json.dump(tickets, f, indent=2)
+    print(f"[✓] Saved {len(tickets)} tickets → {path}")

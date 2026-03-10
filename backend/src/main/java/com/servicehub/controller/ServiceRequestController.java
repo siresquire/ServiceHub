@@ -7,8 +7,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -16,8 +19,10 @@ import org.springframework.web.bind.annotation.*;
 public class ServiceRequestController {
     private final ServiceRequestService requestService;
 
-    @GetMapping
-    public ResponseEntity<Page<ServiceRequestResponse>> getAll(
+    // Paginated → admin only, for dashboard
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<ServiceRequestResponse>> getAllPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(requestService.getAllRequests(page, size));
@@ -44,6 +49,21 @@ public class ServiceRequestController {
     }
 
     // TODO: Add assign endpoint - PUT /api/requests/{id}/assign
-    // TODO: Add my-requests endpoint - GET /api/requests/my-requests
+
+
+    // GET /api/requests/my-requests — USER sees own tickets
+    @GetMapping("/my-requests")
+    public ResponseEntity<List<ServiceRequestResponse>> getMyRequests(
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(requestService.getRequestsByRequester(user.getId()));
+    }
+
+    // Role-based — main method controller will call
+    @GetMapping
+    public ResponseEntity<List<ServiceRequestResponse>> getAll(
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(requestService.getRequestsForUser(user));
+    }
+
     // TODO: Add dashboard stats endpoint - GET /api/requests/dashboard
 }

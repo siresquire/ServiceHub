@@ -40,3 +40,31 @@ def transform_daily_volume(requests_df):
 
     return df.groupby(["date", "category"]).size().reset_index(name="request_count")
 
+def transform_agent_performance(requests_df):
+    logger.info("Transforming agent performance...")
+
+    if requests_df.empty:
+        return pd.DataFrame()
+
+    df = requests_df.copy()
+
+    df["created_at"] = pd.to_datetime(df["created_at"])
+    df["resolved_at"] = pd.to_datetime(df["resolved_at"])
+
+    resolved = df[df["resolved_at"].notna()].copy()
+
+    if resolved.empty:
+        return pd.DataFrame()
+
+    resolved["resolution_hours"] = (
+        resolved["resolved_at"] - resolved["created_at"]
+    ).dt.total_seconds() / 3600
+
+    performance = resolved.groupby("assignee_id").agg(
+        total_resolved=("id", "count"),
+        avg_resolution_hours=("resolution_hours", "mean"),
+        min_resolution_hours=("resolution_hours", "min"),
+        max_resolution_hours=("resolution_hours", "max"),
+    ).reset_index()
+
+    return performance

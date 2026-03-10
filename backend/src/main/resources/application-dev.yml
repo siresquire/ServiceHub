@@ -11,13 +11,39 @@
 # =============================================================================
 
 spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:tempdb}
+    username: ${SPRING_DATASOURCE_USERNAME:servicehub}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # --- JPA / Hibernate ---
   jpa:
-    show-sql: true
+    defer-datasource-initialization: false
+    hibernate:
+      ddl-auto: none
+    show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+
+  # --- Data Initialization ---
+  # Seed data (data.sql) is loaded on startup.
+  # Set to "never" in production if using Flyway/Liquibase.
+  sql:
+    init:
+      mode: never
+
+  # --- Thymeleaf Template Engine ---
   thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
     cache: false
+
+  flyway:
+    enabled: true
+
 
 logging:
   level:

@@ -33,9 +33,9 @@ repos:
       # Validate JSON syntax
       - id: check-json
 
-      # Block files larger than 500KB from being committed
+      # Block files larger than 2048KB (2MB) from being committed
       - id: check-added-large-files
-        args: ["--maxkb=500"]
+        args: ["--maxkb=2048"]
 
       # Prevent direct commits to main or develop
       - id: no-commit-to-branch

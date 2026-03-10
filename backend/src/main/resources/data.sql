@@ -15,7 +15,10 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Seed original users, mapped to proper schema (password: password123)
 INSERT INTO users (id, email, full_name, password, role, department, created_at) VALUES
-  (1, 'admin@amalitech.com', 'Manager User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'MANAGER', 'IT Support', NOW()),
+  (1, 'admin@amalitech.com', 'Manager User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN', 'IT Support', NOW()),
   (2, 'agent@amalitech.com', 'Support Agent', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'AGENT', 'IT Support', NOW()),
-  (3, 'user@amalitech.com', 'Test User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'EMPLOYEE', 'HR', NOW())
+  (3, 'user@amalitech.com', 'Test User', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'USER', 'HR', NOW())
 ON CONFLICT (id) DO NOTHING;
+
+-- Reset sequence so new users start from id 4
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));

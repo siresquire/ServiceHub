@@ -1,0 +1,16 @@
+name: "Setup Java + Maven cache"
+description: "Setup Temurin JDK and cache Maven dependencies."
+inputs:
+  java_version:
+    description: "Java version."
+    required: false
+    default: "17"
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java_version }}
+        cache: maven

@@ -8,8 +8,6 @@ jobs:
     name: CodeQL Analysis (Java)
     runs-on: ubuntu-latest
     permissions:
-      security-events: write
-      actions: read
       contents: read
     steps:
       - name: Checkout code
@@ -34,3 +32,4 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:java"
+          upload: never

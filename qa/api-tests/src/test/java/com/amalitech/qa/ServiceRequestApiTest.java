@@ -2,15 +2,16 @@ package com.amalitech.qa;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
 public class ServiceRequestApiTest {
-    private String authToken;
+    private static String authToken;
 
-    @BeforeClass
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         RestAssured.baseURI = "http://localhost:8080";
         authToken = given()
             .contentType(ContentType.JSON)

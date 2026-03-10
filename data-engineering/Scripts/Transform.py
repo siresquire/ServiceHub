@@ -68,3 +68,28 @@ def transform_agent_performance(requests_df):
     ).reset_index()
 
     return performance
+
+def transform_sla_breaches(requests_df, sla_df):
+    """Detect requests that exceeded SLA resolution time."""
+
+    if requests_df.empty or sla_df.empty:
+        return pd.DataFrame()
+
+    requests_df["created_at"] = pd.to_datetime(requests_df["created_at"])
+    requests_df["resolved_at"] = pd.to_datetime(requests_df["resolved_at"])
+
+    merged = requests_df.merge(sla_df, on=["category", "priority"], how="left")
+
+    merged["resolution_hours"] = (
+        merged["resolved_at"] - merged["created_at"]
+    ).dt.total_seconds() / 3600
+
+    breaches = merged[merged["resolution_hours"] > merged["resolution_time_hours"]]
+
+    result = breaches.groupby(["category", "priority"]).agg(
+        total_breaches=("id", "count"),
+        avg_breach_hours=("resolution_hours", "mean"),
+        max_breach_hours=("resolution_hours", "max"),
+    ).reset_index()
+
+    return result

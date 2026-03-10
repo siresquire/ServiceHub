@@ -136,6 +136,14 @@ jobs:
               uses: github/codeql-action/analyze@v3
               with:
                   category: "/language:java"
+                  upload: never # Skip GHAS upload (fixes permission error on private repos)
+
+            - name: Upload CodeQL Results as Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: codeql-results
+                  path: ../results/**/*.sarif
+                  retention-days: 7
 
     # ===========================================================================
     # Stage 2: Build Images

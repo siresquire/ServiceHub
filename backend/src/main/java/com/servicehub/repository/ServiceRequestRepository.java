@@ -19,4 +19,8 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findByDepartment_Name(String department);
     Long countByStatus(RequestStatus status);
     List<ServiceRequest> findBySlaDeadlineBeforeAndStatusNotIn(LocalDateTime deadline, List<RequestStatus> statuses);
+
+    Page<ServiceRequest> findAllByStatus(RequestStatus status, Pageable pageable);
+
+    Page<ServiceRequest> findByStatusOrStatus(RequestStatus requestStatus, RequestStatus requestStatus1, Pageable page);
 }

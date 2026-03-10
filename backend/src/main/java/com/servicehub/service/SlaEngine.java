@@ -4,7 +4,6 @@ import com.servicehub.model.ServiceRequest;
 import com.servicehub.model.enums.Priority;
 import com.servicehub.model.enums.RequestStatus;
 import com.servicehub.repository.ServiceRequestRepository;
-import com.servicehub.repository.SlaPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +29,11 @@ public class SlaEngine {
   private static final Logger log = LoggerFactory.getLogger(SlaEngine.class);
 
   /**
-   * Scheduled task to run every minute to check for SLA breaches and escalate priority of affected service requests.
-   * It fetches all SUBMITTED requests in batches and checks if their SLA deadline has passed.
+   * Scheduled task to run every minute to check for response SLA breaches and escalate priority of affected service requests.
+   * It fetches all OPEN requests in batches and checks if their response SLA deadline has passed.
    * If breached, it escalates the priority and marks the request as SLA breached.
+   * For requests already at HIGH priority, it will not escalate further but will mark as SLA breached.
+   * For CRITICAL priority, it will also mark as SLA breached and can trigger an alert too.
    */
   @Scheduled(fixedRate = 60000)
   public void trackResponseSla() {
@@ -48,6 +49,8 @@ public class SlaEngine {
           Priority nextPriority = this.getNextPriority(req.getPriority());
           log.info("SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
           req.setPriority(nextPriority);
+          req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), nextPriority));
+          req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), nextPriority));
           req.setSlaBreached(true);
         }
       }
@@ -60,6 +63,15 @@ public class SlaEngine {
 
   }
 
+  /**
+   * Scheduled task to run every minute to check for resolution SLA breaches and escalate priority of affected service requests.
+   * It fetches all ASSIGNED and IN_PROGRESS requests in batches and checks if their resolution SLA deadline has passed.
+   * If breached, it escalates the priority and marks the request as SLA breached.
+   * For requests already at HIGH priority, it will not escalate further but will mark as SLA breached.
+   * For CRITICAL priority, it will also mark as SLA breached and can trigger an alert too.
+   * Note: This method assumes that the response SLA has already been breached and priority escalated by the trackResponseSla() method, so it only checks ASSIGNED and IN_PROGRESS requests.
+   * Depending on the SLA policy, you may want to also check OPEN requests here if resolution
+   */
   @Scheduled(fixedRate = 60000)
   public void trackResolutionSla() {
     int page = 0;
@@ -73,6 +85,8 @@ public class SlaEngine {
         if (req.getResolutionSlaDeadline().isBefore(java.time.LocalDateTime.now())) {
          Priority nextPriority = this.getNextPriority(req.getPriority());
           log.info("Resolution SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
+          req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), nextPriority));
+          req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), nextPriority));
           req.setPriority(nextPriority);
           req.setSlaBreached(true);
         }

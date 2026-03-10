@@ -4,14 +4,16 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DashboardPageTest {
-    private WebDriver driver;
+    private static WebDriver driver;
 
-    @BeforeClass
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
@@ -27,6 +29,8 @@ public class DashboardPageTest {
     // TODO: testSubmitRequestFlow
     // TODO: testStatusUpdateFlow
 
-    @AfterClass
-    public void teardown() { if (driver != null) driver.quit(); }
+    @AfterAll
+    public static void teardown() {
+        if (driver != null) driver.quit();
+    }
 }

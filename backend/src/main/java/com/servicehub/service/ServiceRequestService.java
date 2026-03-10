@@ -1,6 +1,9 @@
 package com.servicehub.service;
 
 import com.servicehub.dto.*;
+import com.servicehub.exception.BadRequestException;
+import com.servicehub.exception.InvalidServiceRequestTransition;
+import com.servicehub.exception.NotFoundException;
 import com.servicehub.model.*;
 import com.servicehub.model.enums.*;
 import com.servicehub.repository.*;
@@ -42,20 +45,57 @@ public class ServiceRequestService {
 
     public ServiceRequestResponse updateStatus(Long id, StatusUpdateRequest update, User agent) {
         ServiceRequest req = requestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-        req.setStatus(RequestStatus.valueOf(update.getNewStatus()));
+                .orElseThrow(() -> new NotFoundException("Request not found"));
+        this.validateStatusTransition(req.getStatus(), update.getNewStatus());
+        req.setStatus(update.getNewStatus());
         req.setAssignedTo(agent);
         req.setUpdatedAt(LocalDateTime.now());
-        if (update.getNewStatus().equals("RESOLVED")) {
+        if (update.getNewStatus().equals(RequestStatus.RESOLVED)) {
             req.setResolvedAt(LocalDateTime.now());
         }
         return toResponse(requestRepository.save(req));
     }
 
+
     // TODO: Implement assignRequest(Long requestId, Long agentId)
     // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection
+
+    /**
+     * Validates if the status transition is allowed based on the current status and the desired new status.
+     * @param current current status of the request in the db
+     * @param newStatus new status that the user wants to update to
+     * @throws BadRequestException if the new status is the same as the current status
+     * @throws InvalidServiceRequestTransition if the transition is not allowed based on the defined workflow
+     */
+    private void validateStatusTransition(RequestStatus current, RequestStatus newStatus) {
+
+        if(current.equals(newStatus)) {
+            throw new BadRequestException("Request is already in the desired status");
+        }
+
+        switch (current) {
+            case SUBMITTED:
+                if (newStatus != RequestStatus.ASSIGNED && newStatus != RequestStatus.CLOSED) {
+                    throw new InvalidServiceRequestTransition(current, newStatus);
+                }
+                break;
+            case ASSIGNED:
+                if (newStatus != RequestStatus.IN_PROGRESS && newStatus != RequestStatus.CLOSED) {
+                    throw new InvalidServiceRequestTransition(current, newStatus);
+                }
+                break;
+            case IN_PROGRESS:
+                if (newStatus != RequestStatus.RESOLVED && newStatus != RequestStatus.CLOSED) {
+                    throw new BadRequestException("Invalid status transition from IN_PROGRESS to " + newStatus);
+                }
+                break;
+            case RESOLVED,CLOSED:
+                throw new InvalidServiceRequestTransition(current, newStatus);
+        }
+    }
+
 
     private ServiceRequestResponse toResponse(ServiceRequest req) {
         return ServiceRequestResponse.builder()

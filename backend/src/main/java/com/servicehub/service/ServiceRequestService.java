@@ -7,6 +7,7 @@ import com.servicehub.exception.NotFoundException;
 import com.servicehub.model.*;
 import com.servicehub.model.enums.*;
 import com.servicehub.repository.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -43,21 +44,62 @@ public class ServiceRequestService {
         return toResponse(requestRepository.save(req));
     }
 
-    public ServiceRequestResponse updateStatus(Long id, StatusUpdateRequest update, User agent) {
+    /**
+     * Update service request status with validation of allowed transitions and agent assignment for ASSIGNED status
+     * @param id Service request id to update
+     * @param update DTO containing the new status to update to
+     * @param agent (optional) agent to assign if the new status is ASSIGNED. Must be provided if updating to ASSIGNED, otherwise ignored
+     * @return updated service request response
+     */
+    public ServiceRequestResponse updateStatus(@NotNull Long id, @NotNull StatusUpdateRequest update, User agent) {
         ServiceRequest req = requestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        // Validations: Transition rules, agent assignment for ASSIGNED status
         this.validateStatusTransition(req.getStatus(), update.getNewStatus());
+        if(update.getNewStatus().equals(RequestStatus.ASSIGNED) && agent == null) {
+            throw new BadRequestException("Agent must be provided when assigning a request");
+        }
+
+
         req.setStatus(update.getNewStatus());
-        req.setAssignedTo(agent);
-        req.setUpdatedAt(LocalDateTime.now());
+
+        // Track resolved time for SLA reporting
         if (update.getNewStatus().equals(RequestStatus.RESOLVED)) {
             req.setResolvedAt(LocalDateTime.now());
         }
+
+        if (update.getNewStatus().equals(RequestStatus.ASSIGNED)) {
+            req.setAssignedTo(agent);
+            req.setAssignedAt(LocalDateTime.now());
+        }
+
         return toResponse(requestRepository.save(req));
     }
 
+    /**
+     * Helper for assign a request to an agent which internally calls the updateStatus
+     * @param id Service request id to update
+     * @param agentId agent to assign the request to. The status will be updated to ASSIGNED and the agent will be set as the assignedTo field of the request
+     * @return updated service request response
+     */
+    public ServiceRequestResponse updateStatus(Long id, Long agentId) {
+        User agent = userRepository.findById(agentId)
+                .orElseThrow(() -> new NotFoundException("Agent not found"));
 
-    // TODO: Implement assignRequest(Long requestId, Long agentId)
+        var updateService = new StatusUpdateRequest();
+        updateService.setNewStatus(RequestStatus.ASSIGNED);
+
+        return updateStatus(id, updateService , agent);
+    }
+
+    public ServiceRequestResponse updateStatus(Long id, StatusUpdateRequest update) {
+        return updateStatus(id, update , null);
+    }
+
+
+
+        // TODO: Implement assignRequest(Long requestId, Long agentId)
     // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection

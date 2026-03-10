@@ -1,107 +1,137 @@
 -- ============================================================================
--- ServiceHub Analytics Schema
--- Description: Pre-aggregated tables refreshed by the ETL pipeline.
+-- ServiceHub Analytics Schema — Star Schema
+-- Description: Fact + dimension tables refreshed by the ETL pipeline.
 -- Purpose: Optimized for dashboards and reporting (Grafana, Streamlit, etc.).
--- ===========================================================================
+-- ============================================================================
 
--- 1. SLA COMPLIANCE METRICS
--- Aggregates resolution performance by category and priority.
+-- ─── DIMENSION TABLES ────────────────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS analytics_sla_metrics (
-  id                   SERIAL          PRIMARY KEY,
-  -- Classifiers
-  category             ticket_category NOT NULL,
-  priority             ticket_priority NOT NULL,
-  
-  -- Counts
-  total_resolved       INT             NOT NULL DEFAULT 0,
-  total_breached       INT             NOT NULL DEFAULT 0,
-  
-  -- Calculations (Hours)
-  avg_resolution_hours NUMERIC(10, 4),
-  max_resolution_hours NUMERIC(10, 4),
-  compliance_rate      NUMERIC(5, 4)   CHECK (compliance_rate BETWEEN 0 AND 1),
-  
+-- DIM 1: DATE
+-- Standard date dimension for all time-based slicing.
+
+CREATE TABLE IF NOT EXISTS dim_date (
+  date_key        INT          PRIMARY KEY,  -- Surrogate key: YYYYMMDD integer
+  full_date       DATE         NOT NULL UNIQUE,
+  day_of_week     SMALLINT     NOT NULL,     -- 1 (Mon) – 7 (Sun)
+  day_name        VARCHAR(9)   NOT NULL,
+  week_start_date DATE         NOT NULL,     -- ISO Monday of the week
+  week_number     SMALLINT     NOT NULL,     -- ISO week number
+  month           SMALLINT     NOT NULL,
+  month_name      VARCHAR(9)   NOT NULL,
+  quarter         SMALLINT     NOT NULL,
+  year            SMALLINT     NOT NULL,
+  is_weekend      BOOLEAN      NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_dim_date_full ON dim_date (full_date);
+CREATE INDEX IF NOT EXISTS idx_dim_date_week ON dim_date (week_start_date);
+
+
+-- DIM 2: CATEGORY
+-- Ticket category lookup — replaces inline ticket_category enum usage.
+
+CREATE TABLE IF NOT EXISTS dim_category (
+  category_key  SERIAL       PRIMARY KEY,
+  category_name ticket_category NOT NULL UNIQUE,
+  description   TEXT
+);
+
+
+-- DIM 3: PRIORITY
+-- Ticket priority lookup — replaces inline ticket_priority enum usage.
+
+CREATE TABLE IF NOT EXISTS dim_priority (
+  priority_key  SERIAL       PRIMARY KEY,
+  priority_name ticket_priority NOT NULL UNIQUE,
+  sla_hours     NUMERIC(6,2),  -- Target SLA threshold in hours for this priority
+  description   TEXT
+);
+
+
+-- DIM 4: AGENT
+-- Support agent dimension, sourced from the users table.
+
+CREATE TABLE IF NOT EXISTS dim_agent (
+  agent_key     SERIAL       PRIMARY KEY,
+  user_id       INT          NOT NULL UNIQUE REFERENCES users (id) ON DELETE CASCADE,
+  display_name  VARCHAR(200),
+  department    VARCHAR(100),
+  is_active     BOOLEAN      NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_dim_agent_user ON dim_agent (user_id);
+
+
+-- DIM 5: DEPARTMENT
+-- Department dimension for workload and efficiency reporting.
+
+CREATE TABLE IF NOT EXISTS dim_department (
+  department_key  SERIAL       PRIMARY KEY,
+  department_name VARCHAR(100) NOT NULL UNIQUE
+);
+
+
+-- ─── FACT TABLE ──────────────────────────────────────────────────────────────
+
+-- FACT: TICKET EVENTS
+-- Grain: one row per resolved ticket event.
+-- All measures are additive unless noted.
+
+CREATE TABLE IF NOT EXISTS fact_ticket_events (
+  event_id                    BIGSERIAL    PRIMARY KEY,
+
+  -- Dimension foreign keys
+  date_key                    INT          NOT NULL REFERENCES dim_date       (date_key),
+  category_key                INT          NOT NULL REFERENCES dim_category   (category_key),
+  priority_key                INT          NOT NULL REFERENCES dim_priority   (priority_key),
+  agent_key                   INT          REFERENCES dim_agent               (agent_key),
+  department_key              INT          REFERENCES dim_department          (department_key),
+
+  -- Additive measures
+  resolution_hours            NUMERIC(10, 4),    -- Null if not yet resolved
+  response_hours              NUMERIC(10, 4),    -- Time to first response
+
+  -- Semi-additive / status flags
+  is_resolved                 BOOLEAN      NOT NULL DEFAULT FALSE,
+  is_sla_breached             BOOLEAN      NOT NULL DEFAULT FALSE,
+  is_first_contact_resolved   BOOLEAN      NOT NULL DEFAULT FALSE,
+
   -- Metadata
-  refreshed_at         TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-  CONSTRAINT uq_sla_metrics_cat_pri UNIQUE (category, priority)
+  refreshed_at                TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-
--- 2. DAILY VOLUME TRENDS
--- Tracks daily request throughput by category.
-
-CREATE TABLE IF NOT EXISTS analytics_daily_volume (
-  id            SERIAL          PRIMARY KEY,
-  date          DATE            NOT NULL,
-  category      ticket_category NOT NULL,
-  request_count INT             NOT NULL DEFAULT 0,
-  
-  refreshed_at  TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-  CONSTRAINT uq_daily_vol_date_cat UNIQUE (date, category)
-);
-
-CREATE INDEX IF NOT EXISTS idx_daily_vol_date ON analytics_daily_volume (date DESC);
+CREATE INDEX IF NOT EXISTS idx_fact_date      ON fact_ticket_events (date_key);
+CREATE INDEX IF NOT EXISTS idx_fact_category  ON fact_ticket_events (category_key);
+CREATE INDEX IF NOT EXISTS idx_fact_priority  ON fact_ticket_events (priority_key);
+CREATE INDEX IF NOT EXISTS idx_fact_agent     ON fact_ticket_events (agent_key);
+CREATE INDEX IF NOT EXISTS idx_fact_dept      ON fact_ticket_events (department_key);
 
 
--- 3. AGENT PERFORMANCE LEADERBOARD
--- Detailed metrics for support agent efficiency and quality.
+-- ─── EXAMPLE ANALYTICAL QUERIES ──────────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS analytics_agent_performance (
-  id                          SERIAL       PRIMARY KEY,
-  assignee_id                 INT          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-  
-  -- Volume & Speed
-  total_resolved              INT          NOT NULL DEFAULT 0,
-  avg_resolution_hours        NUMERIC(10, 4),
-  min_resolution_hours        NUMERIC(10, 4),
-  max_resolution_hours        NUMERIC(10, 4),
-  
-  -- Quality
-  first_contact_resolution_rate NUMERIC(5, 4) CHECK (
-    first_contact_resolution_rate BETWEEN 0 AND 1
-  ),
-  
-  refreshed_at                TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  CONSTRAINT uq_agent_perf_assignee UNIQUE (assignee_id)
-);
+-- SLA compliance rate by category and priority (replaces analytics_sla_metrics):
+--
+--   SELECT
+--     dc.category_name,
+--     dp.priority_name,
+--     COUNT(*)                                            AS total_resolved,
+--     SUM(is_sla_breached::int)                           AS total_breached,
+--     AVG(resolution_hours)                               AS avg_resolution_hours,
+--     1.0 - AVG(is_sla_breached::int)                    AS compliance_rate
+--   FROM fact_ticket_events f
+--   JOIN dim_category dc  ON f.category_key  = dc.category_key
+--   JOIN dim_priority dp  ON f.priority_key  = dp.priority_key
+--   WHERE f.is_resolved = TRUE
+--   GROUP BY dc.category_name, dp.priority_name;
 
-
--- 4. DEPARTMENT WORKLOAD & EFFICIENCY
--- High-level overview of department-level throughput.
-
-CREATE TABLE IF NOT EXISTS analytics_department_workload (
-  id                   SERIAL       PRIMARY KEY,
-  department_name      VARCHAR(100) NOT NULL UNIQUE,
-  
-  -- Volume
-  total_requests       INT          NOT NULL DEFAULT 0,
-  open_requests        INT          NOT NULL DEFAULT 0,
-  resolved_requests    INT          NOT NULL DEFAULT 0,
-  
-  -- Efficiency
-  avg_resolution_hours NUMERIC(10, 4),
-  resolution_rate      NUMERIC(5, 4) CHECK (resolution_rate BETWEEN 0 AND 1),
-  
-  refreshed_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-);
-
-
--- 5. WEEKLY ROLLING TRENDS
--- Long-term request volume and resolution trends.
-
-CREATE TABLE IF NOT EXISTS analytics_weekly_trends (
-  id                   SERIAL          PRIMARY KEY,
-  week_start_date      DATE            NOT NULL,
-  category             ticket_category NOT NULL,
-  
-  -- Averages & Volume
-  avg_resolution_hours NUMERIC(10, 4),
-  avg_response_hours   NUMERIC(10, 4),
-  request_count        INT             NOT NULL DEFAULT 0,
-  
-  refreshed_at         TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-  CONSTRAINT uq_weekly_trends_week_cat UNIQUE (week_start_date, category)
-);
-
-CREATE INDEX IF NOT EXISTS idx_weekly_trends_date ON analytics_weekly_trends (week_start_date DESC);
+-- Daily volume by category (replaces analytics_daily_volume):
+--
+--   SELECT
+--     dd.full_date,
+--     dc.category_name,
+--     COUNT(*) AS request_count
+--   FROM fact_ticket_events f
+--   JOIN dim_date     dd ON f.date_key     = dd.date_key
+--   JOIN dim_category dc ON f.category_key = dc.category_key
+--   GROUP BY dd.full_date, dc.category_name
+--   ORDER BY dd.full_date DESC;

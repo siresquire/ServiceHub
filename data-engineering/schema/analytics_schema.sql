@@ -107,31 +107,3 @@ CREATE INDEX IF NOT EXISTS idx_fact_agent     ON fact_ticket_events (agent_key);
 CREATE INDEX IF NOT EXISTS idx_fact_dept      ON fact_ticket_events (department_key);
 
 
--- ─── EXAMPLE ANALYTICAL QUERIES ──────────────────────────────────────────────
-
--- SLA compliance rate by category and priority (replaces analytics_sla_metrics):
---
---   SELECT
---     dc.category_name,
---     dp.priority_name,
---     COUNT(*)                                            AS total_resolved,
---     SUM(is_sla_breached::int)                           AS total_breached,
---     AVG(resolution_hours)                               AS avg_resolution_hours,
---     1.0 - AVG(is_sla_breached::int)                    AS compliance_rate
---   FROM fact_ticket_events f
---   JOIN dim_category dc  ON f.category_key  = dc.category_key
---   JOIN dim_priority dp  ON f.priority_key  = dp.priority_key
---   WHERE f.is_resolved = TRUE
---   GROUP BY dc.category_name, dp.priority_name;
-
--- Daily volume by category (replaces analytics_daily_volume):
---
---   SELECT
---     dd.full_date,
---     dc.category_name,
---     COUNT(*) AS request_count
---   FROM fact_ticket_events f
---   JOIN dim_date     dd ON f.date_key     = dd.date_key
---   JOIN dim_category dc ON f.category_key = dc.category_key
---   GROUP BY dd.full_date, dc.category_name
---   ORDER BY dd.full_date DESC;

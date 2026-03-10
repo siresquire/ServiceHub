@@ -70,6 +70,10 @@ jobs:
   codeql-java:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     uses: ./.github/workflows/_reusable-codeql-java.yml
 
   build-images:

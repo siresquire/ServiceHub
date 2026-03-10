@@ -101,7 +101,6 @@ public class ServiceRequestService {
         };
     }
 
-    // TODO: Implement assignRequest(Long requestId, Long agentId)
     /**
      * Helper for assign a request to an agent which internally calls the updateStatus
      * @param id Service request id to update
@@ -124,7 +123,6 @@ public class ServiceRequestService {
 
 
 
-        // TODO: Implement assignRequest(Long requestId, Long agentId)
     // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection

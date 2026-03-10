@@ -127,3 +127,18 @@ make logs       # Tail backend logs
 make db-shell   # Connect to PostgreSQL shell
 make clean      # Destroy containers and database volumes (start fresh)
 ```
+
+### CI/CD Overview
+
+This repository uses GitHub Actions with **modular, reusable workflows**:
+
+- Feature branches run a fast CI (`.github/workflows/ci-feature.yml`) that only executes the stages affected by the files you changed (backend, data-engineering, or devops), plus a mandatory GitLeaks scan.
+- The main CI on `develop` (`.github/workflows/ci.yml`) orchestrates reusable workflows for:
+  - Backend lint & tests
+  - Data-engineering lint
+  - DevOps YAML lint
+  - Backend Docker image build
+  - Security scans (GitLeaks + Trivy image scan)
+  - Integration smoke test against PostgreSQL
+
+Logs are grouped for readability and a single image artifact is built and scanned **before any push to a registry (ECR/GHCR)**.

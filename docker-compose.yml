@@ -68,7 +68,7 @@ services:
       # Spring profile determines which application-{profile}.yml is loaded
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       # Database connection — uses Docker DNS name "postgres" to reach the DB container
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-servicehub}
+      SPRING_DATASOURCE_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/servicehub}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-servicehub}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
       # Security — JWT signing key (override in production via .env or CI secrets)

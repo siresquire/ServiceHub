@@ -1,0 +1,58 @@
+name: Reusable - Build Backend Image
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "Local image name (without tag)."
+        required: false
+        type: string
+        default: "servicehub-backend"
+    outputs:
+      image-name:
+        description: "Built image name."
+        value: ${{ jobs.build-image.outputs.image-name }}
+      image-tag:
+        description: "Built image tag (commit SHA)."
+        value: ${{ jobs.build-image.outputs.image-tag }}
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    outputs:
+      image-name: ${{ steps.meta.outputs.image-name }}
+      image-tag: ${{ steps.meta.outputs.image-tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
+          echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build backend Docker image
+        uses: ./.github/actions/log-group
+        with:
+          title: "Docker build backend"
+
+      - name: Docker build
+        run: docker build -t "${{ inputs.image-name }}:${GITHUB_SHA}" ./backend
+
+      - name: End Docker build group
+        if: always()
+        uses: ./.github/actions/log-group
+        with:
+          title: "Docker build backend"
+          end: "true"
+
+      - name: Save image as artifact
+        run: docker save "${{ inputs.image-name }}:${GITHUB_SHA}" > backend-image.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-image
+          path: backend-image.tar
+          retention-days: 1

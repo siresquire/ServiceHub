@@ -43,7 +43,8 @@ public class ServiceRequest {
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
-    private LocalDateTime slaDeadline;
+    private LocalDateTime responseSlaDeadline;
+    private LocalDateTime resolutionSlaDeadline;
     private Boolean slaBreached;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

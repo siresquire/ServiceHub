@@ -25,8 +25,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SlaEngine {
 
-  private static final Logger log = LoggerFactory.getLogger(SlaEngine.class);
   private final ServiceRequestRepository serviceRequestRepository;
+  private final SlaPolicyService slaPolicyService;
+  private static final Logger log = LoggerFactory.getLogger(SlaEngine.class);
 
   /**
    * Scheduled task to run every minute to check for SLA breaches and escalate priority of affected service requests.
@@ -39,6 +40,7 @@ public class SlaEngine {
     int size = 200;
     
     Page<ServiceRequest> requests = serviceRequestRepository.findAllByStatus(RequestStatus.SUBMITTED,  PageRequest.of(page, size));
+    log.info("Running SLA Engine to track response SLAs. Found {} SUBMITTED requests to check for SLA breaches.", requests.getTotalElements());
     do {
       List<ServiceRequest> requestList = requests.getContent();
       for (ServiceRequest req : requestList) {
@@ -64,6 +66,7 @@ public class SlaEngine {
     int size = 200;
 
     Page<ServiceRequest> requests = serviceRequestRepository.findByStatusOrStatus(RequestStatus.ASSIGNED, RequestStatus.IN_PROGRESS,  PageRequest.of(page, size));
+    log.info("Running SLA Engine to track resolution SLAs. Found {} ASSIGNED/IN_PROGRESS requests to check for SLA breaches.", requests.getTotalElements());
     do {
       List<ServiceRequest> requestList = requests.getContent();
       for (ServiceRequest req : requestList) {

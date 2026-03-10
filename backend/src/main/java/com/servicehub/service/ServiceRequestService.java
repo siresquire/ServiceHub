@@ -19,6 +19,7 @@ public class ServiceRequestService {
     private final ServiceRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final SlaPolicyService slaPolicyService;
 
     public Page<ServiceRequestResponse> getAllRequests(int page, int size) {
         return requestRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
@@ -41,6 +42,9 @@ public class ServiceRequestService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), req.getPriority()));
+        req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), req.getPriority()));
         return toResponse(requestRepository.save(req));
     }
 
@@ -60,7 +64,6 @@ public class ServiceRequestService {
         if(update.getNewStatus().equals(RequestStatus.ASSIGNED) && agent == null) {
             throw new BadRequestException("Agent must be provided when assigning a request");
         }
-
 
         req.setStatus(update.getNewStatus());
 

@@ -19,6 +19,8 @@ target/
 *.iml
 .idea/
 .vscode/
+.cursor/
+.cursor
 *.swp
 .project
 .classpath

@@ -24,6 +24,13 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().build();
   }
 
+  @ExceptionHandler(InvalidServiceRequestTransition.class)
+  public ResponseEntity<ServerResponse<?>> handleInvalidServiceRequestTransition(InvalidServiceRequestTransition ex) {
+    return ResponseEntity.unprocessableEntity().body(new ServerResponse<>(ex.getMessage()));
+  }
+
+
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(

@@ -12,9 +12,9 @@
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/servicehub}
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:tempdb}
     username: ${SPRING_DATASOURCE_USERNAME:servicehub}
-    password: ${SPRING_DATASOURCE_PASSWORD:servicehub_pass}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   # --- JPA / Hibernate ---

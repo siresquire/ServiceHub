@@ -47,8 +47,8 @@ Requests are assigned one of the following priority levels:
 
 Two metrics are tracked for each request in **hours**, as stored in the database:
 
-- **`response_hours`** – maximum time to respond to the request  
-- **`resolution_hours`** – maximum time to fully resolve the request  
+- **`response_hours`** – maximum time to respond to the request
+- **`resolution_hours`** – maximum time to fully resolve the request
 
 ## Response Time
 
@@ -119,7 +119,7 @@ category and priority combination. Times are stored in **hours** in the database
 
 **Constraints:**
 
-- `(category, priority)` combination must be unique (`uq_sla_category_priority`)  
+- `(category, priority)` combination must be unique (`uq_sla_category_priority`)
 - `response_hours` and `resolution_hours` must be > 0
 
 ---
@@ -132,7 +132,7 @@ category and priority combination. Times are stored in **hours** in the database
 
 This means:
 
-- Agent must respond within **30 minutes** (0.5 hours)  
+- Agent must respond within **30 minutes** (0.5 hours)
 - Request must be resolved within **2 hours**
 
 ---

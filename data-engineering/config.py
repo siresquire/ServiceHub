@@ -1,6 +1,10 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+
+# Resolve .env from the project root (one level above data-engineering/)
+_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path=_env_path)
+
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "port": os.getenv("DB_PORT", "5432"),

@@ -29,3 +29,14 @@ def transform_sla_metrics(requests_df):
 
     return summary
 
+def transform_daily_volume(requests_df):
+    logger.info("Transforming daily volume...")
+
+    if requests_df.empty:
+        return pd.DataFrame()
+
+    df = requests_df.copy()
+    df["date"] = pd.to_datetime(df["created_at"]).dt.date
+
+    return df.groupby(["date", "category"]).size().reset_index(name="request_count")
+

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -77,6 +79,28 @@ public class ServiceRequestService {
         return toResponse(requestRepository.save(req));
     }
 
+    // For USER — own tickets only
+    public List<ServiceRequestResponse> getRequestsByRequester(Long userId) {
+        return requestRepository.findByRequesterId(userId)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    // For AGENT — department tickets only
+    public List<ServiceRequestResponse> getRequestsByDepartment(String department) {
+        return requestRepository.findByDepartment_Name(department)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    // Role-based — main method controller will call
+    public List<ServiceRequestResponse> getRequestsForUser(User user) {
+        return switch (user.getRole()) {
+            case ADMIN -> requestRepository.findAll()
+                    .stream().map(this::toResponse).collect(Collectors.toList());
+            case AGENT -> getRequestsByDepartment(user.getDepartment());
+            case USER -> getRequestsByRequester(user.getId());
+        };
+    }
+
     /**
      * Helper for assign a request to an agent which internally calls the updateStatus
      * @param id Service request id to update
@@ -99,8 +123,6 @@ public class ServiceRequestService {
 
 
 
-        // TODO: Implement assignRequest(Long requestId, Long agentId)
-    // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection
 

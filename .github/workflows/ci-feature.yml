@@ -18,96 +18,79 @@
 name: Feature Branch Fast CI
 
 on:
-    push:
-        branches-ignore: [main, develop]
-    pull_request:
-        branches-ignore: [main, develop]
+  push:
+    branches-ignore: [main, develop]
+  pull_request:
+    branches-ignore: [main, develop]
 
 concurrency:
-    group: ci-feature-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-feature-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-    # ===========================================================================
-    # Code Quality & Secrets Scan (Parallel Execution)
-    # ===========================================================================
-    lint-test-backend:
-        name: Lint & Test (backend) - JDK ${{ matrix.java }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                java: ["17", "21"]
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      dataeng: ${{ steps.filter.outputs.dataeng }}
+      devops: ${{ steps.filter.outputs.devops }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Paths filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+              - 'docker-compose*.yml'
+            dataeng:
+              - 'data-engineering/**'
+            devops:
+              - 'devops/**'
+              - 'docker-compose*.yml'
 
-            - name: Set up JDK ${{ matrix.java }}
-              uses: actions/setup-java@v4
-              with:
-                  java-version: ${{ matrix.java }}
-                  distribution: "temurin"
+  lint-test-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_reusable-lint-test-backend.yml
 
-            - name: Cache Maven packages
-              uses: actions/cache@v4
-              with:
-                  path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-                  restore-keys: ${{ runner.os }}-maven-
+  lint-data-engineering:
+    needs: changes
+    if: needs.changes.outputs.dataeng == 'true'
+    uses: ./.github/workflows/_reusable-lint-data-engineering.yml
 
-            - name: Build and Test backend
-              working-directory: ./backend
-              run: mvn clean test -B
+  lint-devops:
+    needs: changes
+    if: needs.changes.outputs.devops == 'true'
+    uses: ./.github/workflows/_reusable-lint-devops.yml
 
-    lint-data-engineering:
-        name: Lint (data-engineering)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.10"
-            - name: Install Flake8
-              run: pip install flake8
-            - name: Run Flake8
-              working-directory: ./data-engineering
-              run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  codeql-java:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/_reusable-codeql-java.yml
 
-    lint-devops:
-        name: Lint (devops)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Run yamllint
-              working-directory: ./devops
-              run: |
-                  sudo apt-get install -y yamllint
-                  yamllint . -d "{extends: relaxed, rules: {line-length: disable}}"
-
-    lint-qa:
-        name: Lint (qa)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: QA Linting Placeholder
-              run: echo "Depending on the QA framework (Selenium, Cypress, etc.), insert the linter here."
-
-    gitleaks:
-        name: GitLeaks Scan
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            pull-requests: read
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0 # needed for gitleaks
-            - name: Run Gitleaks
-              uses: gitleaks/gitleaks-action@v2
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  gitleaks:
+    name: GitLeaks Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

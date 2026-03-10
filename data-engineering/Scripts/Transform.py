@@ -40,6 +40,11 @@ def transform_daily_volume(requests_df):
 
     return df.groupby(["date", "category"]).size().reset_index(name="request_count")
 
+# Todo's
+# - Implement transform_agent_performance
+# - Implement transform_sla_breaches
+# - Implement transform_department_workload
+
 def transform_agent_performance(requests_df):
     logger.info("Transforming agent performance...")
 
@@ -90,6 +95,28 @@ def transform_sla_breaches(requests_df, sla_df):
         total_breaches=("id", "count"),
         avg_breach_hours=("resolution_hours", "mean"),
         max_breach_hours=("resolution_hours", "max"),
-    ).reset_index()
+    ).reset_index() 
 
     return result
+
+def transform_department_workload(requests_df):
+    """Analyze workload distribution across departments."""
+
+    if requests_df.empty:
+        return pd.DataFrame()
+
+    requests_df["created_at"] = pd.to_datetime(requests_df["created_at"])
+    requests_df["resolved_at"] = pd.to_datetime(requests_df["resolved_at"])
+
+    requests_df["resolution_hours"] = (
+        requests_df["resolved_at"] - requests_df["created_at"]
+    ).dt.total_seconds() / 3600
+
+    workload = requests_df.groupby("department_name").agg(
+        total_requests=("id", "count"),
+        open_requests=("status", lambda x: (x != "resolved").sum()),
+        resolved_requests=("status", lambda x: (x == "resolved").sum()),
+        avg_resolution_hours=("resolution_hours", "mean"),
+    ).reset_index()
+
+    return workload

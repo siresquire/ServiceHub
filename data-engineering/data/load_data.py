@@ -1,7 +1,11 @@
 import os
+import sys
 import random
 import pandas as pd
 from sqlalchemy import create_engine, text
+
+# Add parent directory to path so config.py can be imported
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import DATABASE_URL
 
 engine = create_engine(DATABASE_URL)
@@ -16,7 +20,7 @@ def get_ids(conn, query, params=None):
     return [row[0] for row in result]
 
 def load_sample_to_source():
-    csv_path = os.path.join(os.path.dirname(__file__), "data", "sample_data.csv")
+    csv_path = os.path.join(os.path.dirname(__file__), "sample_data.csv")
     if not os.path.exists(csv_path):
         print(f"Error: {csv_path} not found.")
         return

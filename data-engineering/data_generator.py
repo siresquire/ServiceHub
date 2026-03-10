@@ -32,7 +32,7 @@ TICKET_TEMPLATES = {
         ("Video call audio issues", "Microphone not detected in Microsoft Teams. Works in other applications."),
     ],
     'FACILITIES': [
-        ("HVAC not cooling meeting room B", "Temperature in Room B consistently 5°F above thermostat setting."),
+        ("HVAC not cooling meeting room B", "Temperature in Room B consistently 5 degrees above thermostat setting."),
         ("Broken chair in open workspace", "Office chair armrest snapped. Creating hazard in aisle 4B."),
         ("Water leak under sink in kitchen", "Slow drip detected under the 2nd floor kitchen sink. Small puddle forming."),
         ("Parking lot light out", "Light pole #7 in east parking lot not functioning. Safety concern after hours."),
@@ -50,10 +50,10 @@ TICKET_TEMPLATES = {
         ("Clarification on PTO carry-over policy", "Unclear on maximum PTO rollover days allowed into next fiscal year."),
         ("Payroll discrepancy for last pay period", "Overtime hours from 11/15 not reflected in most recent paycheck."),
         ("Request for employment verification letter", "Need official letter for mortgage application by end of week."),
-        ("Benefits enrollment question", "Missed open enrollment window — inquiring about qualifying life event."),
+        ("Benefits enrollment question", "Missed open enrollment window - inquiring about qualifying life event."),
         ("Performance review scheduling", "Q4 review not yet scheduled. Manager unresponsive to calendar requests."),
         ("Training certification reimbursement", "AWS Solutions Architect exam fee pending reimbursement since October."),
-        ("Name change documentation", "Legal name change complete — need to update all HR and payroll records."),
+        ("Name change documentation", "Legal name change complete - need to update all HR and payroll records."),
     ],
 }
 
@@ -85,7 +85,7 @@ RESOLUTION_NOTES = {
     'IT_SUPPORT': [
         "Issue resolved remotely via TeamViewer. Driver update applied.",
         "Ticket closed after confirming fix with user. Root cause: outdated firmware.",
-        "Escalated to Tier 2 — resolved after network configuration change.",
+        "Escalated to Tier 2 - resolved after network configuration change.",
         "Hardware replaced under warranty. User confirmed full functionality.",
         "Resolved by clearing application cache and resetting user profile.",
     ],
@@ -100,7 +100,7 @@ RESOLUTION_NOTES = {
         "Documentation processed and updated in HRIS system.",
         "Request approved by department head. HR file updated accordingly.",
         "Employee notified via email with attached confirmation documents.",
-        "Escalated to payroll team — corrective payment issued next cycle.",
+        "Escalated to payroll team - corrective payment issued next cycle.",
         "Meeting scheduled with HR Business Partner to discuss further.",
     ],
 }
@@ -114,10 +114,11 @@ def random_date(start_days_ago=90, end_days_ago=0):
 
 
 def generate_ticket(ticket_id):
-    """Generate a single realistic support ticket."""
+    """Generate a single realistic support ticket with all fields populated."""
     category = random.choice(categories)
     priority = random.choices(priorities, weights=[30, 40, 20, 10])[0]
-    status = random.choices(statuses, weights=[15, 20, 25, 25, 15])[0]
+    # All tickets are RESOLVED or CLOSED so every lifecycle field is populated
+    status = random.choices(['RESOLVED', 'CLOSED'], weights=[50, 50])[0]
 
     title, description = random.choice(TICKET_TEMPLATES[category])
 
@@ -129,35 +130,23 @@ def generate_ticket(ticket_id):
 
     created_at = random_date(start_days_ago=90)
 
-    # Timestamps that follow logical order
-    updated_at = created_at + timedelta(hours=random.randint(1, 48))
-    assigned_at = None
-    resolved_at = None
-    closed_at = None
-    assigned_to = None
-    resolution_note = None
+    # All tickets are assigned → always populated
+    assigned_at = created_at + timedelta(minutes=random.randint(10, 120))
+    assigned_to = random.choice(AGENTS)
 
-    if status in ('ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'):
-        assigned_at = created_at + timedelta(minutes=random.randint(10, 120))
-        assigned_to = random.choice(AGENTS)
+    # All tickets are resolved → always populated
+    resolved_at = assigned_at + timedelta(hours=random.randint(1, 72))
+    resolution_note = random.choice(RESOLUTION_NOTES[category])
+    updated_at = resolved_at
 
-    if status in ('RESOLVED', 'CLOSED'):
-        resolved_at = assigned_at + timedelta(hours=random.randint(1, 72))
-        resolution_note = random.choice(RESOLUTION_NOTES[category])
-        updated_at = resolved_at
-
-    if status == 'CLOSED':
-        closed_at = resolved_at + timedelta(hours=random.randint(1, 24))
-        updated_at = closed_at
+    # All tickets are closed → always populated
+    closed_at = resolved_at + timedelta(hours=random.randint(1, 24))
+    updated_at = closed_at
 
     # SLA breach logic based on priority
-    sla_hours = {'LOW': 72, 'MEDIUM': 48, 'HIGH': 24, 'CRITICAL': 4}
-    sla_deadline = created_at + timedelta(hours=sla_hours[priority])
-    sla_breached = False
-    if resolved_at and resolved_at > sla_deadline:
-        sla_breached = True
-    elif not resolved_at and datetime.now() > sla_deadline:
-        sla_breached = True
+    sla_threshold = {'LOW': 72, 'MEDIUM': 48, 'HIGH': 24, 'CRITICAL': 4}
+    sla_deadline = created_at + timedelta(hours=sla_threshold[priority])
+    sla_breached = resolved_at > sla_deadline
 
     return {
         "ticket_id": f"TKT-{ticket_id:05d}",
@@ -172,12 +161,12 @@ def generate_ticket(ticket_id):
         "assigned_to": assigned_to,
         "created_at": created_at.isoformat(),
         "updated_at": updated_at.isoformat(),
-        "assigned_at": assigned_at.isoformat() if assigned_at else None,
-        "resolved_at": resolved_at.isoformat() if resolved_at else None,
-        "closed_at": closed_at.isoformat() if closed_at else None,
+        "assigned_at": assigned_at.isoformat(),
+        "resolved_at": resolved_at.isoformat(),
+        "closed_at": closed_at.isoformat(),
         "resolution_note": resolution_note,
         "sla_breached": sla_breached,
-        "satisfaction_score": random.randint(1, 5) if status in ('RESOLVED', 'CLOSED') else None,
+        "satisfaction_score": random.randint(1, 5),
     }
 
 
@@ -191,12 +180,12 @@ def generate_dataset(n=800):
 
 def save_csv(tickets, path=None):
     if not tickets:
-        log.warning("No tickets to save — skipping CSV write.")
+        log.warning("No tickets to save - skipping CSV write.")
         return
     output = Path(path) if path else Path(__file__).parent / "data" / "sample_data.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
     log.info("Writing CSV to %s", output)
-    with output.open("w", newline="") as f:
+    with output.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=tickets[0].keys())
         writer.writeheader()
         writer.writerows(tickets)
@@ -209,7 +198,7 @@ def print_summary(tickets):
     resolved = [t for t in tickets if t['satisfaction_score']]
     avg_sat = sum(t['satisfaction_score'] for t in resolved) / len(resolved) if resolved else None
 
-    log.info("── Dataset Summary ─────────────────────────")
+    log.info("-- Dataset Summary ------------------------------------------")
     log.info("  Total tickets     : %d", len(tickets))
     log.info("  Categories        : %s", dict(Counter(t['category'] for t in tickets)))
     log.info("  Priorities        : %s", dict(Counter(t['priority'] for t in tickets)))
@@ -217,7 +206,7 @@ def print_summary(tickets):
     log.info("  SLA breached      : %d", breached)
     if avg_sat is not None:
         log.info("  Avg satisfaction  : %.2f/5.0 (n=%d)", avg_sat, len(resolved))
-    log.info("────────────────────────────────────────────")
+    log.info("----------------------------------------------------")
 
 
 if __name__ == "__main__":

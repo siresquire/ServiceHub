@@ -44,10 +44,13 @@ public class ServiceRequest {
     private User requester;
 
     private LocalDateTime slaDeadline;
+    private Boolean slaBreached;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime assignedAt;
     private LocalDateTime resolvedAt;
+    private Boolean resolved;
+
 
     @PrePersist
     protected void onCreate() {

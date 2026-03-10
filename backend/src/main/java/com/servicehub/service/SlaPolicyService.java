@@ -112,6 +112,14 @@ public class SlaPolicyService {
     slaPolicyRepository.deleteById(id);
   }
 
+  /**
+   * Return the SLA deadline for response based on the category and priority by fetching the corresponding SLA policy and adding the response time to current time.
+   * Uses caching to optimize performance for frequently accessed policies.
+   * @param category Request category to determine the SLA policy
+   * @param priority Request priority to determine the SLA policy
+   * @return LocalDateTime representing the SLA deadline for response, calculated as current time plus the response time defined in the SLA policy for the given category and priority
+    * @throws NotFoundException if no SLA policy is found for the given category and priority
+   */
   @Cacheable(value = "slaResponseDeadlines", key = "#category.toString() + '-' + #priority.toString()", unless = "#result == null")
   public LocalDateTime getResponseSlaDeadline(RequestCategory category, Priority priority) {
     var policy = slaPolicyRepository.findByPriorityAndCategory(priority, category)
@@ -124,6 +132,14 @@ public class SlaPolicyService {
     return LocalDateTime.now().plus(Duration.ofSeconds(seconds));
   }
 
+  /**
+   * Return the SLA deadline for resolution based on the category and priority by fetching the corresponding SLA policy and adding the resolution time to current time.
+   * Uses caching to optimize performance for frequently accessed policies.
+   * @param category Request category to determine the SLA policy
+   * @param priority Request priority to determine the SLA policy
+   * @return LocalDateTime representing the SLA deadline for resolution, calculated as current time plus the resolution time defined in the SLA policy for the given category and priority
+   * @throws NotFoundException if no SLA policy is found for the given category and priority
+   */
   @Cacheable(value = "slaResolutionDeadlines", key = "#category.toString() + '-' + #priority.toString()", unless = "#result == null")
   public LocalDateTime getResolutionSlaDeadline(RequestCategory category, Priority priority) {
     var policy = slaPolicyRepository.findByPriorityAndCategory(priority, category)

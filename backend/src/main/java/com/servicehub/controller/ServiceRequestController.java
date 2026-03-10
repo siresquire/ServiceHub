@@ -1,3 +1,4 @@
+
 package com.servicehub.controller;
 
 import com.servicehub.dto.*;
@@ -57,6 +58,12 @@ public class ServiceRequestController {
 
 
     // TODO: Add assign endpoint - PUT /api/requests/{id}/assign
+     @PutMapping("/{id}/assign")
+    public ResponseEntity<ServiceRequestResponse> assign(
+            @PathVariable Long id,
+            @RequestBody Long agentId) {
+        return ResponseEntity.ok(requestService.updateStatus(id, agentId));
+    }
 
 
     // GET /api/requests/my-requests — USER sees own tickets
@@ -75,3 +82,5 @@ public class ServiceRequestController {
 
     // TODO: Add dashboard stats endpoint - GET /api/requests/dashboard
 }
+
+

@@ -5,6 +5,7 @@
 # No manual setup required — Prometheus is ready to use immediately.
 # =============================================================================
 
+---
 apiVersion: 1
 
 datasources:

@@ -7,9 +7,10 @@
 # Access Prometheus UI: http://localhost:9090
 # =============================================================================
 
+---
 global:
-  scrape_interval: 15s # How often to scrape targets
-  evaluation_interval: 15s # How often to evaluate alerting rules
+  scrape_interval: 15s  # How often to scrape targets
+  evaluation_interval: 15s  # How often to evaluate alerting rules
 
 # ---------------------------------------------------------------------------
 # Scrape Targets

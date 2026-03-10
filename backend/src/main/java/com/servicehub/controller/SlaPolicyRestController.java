@@ -9,6 +9,7 @@ import com.servicehub.service.SlaPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,7 +64,7 @@ public class SlaPolicyRestController {
   @ApiResponse(responseCode = "400", description = "Bad Request - Validation errors or duplicate policy")
   @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required")
   @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
-  public ResponseEntity<ServerResponse<SlaPolicyDto>> createPolicy(@RequestBody SlaPolicyCreate dto) {
+  public ResponseEntity<ServerResponse<SlaPolicyDto>> createPolicy(@RequestBody @Valid SlaPolicyCreate dto) {
     var policy = slaPolicyService.create(dto);
     return ResponseEntity.ok(new ServerResponse<>("SLA Policy created successfully", policy));
   }
@@ -75,7 +76,7 @@ public class SlaPolicyRestController {
   @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required")
   @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
   @ApiResponse(responseCode = "404", description = "SLA Policy not found")
-  public ResponseEntity<ServerResponse<SlaPolicyDto>> updatePolicy(@PathVariable Long id, @RequestBody SlaPolicyUpdate dto) {
+  public ResponseEntity<ServerResponse<SlaPolicyDto>> updatePolicy(@PathVariable Long id, @RequestBody @Valid SlaPolicyUpdate dto) {
     var policy = slaPolicyService.update(id,dto);
     return ResponseEntity.ok(new ServerResponse<>("SLA Policy updated successfully", policy));
   }
@@ -90,6 +91,4 @@ public class SlaPolicyRestController {
     slaPolicyService.delete(id);
     return ResponseEntity.ok(new ServerResponse<>("SLA Policy deleted successfully", null));
   }
-
-
 }

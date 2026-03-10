@@ -1,0 +1,43 @@
+name: Reusable - Lint Data Engineering
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+
+jobs:
+  lint-data-engineering:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python & pip cache
+        uses: ./.github/actions/setup-python-cache
+        with:
+          python_version: ${{ inputs.python-version }}
+
+      - name: Install flake8 (with retry)
+        uses: ./.github/actions/retry
+        with:
+          command: pip install flake8
+
+      - name: Lint data-engineering
+        uses: ./.github/actions/log-group
+        with:
+          title: "Flake8 data-engineering"
+
+      - name: Run Flake8
+        working-directory: ./data-engineering
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: End Flake8 group
+        if: always()
+        uses: ./.github/actions/log-group
+        with:
+          title: "Flake8 data-engineering"
+          end: "true"

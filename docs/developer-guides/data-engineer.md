@@ -46,7 +46,7 @@ Your `config.py` already reads from environment variables. In Docker Compose, th
 - `DB_PORT=5432`
 - `DB_NAME=servicehub`
 - `DB_USER=servicehub`
-- `DB_PASSWORD=servicehub_pass`
+- `DB_PASSWORD` (from the `POSTGRES_PASSWORD` environment variable — set this in your local `.env`, not in source control)
 
 ### Existing Code (etl_pipeline.py)
 The starter code has:

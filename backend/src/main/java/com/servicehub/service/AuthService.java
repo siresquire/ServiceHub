@@ -1,19 +1,16 @@
 package com.servicehub.service;
 
+import com.servicehub.config.JwtService;
 import com.servicehub.dto.*;
+import com.servicehub.exception.InvalidCredentialsException;
 import com.servicehub.model.User;
 import com.servicehub.model.enums.Role;
 import com.servicehub.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -21,22 +18,57 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-    
-    @Value("${jwt.expiration}")
-    private Long jwtExpiration;
-
-    public AuthResponse login(AuthRequest request) {
-        // Mock method to allow the application to compile for Docker
-        // Implement real authentication logic here (Dev C: Alphonse)
-        return AuthResponse.builder().token("mock-jwt-token").email(request.getEmail()).role("USER").fullName("Mock").build();
-    }
+    private final JwtService jwtService;  // ← inject this, not jwt.secret
 
     public AuthResponse register(RegisterRequest request) {
-        // Mock method to allow the application to compile for Docker
-        // Implement real registration logic here (Dev C: Alphonse)
-        return AuthResponse.builder().token("mock-jwt-token").email(request.getEmail()).role("USER").fullName("Mock").build();
+        // 1. Check email doesn't already exist
+        if (userRepository.existsByEmail(request.getEmail())){
+            throw new RuntimeException("Email already exist. try again");
+        }
+        // 2. Build and save User (encode password!)
+        User user = User.builder()
+                .fullName(request.getName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .role(Role.USER)
+                .department(request.getDepartment())
+                .build();
+
+        userRepository.save(user);
+
+        // 3. Generate token via jwtService
+
+        String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
+        // 4. Return AuthResponse with token, email, role, fullName
+
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .fullName(user.getFullName())
+                .build();
+    }
+
+    public AuthResponse login(AuthRequest request) {
+
+        // 1. Find user by email or throw RuntimeException("User not found")
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(()->new InvalidCredentialsException("user not found"));
+
+        // 2. Check password matches or throw RuntimeException("Invalid credentials")
+        if(!passwordEncoder.matches(request.getPassword(),user.getPassword())){
+            throw new InvalidCredentialsException("Invalid credentials");
+        }
+
+        // 3. Generate token via jwtService
+        String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
+
+        // 4. Return AuthResponse
+        return AuthResponse.builder()
+                .token(token)
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .fullName(user.getFullName())
+                .build();
     }
 }

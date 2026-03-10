@@ -14,43 +14,28 @@
 spring:
   application:
     name: servicehub
-
-  # --- Database ---
-  # Default connection for local development.
-  # Overridden by SPRING_DATASOURCE_* env vars in Docker Compose.
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/servicehub}
-    username: ${SPRING_DATASOURCE_USERNAME:servicehub}
-    password: ${SPRING_DATASOURCE_PASSWORD:servicehub_pass}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:tempdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
 
-  # --- JPA / Hibernate ---
   jpa:
-    defer-datasource-initialization: false
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+      ddl-auto: update
 
-  # --- Data Initialization ---
-  # Seed data (data.sql) is loaded on startup.
-  # Set to "never" in production if using Flyway/Liquibase.
-  sql:
-    init:
-      mode: never
 
   # --- Thymeleaf Template Engine ---
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
     cache: false
-
   flyway:
-    enabled: true
-
+    enabled: false
+  sql:
+    init:
+      mode: never
 
 # =============================================================================
 # Server Configuration

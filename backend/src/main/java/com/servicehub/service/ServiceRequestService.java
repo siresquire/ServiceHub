@@ -43,16 +43,37 @@ public class ServiceRequestService {
         return toResponse(requestRepository.save(req));
     }
 
+    /**
+     * Update service request status with validation of allowed transitions and agent assignment for ASSIGNED status
+     * @param id Service request id to update
+     * @param update DTO containing the new status to update to
+     * @param agent (optional) agent to assign if the new status is ASSIGNED. Must be provided if updating to ASSIGNED, otherwise ignored
+     * @return updated service request response
+     */
     public ServiceRequestResponse updateStatus(Long id, StatusUpdateRequest update, User agent) {
         ServiceRequest req = requestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
+
+        // Validations: Transition rules, agent assignment for ASSIGNED status
         this.validateStatusTransition(req.getStatus(), update.getNewStatus());
+        if(update.getNewStatus().equals(RequestStatus.ASSIGNED) && agent == null) {
+            throw new BadRequestException("Agent must be provided when assigning a request");
+        }
+
+
         req.setStatus(update.getNewStatus());
-        req.setAssignedTo(agent);
-        req.setUpdatedAt(LocalDateTime.now());
+
+        // Track resolved time for SLA reporting
         if (update.getNewStatus().equals(RequestStatus.RESOLVED)) {
             req.setResolvedAt(LocalDateTime.now());
         }
+
+
+        if (update.getNewStatus().equals(RequestStatus.ASSIGNED)) {
+            req.setAssignedTo(agent);
+            req.setAssignedAt(LocalDateTime.now());
+        }
+
         return toResponse(requestRepository.save(req));
     }
 

@@ -38,18 +38,10 @@ public class ServiceRequestController {
     @PutMapping("/{id}/status")
     public ResponseEntity<ServiceRequestResponse> updateStatus(
             @PathVariable Long id,
-            @Valid @RequestBody StatusUpdateRequest request
-            ) {
-        return ResponseEntity.ok(requestService.updateStatus(id, request));
+            @Valid @RequestBody StatusUpdateRequest request,
+            @AuthenticationPrincipal User agent) {
+        return ResponseEntity.ok(requestService.updateStatus(id, request, agent));
     }
-
-    @PutMapping("/{id}/assign")
-    public ResponseEntity<ServiceRequestResponse> assign(
-            @PathVariable Long id,
-            @RequestBody Long agentId) {
-        return ResponseEntity.ok(requestService.updateStatus(id, agentId));
-    }
-
 
     // TODO: Add assign endpoint - PUT /api/requests/{id}/assign
     // TODO: Add my-requests endpoint - GET /api/requests/my-requests

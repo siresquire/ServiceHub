@@ -15,7 +15,7 @@
 #   - Swagger UI:   http://localhost:8080/swagger-ui.html
 #   - Health Check: http://localhost:8080/actuator/health
 #   - Prometheus:   http://localhost:8080/actuator/prometheus
-#   - Database:     localhost:5432 (user: servicehub / pass: servicehub_pass)
+#   - Database:     localhost:5432 (user: servicehub / pass: <from POSTGRES_PASSWORD env>)
 # =============================================================================
 
 services:
@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-servicehub}
       POSTGRES_USER: ${POSTGRES_USER:-servicehub}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -70,9 +70,9 @@ services:
       # Database connection — uses Docker DNS name "postgres" to reach the DB container
       SPRING_DATASOURCE_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/servicehub}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-servicehub}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
-      # Security — JWT signing key (override in production via .env or CI secrets)
-      JWT_SECRET: ${JWT_SECRET:-localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION_1234567890}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # Security — JWT signing key (provided via .env for local, GitHub Secrets/infra for CI/prod)
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,7 +97,7 @@ services:
       DB_PORT: "5432"
       DB_NAME: ${POSTGRES_DB:-servicehub}
       DB_USER: ${POSTGRES_USER:-servicehub}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

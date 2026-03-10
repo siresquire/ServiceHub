@@ -51,7 +51,7 @@ class ServiceRequestServiceTests {
 
     BadRequestException exception = Assertions.assertThrows(
             BadRequestException.class,
-            () -> invokeValidate(RequestStatus.OPEN, RequestStatus.OPEN)
+            () -> invokeValidate(RequestStatus.SUBMITTED, RequestStatus.SUBMITTED)
     );
 
     Assertions.assertEquals(
@@ -61,34 +61,34 @@ class ServiceRequestServiceTests {
   }
 
   @Test
-  @DisplayName("Should allow transition from OPEN to ASSIGNED")
+  @DisplayName("Should allow transition from SUBMITTED to ASSIGNED")
   void shouldAllowSubmittedToAssignedTransition() {
 
     Assertions.assertDoesNotThrow(
-            () -> invokeValidate(RequestStatus.OPEN, RequestStatus.ASSIGNED)
+            () -> invokeValidate(RequestStatus.SUBMITTED, RequestStatus.ASSIGNED)
     );
   }
 
   @Test
-  @DisplayName("Should allow transition from OPEN to CLOSED")
+  @DisplayName("Should allow transition from SUBMITTED to CLOSED")
   void shouldAllowSubmittedToClosedTransition() {
 
     Assertions.assertDoesNotThrow(
-            () -> invokeValidate(RequestStatus.OPEN, RequestStatus.CLOSED)
+            () -> invokeValidate(RequestStatus.SUBMITTED, RequestStatus.CLOSED)
     );
   }
 
   @Test
-  @DisplayName("Should throw InvalidServiceRequestTransition when transitioning from OPEN to IN_PROGRESS")
+  @DisplayName("Should throw InvalidServiceRequestTransition when transitioning from SUBMITTED to IN_PROGRESS")
   void shouldRejectSubmittedToInProgressTransition() {
 
     InvalidServiceRequestTransition exception = Assertions.assertThrows(
             InvalidServiceRequestTransition.class,
-            () -> invokeValidate(RequestStatus.OPEN, RequestStatus.IN_PROGRESS)
+            () -> invokeValidate(RequestStatus.SUBMITTED, RequestStatus.IN_PROGRESS)
     );
 
     Assertions.assertEquals(
-            "Invalid status transition from OPEN to IN_PROGRESS",
+            "Invalid status transition from SUBMITTED to IN_PROGRESS",
             exception.getMessage()
     );
   }
@@ -175,16 +175,16 @@ class ServiceRequestServiceTests {
   }
 
   @Test
-  @DisplayName("Should throw InvalidServiceRequestTransition when transitioning from CLOSED to OPEN")
+  @DisplayName("Should throw InvalidServiceRequestTransition when transitioning from CLOSED to SUBMITTED")
   void shouldRejectTransitionsFromClosedStatus() {
 
     InvalidServiceRequestTransition exception = Assertions.assertThrows(
             InvalidServiceRequestTransition.class,
-            () -> invokeValidate(RequestStatus.CLOSED, RequestStatus.OPEN)
+            () -> invokeValidate(RequestStatus.CLOSED, RequestStatus.SUBMITTED)
     );
 
     Assertions.assertEquals(
-            "Invalid status transition from CLOSED to OPEN",
+            "Invalid status transition from CLOSED to SUBMITTED",
             exception.getMessage()
     );
   }

@@ -6,8 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity @Table(name = "service_requests")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class ServiceRequest {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,15 +42,10 @@ public class ServiceRequest {
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
-    private LocalDateTime responseSlaDeadline;
-    private LocalDateTime resolutionSlaDeadline;
-    private Boolean slaBreached;
+    private LocalDateTime slaDeadline;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime assignedAt;
     private LocalDateTime resolvedAt;
-    private Boolean resolved;
-
 
     @PrePersist
     protected void onCreate() {

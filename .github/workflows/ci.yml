@@ -105,6 +105,4 @@ jobs:
     with:
       image-name: ${{ needs.build-images.outputs.image-name }}
       image-tag: ${{ needs.build-images.outputs.image-tag }}
-    secrets:
-      SERVICEHUB_DB_PASSWORD: ${{ secrets.SERVICEHUB_DB_PASSWORD }}
-      SERVICEHUB_JWT_SECRET: ${{ secrets.SERVICEHUB_JWT_SECRET }}
+    secrets: inherit  # pragma: allowlist secret

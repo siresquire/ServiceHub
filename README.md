@@ -11,6 +11,50 @@
 
 An internal service request management platform with intelligent routing, SLA tracking, and workflow automation. Built by Team 10.
 
+## 🏛️ Architecture Overview
+
+```mermaid
+graph TD
+    subgraph Clients["👥 End Users & Clients"]
+        Users["IT Agents / Consumers"]
+    end
+
+    subgraph CI_CD["⚙️ CI/CD Pipeline (GitHub Actions)"]
+        Lint["Lint & Checkstyle"]
+        Sec["SAST (CodeQL) & GitLeaks"]
+        Test["Matrix Unit Tests (Java 17/21)"]
+        Integ["Integration Tests & Trivy"]
+        Lint --> Sec --> Test --> Integ
+    end
+
+    subgraph Host["🐳 Docker Host Environment"]
+        subgraph AppStack["ServiceHub Application Network (servicehub-network)"]
+            Backend["☕ servicehub-backend<br/>(Spring Boot :8080)"]
+            DB[("🐘 servicehub-postgres<br/>(PostgreSQL 16)")]
+            ETL["🐍 servicehub-etl<br/>(Python 3.10 Job)"]
+
+            Backend -- "JDBC/JPA" --> DB
+            ETL -- "Analytics/Metrics" --> DB
+        end
+
+        subgraph ObsStack["🔍 Observability Stack"]
+            Prom["Prometheus (:9090)"]
+            Graf["Grafana (:3000)"]
+            Loki["Loki (:3100)"]
+
+            Prom -- "Scrapes /actuator/prometheus" --> Backend
+            Graf -- "Queries" --> Prom
+            Graf -- "Queries" --> Loki
+        end
+
+        Vol[("💾 persistent volume: pgdata")]
+        DB -- "Reads/Writes" --> Vol
+    end
+
+    Users -- "HTTP / REST" --> Backend
+    Integ -. "Deploys to" .-> Host
+```
+
 ## 🚀 Quick Start (DevOps Starter Kit)
 
 This repository has been fully configured with an industry-standard DevOps setup to make your development process as smooth as possible.

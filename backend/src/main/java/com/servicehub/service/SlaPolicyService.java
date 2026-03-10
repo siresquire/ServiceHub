@@ -6,13 +6,18 @@ import com.servicehub.dto.SlaPolicyUpdate;
 import com.servicehub.exception.BadRequestException;
 import com.servicehub.exception.NotFoundException;
 import com.servicehub.model.SlaPolicy;
+import com.servicehub.model.enums.Priority;
 import com.servicehub.model.enums.RequestCategory;
 import com.servicehub.repository.SlaPolicyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -81,6 +86,7 @@ public class SlaPolicyService {
         .toList();
   }
 
+  @CacheEvict(value = "slaResponseDeadlines", allEntries = true)
   public SlaPolicyDto update(Long id, SlaPolicyUpdate dto) {
     return slaPolicyRepository.findById(id)
             .map(sla -> {
@@ -98,11 +104,36 @@ public class SlaPolicyService {
             .orElseThrow(() -> new BadRequestException("SLA Policy not found"));
   }
 
+  @CacheEvict(value = "slaResponseDeadlines", allEntries = true)
   public void delete(Long id) {
     if (!slaPolicyRepository.existsById(id)) {
       throw new BadRequestException("SLA Policy not found");
     }
     slaPolicyRepository.deleteById(id);
+  }
+
+  @Cacheable(value = "slaResponseDeadlines", key = "#category.toString() + '-' + #priority.toString()", unless = "#result == null")
+  public LocalDateTime getResponseSlaDeadline(RequestCategory category, Priority priority) {
+    var policy = slaPolicyRepository.findByPriorityAndCategory(priority, category)
+        .orElseThrow(() -> new NotFoundException("SLA Policy not found for category " + category + " and priority " + priority));
+
+    // Convert hours (in double) to seconds for Duration
+    long seconds = Math.round(policy.getResponseTimeHours() * 3600);
+
+    // Use duration to add the SLA time to current time for accurate handling of fractional hours
+    return LocalDateTime.now().plus(Duration.ofSeconds(seconds));
+  }
+
+  @Cacheable(value = "slaResolutionDeadlines", key = "#category.toString() + '-' + #priority.toString()", unless = "#result == null")
+  public LocalDateTime getResolutionSlaDeadline(RequestCategory category, Priority priority) {
+    var policy = slaPolicyRepository.findByPriorityAndCategory(priority, category)
+        .orElseThrow(() -> new NotFoundException("SLA Policy not found for category " + category + " and priority " + priority));
+
+    // Convert hours (in double) to seconds for Duration
+    long seconds = Math.round(policy.getResolutionTimeHours() * 3600);
+
+    // Use duration to add the SLA time to current time for accurate handling of fractional hours
+    return LocalDateTime.now().plus(Duration.ofSeconds(seconds));
   }
 
 }

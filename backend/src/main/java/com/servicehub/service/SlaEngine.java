@@ -39,12 +39,12 @@ public class SlaEngine {
     int page = 0;
     int size = 200;
     
-    Page<ServiceRequest> requests = serviceRequestRepository.findAllByStatus(RequestStatus.SUBMITTED,  PageRequest.of(page, size));
+    Page<ServiceRequest> requests = serviceRequestRepository.findAllByStatus(RequestStatus.OPEN,  PageRequest.of(page, size));
     log.info("Running SLA Engine to track response SLAs. Found {} SUBMITTED requests to check for SLA breaches.", requests.getTotalElements());
     do {
       List<ServiceRequest> requestList = requests.getContent();
       for (ServiceRequest req : requestList) {
-        if (req.getSlaDeadline().isBefore(java.time.LocalDateTime.now())) {
+        if (req.getResponseSlaDeadline().isBefore(java.time.LocalDateTime.now())) {
           Priority nextPriority = this.getNextPriority(req.getPriority());
           log.info("SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
           req.setPriority(nextPriority);
@@ -54,7 +54,7 @@ public class SlaEngine {
       serviceRequestRepository.saveAll(requestList);
 
       page++;
-      requests = serviceRequestRepository.findAllByStatus(RequestStatus.SUBMITTED,  PageRequest.of(page, size));
+      requests = serviceRequestRepository.findAllByStatus(RequestStatus.OPEN,  PageRequest.of(page, size));
 
     }while (requests.hasNext());
 
@@ -70,7 +70,7 @@ public class SlaEngine {
     do {
       List<ServiceRequest> requestList = requests.getContent();
       for (ServiceRequest req : requestList) {
-        if (req.getSlaDeadline().isBefore(java.time.LocalDateTime.now())) {
+        if (req.getResolutionSlaDeadline().isBefore(java.time.LocalDateTime.now())) {
          Priority nextPriority = this.getNextPriority(req.getPriority());
           log.info("Resolution SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
           req.setPriority(nextPriority);

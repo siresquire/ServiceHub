@@ -37,7 +37,7 @@ public class ServiceRequestService {
                 .description(dto.getDescription())
                 .category(RequestCategory.valueOf(dto.getCategory()))
                 .priority(Priority.valueOf(dto.getPriority()))
-                .status(RequestStatus.SUBMITTED)
+                .status(RequestStatus.OPEN)
                 .requester(requester)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -102,7 +102,6 @@ public class ServiceRequestService {
 
 
 
-        // TODO: Implement assignRequest(Long requestId, Long agentId)
     // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection
@@ -121,7 +120,7 @@ public class ServiceRequestService {
         }
 
         switch (current) {
-            case SUBMITTED:
+            case OPEN:
                 if (newStatus != RequestStatus.ASSIGNED && newStatus != RequestStatus.CLOSED) {
                     throw new InvalidServiceRequestTransition(current, newStatus);
                 }

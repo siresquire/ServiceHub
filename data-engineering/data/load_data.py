@@ -10,14 +10,21 @@ from config import DATABASE_URL
 
 engine = create_engine(DATABASE_URL)
 
-# CSV value → DB enum mappings
-CATEGORY_MAP = {'IT_SUPPORT': 'IT', 'FACILITIES': 'FACILITIES', 'HR_REQUEST': 'HR'}
-STATUS_MAP   = {'OPEN': 'SUBMITTED', 'ASSIGNED': 'ASSIGNED', 'IN_PROGRESS': 'IN_PROGRESS',
-                'RESOLVED': 'RESOLVED', 'CLOSED': 'CLOSED'}
+# SLA resolution hours per (category, priority) – matches sla_policies seed
+SLA_RESOLUTION = {
+    ('IT_SUPPORT', 'HIGH'): 4,   ('IT_SUPPORT', 'MEDIUM'): 24,
+    ('IT_SUPPORT', 'LOW'): 48,   ('IT_SUPPORT', 'CRITICAL'): 4,
+    ('HR_REQUEST', 'HIGH'): 8,   ('HR_REQUEST', 'MEDIUM'): 48,
+    ('HR_REQUEST', 'LOW'): 96,   ('HR_REQUEST', 'CRITICAL'): 24,
+    ('FACILITIES', 'HIGH'): 8,   ('FACILITIES', 'MEDIUM'): 24,
+    ('FACILITIES', 'LOW'): 72,   ('FACILITIES', 'CRITICAL'): 12,
+}
+
 
 def get_ids(conn, query, params=None):
     result = conn.execute(text(query), params or {})
     return [row[0] for row in result]
+
 
 def load_sample_to_source():
     csv_path = os.path.join(os.path.dirname(__file__), "sample_data.csv")
@@ -35,35 +42,58 @@ def load_sample_to_source():
     print(f"Loaded {len(df)} rows from CSV.")
 
     with engine.connect() as conn:
-        agent_ids = get_ids(conn, "SELECT id FROM users WHERE role = :r", {"r": "AGENT"})
-        emp_ids   = get_ids(conn, "SELECT id FROM users WHERE role = :r", {"r": "EMPLOYEE"})
+        agent_ids = get_ids(conn, "SELECT id FROM users WHERE role = 'AGENT'::user_role")
+        user_ids  = get_ids(conn, "SELECT id FROM users WHERE role = 'USER'::user_role")
         dept_ids  = get_ids(conn, "SELECT id FROM departments")
 
-        if not agent_ids or not emp_ids or not dept_ids:
-            print("Error: seed users/departments missing. Start the backend first.")
+        if not agent_ids or not user_ids or not dept_ids:
+            print("Error: seed users/departments missing. Run _reset_db.py first.")
             return
 
         db_df = pd.DataFrame()
-        db_df['title']          = df['title']
-        db_df['description']    = df['description']
-        db_df['category']       = df['category'].map(CATEGORY_MAP)
-        db_df['priority']       = df['priority']
-        db_df['status']         = df['status'].map(STATUS_MAP).fillna(df['status'])
-        db_df['requester_id']   = [random.choice(emp_ids) for _ in range(len(df))]
-        db_df['assigned_to_id'] = [
-            random.choice(agent_ids) if s not in ('OPEN', 'SUBMITTED') else None
+        db_df['title']       = df['title']
+        db_df['description'] = df['description']
+        db_df['category']    = df['category']       # matches enum directly
+        db_df['priority']    = df['priority']
+        db_df['status']      = df['status']          # matches enum directly
+        db_df['requester_id'] = [random.choice(user_ids) for _ in range(len(df))]
+        db_df['assignee_id']  = [
+            random.choice(agent_ids) if s not in ('OPEN',) else None
             for s in df['status']
         ]
-        db_df['department_id']  = [random.choice(dept_ids) for _ in range(len(df))]
-        db_df['created_at']     = pd.to_datetime(df['created_at'])
-        db_df['updated_at']     = pd.to_datetime(df['updated_at'])
-        db_df['resolved_at']    = pd.to_datetime(df['resolved_at'])
+        db_df['department_id'] = [random.choice(dept_ids) for _ in range(len(df))]
+        db_df['created_at']    = pd.to_datetime(df['created_at'])
+        db_df['updated_at']    = pd.to_datetime(df['updated_at'])
+        db_df['resolved_at']   = pd.to_datetime(df['resolved_at'])
 
-        # Compute sla_deadline = created_at + SLA resolution hours per priority
-        sla_hours = {'LOW': 48, 'MEDIUM': 24, 'HIGH': 8, 'CRITICAL': 4}
-        db_df['sla_deadline'] = db_df['created_at'] + df['priority'].map(sla_hours).apply(
-            lambda h: pd.Timedelta(hours=h)
+        # Compute first_response_at (a few hours after created_at for non-OPEN)
+        db_df['first_response_at'] = db_df.apply(
+            lambda r: r['created_at'] + pd.Timedelta(hours=random.uniform(0.5, 4))
+            if r['status'] != 'OPEN' else pd.NaT, axis=1
         )
+
+        # SLA hours from policy
+        db_df['sla_hours'] = [
+            SLA_RESOLUTION.get((cat, pri), 24)
+            for cat, pri in zip(df['category'], df['priority'])
+        ]
+
+        # Compute performance metrics
+        db_df['response_time_hours'] = (
+            (db_df['first_response_at'] - db_df['created_at'])
+            .dt.total_seconds() / 3600
+        ).round(2)
+        db_df['resolution_time_hours'] = (
+            (db_df['resolved_at'] - db_df['created_at'])
+            .dt.total_seconds() / 3600
+        ).round(2)
+
+        # SLA breached if resolution_time_hours > sla_hours
+        db_df['sla_breached'] = db_df['resolution_time_hours'] > db_df['sla_hours']
+        db_df.loc[db_df['resolved_at'].isna(), 'sla_breached'] = False
+
+        db_df['reopened_count'] = 0
+        db_df['is_archived']   = False
 
         print(f"Inserting {len(db_df)} rows into 'service_requests'...")
         try:

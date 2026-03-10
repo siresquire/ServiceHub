@@ -105,3 +105,4 @@ jobs:
     with:
       image-name: ${{ needs.build-images.outputs.image-name }}
       image-tag: ${{ needs.build-images.outputs.image-tag }}
+    secrets: inherit  # pragma: allowlist secret

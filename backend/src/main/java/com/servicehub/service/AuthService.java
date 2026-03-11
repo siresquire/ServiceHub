@@ -20,17 +20,19 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DepartmentRepository departmentRepository;
     private final JwtService jwtService;  // ← inject this, not jwt.secret
 
     public AuthResponse register(RegisterRequest request) {
         // 1. Check email doesn't already exist
         if (userRepository.existsByEmail(request.getEmail())){
-            throw new RuntimeException("Email already exist. try again");
+            throw new NotFoundException("Email already exist. try again");
         }
+
         Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(()->new NotFoundException("Department not found with id: " + request.getDepartmentId()));
+                .orElseThrow(()->new NotFoundException("Department not found"));
+
 
         // 2. Build and save User (encode password!)
         User user = User.builder()

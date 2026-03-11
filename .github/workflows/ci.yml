@@ -100,7 +100,9 @@ jobs:
 
   publish-ecr:
     name: Publish to ECR
-    needs: integration-test
+    needs:
+      - build-images
+      - integration-test
     permissions:
       contents: read
       id-token: write

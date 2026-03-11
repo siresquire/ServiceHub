@@ -300,14 +300,12 @@
 
                 <!-- Department -->
                 <div class="mb-4">
-                    <label for="department" class="form-label">Department</label>
-                    <select id="department" name="department" class="form-select">
+                    <label for="departmentId" class="form-label">Department</label>
+                    <select id="departmentId" name="departmentId" class="form-select" required>
                         <option value="">Select your department…</option>
-                        <option value="IT">IT</option>
-                        <option value="HR">HR</option>
-                        <option value="Facilities">Facilities</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Other">Other</option>
+                        <option th:each="d : ${departments}"
+                                th:value="${d.id}"
+                                th:text="${d.name}">IT Support</option>
                     </select>
                 </div>
 

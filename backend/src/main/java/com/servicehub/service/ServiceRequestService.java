@@ -156,6 +156,47 @@ public class ServiceRequestService {
                 throw new InvalidServiceRequestTransition(current, newStatus);
         }
     }
+    // ── USER ──────────────────────────────────────────────────────────────────
+
+    public List<ServiceRequest> getOpenRequestsForUser(User user) {
+        return requestRepository.findByRequesterAndStatusIn(
+                user,
+                List.of(RequestStatus.OPEN, RequestStatus.IN_PROGRESS, RequestStatus.ASSIGNED)
+        );
+    }
+
+    public List<ServiceRequest> getResolvedRequestsForUser(User user) {
+        return requestRepository.findByRequesterAndStatusIn(
+                user,
+                List.of(RequestStatus.RESOLVED, RequestStatus.CLOSED)
+        );
+    }
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────
+
+    public List<ServiceRequest> getAllRequests() {
+        return requestRepository.findAll();
+    }
+
+// ── AGENT ─────────────────────────────────────────────────────────────────
+
+    public List<ServiceRequest> getAssignedRequests(User agent) {
+        return requestRepository.findByAssignedTo(agent);
+    }
+
+    public List<ServiceRequest> getUnassignedRequests() {
+        return requestRepository.findByAssignedToIsNull();
+    }
+
+    public List<ServiceRequest> getSlaBreachedRequests() {
+        return requestRepository.findBySlaBreachedTrue();
+    }
+
+    public List<ServiceRequest> getSlaWarningRequests() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = now.plusHours(2);
+        return requestRepository.findSlaWarnings(now, cutoff);
+    }
 
 
 

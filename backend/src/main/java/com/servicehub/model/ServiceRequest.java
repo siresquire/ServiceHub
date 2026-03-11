@@ -37,6 +37,7 @@ public class ServiceRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
+    @ToString.Exclude
     private User assignedTo;
 
     @ManyToOne(fetch = FetchType.LAZY)

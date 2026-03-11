@@ -26,8 +26,9 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @JoinColumn(name = "department_id")
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    @ToString.Exclude
     private Department department;
 
     @Column(updatable = false)

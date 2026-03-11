@@ -51,8 +51,8 @@ resource "aws_iam_role" "github_actions" {
 }
 
 # ─── Role Permissions ────────────────────────────────────────────────────────
-# For demonstration/CI purposes, attaching AdministratorAccess. 
-# In a strict production setup, this should be scoped down to exactly 
+# For demonstration/CI purposes, attaching AdministratorAccess.
+# In a strict production setup, this should be scoped down to exactly
 # what Terraform and the application need.
 resource "aws_iam_role_policy_attachment" "github_actions_admin" {
   role       = aws_iam_role.github_actions.name

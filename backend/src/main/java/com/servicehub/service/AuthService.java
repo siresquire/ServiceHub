@@ -3,8 +3,11 @@ package com.servicehub.service;
 import com.servicehub.config.JwtService;
 import com.servicehub.dto.*;
 import com.servicehub.exception.InvalidCredentialsException;
+import com.servicehub.exception.NotFoundException;
+import com.servicehub.model.Department;
 import com.servicehub.model.User;
 import com.servicehub.model.enums.Role;
+import com.servicehub.repository.DepartmentRepository;
 import com.servicehub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -18,20 +21,26 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DepartmentRepository departmentRepository;
     private final JwtService jwtService;  // ← inject this, not jwt.secret
 
     public AuthResponse register(RegisterRequest request) {
         // 1. Check email doesn't already exist
         if (userRepository.existsByEmail(request.getEmail())){
-            throw new RuntimeException("Email already exist. try again");
+            throw new NotFoundException("Email already exist. try again");
         }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(()->new NotFoundException("Department not found"));
+
+
         // 2. Build and save User (encode password!)
         User user = User.builder()
                 .fullName(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .role(Role.USER)
-                .department(request.getDepartment())
+                .department(department)
                 .build();
 
         userRepository.save(user);

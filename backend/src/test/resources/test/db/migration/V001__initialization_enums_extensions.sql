@@ -1,0 +1,1 @@
+-- Empty cause not supported by H2, but needed for Flyway to recognize the migration as applied

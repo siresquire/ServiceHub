@@ -1,0 +1,138 @@
+# =============================================================================
+# ServiceHub — Base Application Configuration
+# =============================================================================
+# This is the SHARED base configuration loaded by all Spring profiles.
+# Profile-specific overrides are in:
+#   - application-dev.yml   (local Docker development)
+#   - application-test.yml  (CI/CD pipeline and unit tests)
+#   - application-prod.yml  (production deployment)
+#
+# Values use ${ENV_VAR:default} syntax so they can be overridden by
+# environment variables in Docker Compose, CI, or production deployments.
+# =============================================================================
+
+spring:
+  application:
+    name: servicehub
+  datasource:
+    url: jdbc:h2:mem:tempdb;MODE=PostgreSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      pool-name: sh-db-pool
+      validation-timeout: 5000
+      leak-detection-threshold: 20000
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+
+  # --- Thymeleaf Template Engine ---
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+  sql:
+    init:
+      mode: never
+  mail:
+    host: smtp.test.com
+    port: 587
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  flyway:
+    enabled: true
+    locations: classpath:test/db/migration
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+server:
+  port: ${SERVER_PORT:8080}
+
+# =============================================================================
+# JWT Configuration
+# =============================================================================
+# IMPORTANT: Override JWT_SECRET in production via environment variable.
+# The default value is ONLY for local development convenience.
+jwt:
+  secret: ${JWT_SECRET:localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION_1234567890}
+  expiration: 86400000 # 24 hours in milliseconds
+
+# =============================================================================
+# API Documentation (Swagger / OpenAPI)
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: false
+
+# =============================================================================
+# Actuator & Monitoring
+# =============================================================================
+# Expose health, info, and Prometheus endpoints for monitoring.
+# Health check is used by Docker HEALTHCHECK and load balancers.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# =============================================================================
+# Application Properties
+# =============================================================================
+# Default values for application-specific properties. Override in profile-specific configs or via environment variables.
+app:
+  accounts:
+    admin:
+      email: admin@amalitech.com
+      password: password123
+
+    user:
+      email: user@amalitech.com
+      password: password123
+
+    agent:
+      email: agent@amalitech.com
+      password: password123
+  sla:
+    sla-breach-notification:
+      enabled: false
+      admin-email: ${SPRING_EMAIL_ADMIN_ADDRES:test@mail.com}
+    sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:900000} # 15 minutes in milliseconds
+
+
+
+# =============================================================================
+# Logging
+# =============================================================================
+# Default log level. Override per-package in profile-specific configs.
+logging:
+  level:
+    root: INFO
+    com.servicehub: INFO
+    org.springframework.security: WARN
+

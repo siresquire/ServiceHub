@@ -4,6 +4,7 @@ package com.servicehub.controller;
 import com.servicehub.dto.DashboardStatsResponse;
 import com.servicehub.dto.DashboardTrendsResponse;
 import com.servicehub.model.User;
+import com.servicehub.service.AdminService;
 import com.servicehub.service.DashboardService;
 import com.servicehub.service.ServiceRequestService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class ViewController {
 
     private final DashboardService dashboardService;
     private final ServiceRequestService requestService;
+    private final AdminService adminService;
 
     // ADMIN
     @GetMapping("/dashboard")
@@ -48,5 +50,21 @@ public class ViewController {
         model.addAttribute("requests", requestService.getRequestsForUser(user));
         model.addAttribute("user", user);
         return "user-dashboard";
+    }
+
+    // ── ADMIN USERS PAGE ──
+    @GetMapping("/admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminUsers(Model model) {
+        model.addAttribute("users", adminService.getAllUsers());
+        return "admin/users";
+    }
+
+    // ── ADMIN DEPARTMENTS PAGE ──
+    @GetMapping("/admin/departments")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminDepartments(Model model) {
+        model.addAttribute("departments", adminService.getAllDepartments());
+        return "admin/departments";
     }
 }

@@ -19,27 +19,6 @@ public class ViewController {
     private final ServiceRequestService requestService;
     private final AdminService adminService;
 
-    // ── INDEX → redirect to login ──────────────────────────────────────────
-    @GetMapping("/")
-    public String index() {
-        return "redirect:/auth/login";
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    //  ADMIN ROUTES
-    // ══════════════════════════════════════════════════════════════════════
-
-    /** Admin home — overview of users, departments, recent tickets */
-    @GetMapping("/admin/dashboard")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String adminHome(Model model) {
-        model.addAttribute("users", adminService.getAllUsers());
-        model.addAttribute("departments", adminService.getAllDepartments());
-        model.addAttribute("stats", dashboardService.getDashboardStats());
-        return "admin/home";
-    }
-
-    /** Admin analytics — charts, SLA, trends */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminAnalytics(Model model) {
@@ -47,14 +26,28 @@ public class ViewController {
         model.addAttribute("trends", dashboardService.getTrends(7));
         return "dashboard";
     }
-
-    /** Admin — all tickets */
-    @GetMapping("/admin/tickets")
+    @GetMapping("/admin/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
-    public String adminTickets(Model model) {
-        model.addAttribute("tickets", requestService.getAllRequests());
+    public String adminHome(Model model) {
+        model.addAttribute("users", adminService.getAllUsers());
         model.addAttribute("departments", adminService.getAllDepartments());
-        return "admin/tickets";
+        return "admin/home";
+    }
+
+    @GetMapping("/agent/dashboard")
+    @PreAuthorize("hasRole('AGENT')")
+    public String agentDashboard(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("requests", requestService.getRequestsForUser(user));
+        model.addAttribute("user", user);
+        return "agent-dashboard";
+    }
+
+    @GetMapping("/user/dashboard")
+    @PreAuthorize("hasRole('USER')")
+    public String userDashboard(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("requests", requestService.getRequestsForUser(user));
+        model.addAttribute("user", user);
+        return "user-dashboard";
     }
 
     /** Admin — user management */

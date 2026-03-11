@@ -31,7 +31,6 @@ public class UserInitializer implements CommandLineRunner {
   public void run(String... args) throws Exception {
     // If no departments exist, create a default IT Support department
     logger.info("Default user initializer running...");
-    logger.info("No departments found. Creating default IT Support department...")
       Department defaultDepartment = departmentRepository.findByCategory(RequestCategory.IT_SUPPORT)
               .orElse(
               Department.builder()

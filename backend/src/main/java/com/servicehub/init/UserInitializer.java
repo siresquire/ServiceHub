@@ -32,12 +32,15 @@ public class UserInitializer implements CommandLineRunner {
     // If no departments exist, create a default IT Support department
     logger.info("Default user initializer running...");
       Department defaultDepartment = departmentRepository.findByCategory(RequestCategory.IT_SUPPORT)
-              .orElse(
-              Department.builder()
-                      .name("IT Support")
-                      .category(RequestCategory.IT_SUPPORT)
-                      .description("Handles all IT related support requests, including hardware, software, and network issues.")
-                      .build());
+              .orElseGet(() -> {
+                        Department dept = Department.builder()
+                                .name("IT Support")
+                                .category(RequestCategory.IT_SUPPORT)
+                                .description("Handles all IT related support requests, including hardware, software, and network issues.")
+                                .build();
+                        return departmentRepository.save(dept);
+                      }
+              );
 
     // If no users exist, create default admin, user, and agent accounts from properties
     if(userRepository.count() == 0) {

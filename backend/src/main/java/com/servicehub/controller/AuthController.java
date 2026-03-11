@@ -9,11 +9,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -73,8 +75,15 @@ public class AuthController {
             cookie.setMaxAge(86400);
             response.addCookie(cookie);
 
-            return "redirect:/";
+            // ← redirect based on role
+            return switch (auth.getRole()) {
+                case "ADMIN" -> "redirect:/admin/dashboard";
+                case "AGENT" -> "redirect:/agent/dashboard";
+                default      -> "redirect:/user/dashboard";
+            };
+
         } catch (RuntimeException ex) {
+            log.info("Login error: {}", ex);
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("lastEmail", email);
             return "auth/login";

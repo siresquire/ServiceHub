@@ -16,16 +16,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/dashboard")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class ViewController {
 
     private final DashboardService dashboardService;
     private final ServiceRequestService requestService;
     private final AdminService adminService;
 
-    // ADMIN
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminDashboard(Model model) {
@@ -33,8 +30,14 @@ public class ViewController {
         model.addAttribute("trends", dashboardService.getTrends(7));
         return "dashboard";
     }
+    @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminHome(Model model) {
+        model.addAttribute("users", adminService.getAllUsers());
+        model.addAttribute("departments", adminService.getAllDepartments());
+        return "admin/home";
+    }
 
-    // AGENT
     @GetMapping("/agent/dashboard")
     @PreAuthorize("hasRole('AGENT')")
     public String agentDashboard(@AuthenticationPrincipal User user, Model model) {
@@ -43,7 +46,6 @@ public class ViewController {
         return "agent-dashboard";
     }
 
-    // USER
     @GetMapping("/user/dashboard")
     @PreAuthorize("hasRole('USER')")
     public String userDashboard(@AuthenticationPrincipal User user, Model model) {
@@ -52,7 +54,6 @@ public class ViewController {
         return "user-dashboard";
     }
 
-    // ── ADMIN USERS PAGE ──
     @GetMapping("/admin/users")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminUsers(Model model) {
@@ -60,7 +61,6 @@ public class ViewController {
         return "admin/users";
     }
 
-    // ── ADMIN DEPARTMENTS PAGE ──
     @GetMapping("/admin/departments")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminDepartments(Model model) {

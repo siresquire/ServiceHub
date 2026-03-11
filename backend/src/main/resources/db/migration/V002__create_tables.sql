@@ -4,8 +4,8 @@
 
 -- DEPARTMENTS
 CREATE TABLE IF NOT EXISTS departments (
-                                           id          SERIAL        PRIMARY KEY,
-                                           name        VARCHAR(100)  NOT NULL UNIQUE,
+    id          BIGSERIAL        PRIMARY KEY,
+    name        VARCHAR(100)  NOT NULL UNIQUE,
     description TEXT,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS departments (
 
 -- USERS
 CREATE TABLE IF NOT EXISTS users (
-                                     id            SERIAL        PRIMARY KEY,
-                                     email         VARCHAR(30)  NOT NULL UNIQUE,
+    id            BIGSERIAL        PRIMARY KEY,
+    email         VARCHAR(30)  NOT NULL UNIQUE,
     name          VARCHAR(50)  NOT NULL,
     password      VARCHAR(255)  NOT NULL,          -- bcrypt hash
     role          user_role     NOT NULL DEFAULT 'USER',
@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_users_department_id ON users (department_id);
 
 -- SLA POLICIES
 CREATE TABLE IF NOT EXISTS sla_policies (
-    id                   SERIAL           PRIMARY KEY,
+    id                   BIGSERIAL           PRIMARY KEY,
     category             ticket_category  NOT NULL,
     priority             ticket_priority  NOT NULL,
     response_hours       NUMERIC(6, 2)    NOT NULL CHECK (response_hours > 0),
@@ -56,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_sla_category_priority    ON sla_policies (categor
 
 CREATE TABLE IF NOT EXISTS service_requests (
     -- Core Identity
-    id                    SERIAL           PRIMARY KEY,
+    id                    BIGSERIAL           PRIMARY KEY,
     title                 VARCHAR(120)     NOT NULL,
     description           TEXT,
     category              ticket_category  NOT NULL,

@@ -15,13 +15,12 @@ spring:
   application:
     name: servicehub
   datasource:
-    url: jdbc:h2:mem:tempdb
+    url: jdbc:h2:mem:tempdb;MODE=PostgreSQL
     driverClassName: org.h2.Driver
     username: sa
     password: ""
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
 

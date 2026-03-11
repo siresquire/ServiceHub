@@ -46,6 +46,7 @@ Thumbs.db
 .terraform/
 terraform/**/terraform.tfstate
 terraform/**/terraform.tfstate.backup
+*.tfplan
 
 # --- Python ---
 __pycache__/

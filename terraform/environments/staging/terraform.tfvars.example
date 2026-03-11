@@ -1,0 +1,12 @@
+# =============================================================================
+# ServiceHub — Staging Environment Variables Template
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in the real values.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# IMPORTANT: terraform.tfvars is gitignored — never commit real secrets.
+# =============================================================================
+
+rds_password   = "CHANGE_ME_TO_A_STRONG_PASSWORD"
+aws_account_id = "123456789012"

@@ -54,6 +54,7 @@ public class ViewController {
         return "user-dashboard";
     }
 
+    // ── ADMIN USERS PAGE ──
     @GetMapping("/admin/users")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminUsers(Model model) {
@@ -61,6 +62,7 @@ public class ViewController {
         return "admin/users";
     }
 
+    // ── ADMIN DEPARTMENTS PAGE ──
     @GetMapping("/admin/departments")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminDepartments(Model model) {

@@ -61,9 +61,22 @@ jobs:
     needs: build-image
     uses: ./.github/workflows/_reusable-publish-ecr.yml
     with:
-      image-name: ${{ needs.build-image.outputs.image-name }}
-      image-tag: ${{ needs.build-image.outputs.image-tag }}
+      image-name: ${{ needs.build-image.outputs.image_name }}
+      image-tag: ${{ needs.build-image.outputs.image_tag }}
     secrets: inherit # pragma: allowlist secret
+
+  # ===========================================================================
+  # Debug Job - Check outputs
+  # ===========================================================================
+  debug-outputs:
+    name: Debug Outputs
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show build outputs
+        run: |
+          echo "build-image.outputs.image_name: '${{ needs.build-image.outputs.image_name }}'"
+          echo "build-image.outputs.image_tag: '${{ needs.build-image.outputs.image_tag }}'"
 
   # ===========================================================================
   # Job 3: Deploy to ECS Fargate

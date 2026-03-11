@@ -86,14 +86,28 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/_reusable-security-scans.yml
     with:
-      image-name: ${{ needs.build-images.outputs.image-name }}
-      image-tag: ${{ needs.build-images.outputs.image-tag }}
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
 
   integration-test:
     name: Integration smoke test
     needs: build-images
     uses: ./.github/workflows/_reusable-integration-smoke.yml
     with:
-      image-name: ${{ needs.build-images.outputs.image-name }}
-      image-tag: ${{ needs.build-images.outputs.image-tag }}
-    secrets: inherit  # pragma: allowlist secret
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret
+
+  publish-ecr:
+    name: Publish to ECR
+    needs:
+      - build-images
+      - integration-test
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/_reusable-publish-ecr.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret

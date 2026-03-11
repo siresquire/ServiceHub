@@ -7,6 +7,7 @@ import com.servicehub.repository.ServiceRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,13 +30,13 @@ public class SlaEngine {
   private static final Logger log = LoggerFactory.getLogger(SlaEngine.class);
 
   /**
-   * Scheduled task to run every minute to check for response SLA breaches and escalate priority of affected service requests.
+   * Scheduled task to run every 15 minute to check for response SLA breaches and escalate priority of affected service requests.
    * It fetches all OPEN requests in batches and checks if their response SLA deadline has passed.
    * If breached, it escalates the priority and marks the request as SLA breached.
    * For requests already at HIGH priority, it will not escalate further but will mark as SLA breached.
    * For CRITICAL priority, it will also mark as SLA breached and can trigger an alert too.
    */
-  @Scheduled(fixedRate = 60000)
+  @Scheduled(fixedRateString = "${app.sla.sla-breach-check-interval}")
   public void trackResponseSla() {
     int page = 0;
     int size = 200;

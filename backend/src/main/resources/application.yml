@@ -19,6 +19,16 @@ spring:
     driverClassName: org.h2.Driver
     username: sa
     password: ""
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      pool-name: sh-db-pool
+      validation-timeout: 5000
+      leak-detection-threshold: 20000
+      connection-test-query: SELECT 1
 
   jpa:
     hibernate:
@@ -94,6 +104,10 @@ app:
     agent:
       email: employee@amalitech.com
       password: password123
+  sla:
+    sla-breach-notification:
+      enabled: true
+    sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:60000} # 15 minutes in milliseconds
 
 
 

@@ -19,6 +19,8 @@ target/
 *.iml
 .idea/
 .vscode/
+.cursor/
+.cursor
 *.swp
 .project
 .classpath
@@ -34,6 +36,17 @@ Thumbs.db
 .env
 *.env
 !.env.example
+
+# --- Terraform Variables ---
+# tfvars files often contain secrets like DB passwords. Never commit them.
+*.tfvars
+
+# --- Terraform Local State & Providers ---
+# Local cache and provider binaries; very large and OS-specific.
+.terraform/
+terraform/**/terraform.tfstate
+terraform/**/terraform.tfstate.backup
+*.tfplan
 
 # --- Python ---
 __pycache__/
@@ -55,3 +68,7 @@ docker-compose.override.yml
 # Prevent generated prompt artifacts from cluttering the repo
 *.resolved
 *.md.resolved
+
+# --- Scripts ---
+# Local utility scripts with sensitive data patterns
+scripts/

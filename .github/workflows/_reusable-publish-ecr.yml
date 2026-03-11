@@ -1,0 +1,118 @@
+# =============================================================================
+# ServiceHub — Reusable Workflow: Publish to ECR
+# =============================================================================
+# Pushes a pre-built Docker image artifact to Amazon ECR.
+#
+# Prerequisites:
+#   - The caller workflow must have already built the image and uploaded
+#     it as a 'backend-image' artifact (via _reusable-build-backend-image.yml)
+#   - AWS OIDC identity provider configured in the AWS account
+#   - GitHub Secrets: AWS_ROLE_ARN, AWS_REGION, AWS_ACCOUNT_ID
+#
+# Usage (from deploy.yml):
+#   publish-ecr:
+#     needs: build-image
+#     uses: ./.github/workflows/_reusable-publish-ecr.yml
+#     with:
+#       image-name: ${{ needs.build-image.outputs.image-name }}
+#       image-tag: ${{ needs.build-image.outputs.image-tag }}
+#     secrets: inherit
+# =============================================================================
+
+name: Reusable - Publish to ECR
+
+on:
+    workflow_call:
+        inputs:
+            image-name:
+                description: "Docker image name (without registry prefix or tag)"
+                required: true
+                type: string
+            image-tag:
+                description: "Docker image tag (typically the commit SHA)"
+                required: true
+                type: string
+        secrets:
+            AWS_ROLE_ARN:
+                required: true
+            AWS_REGION:
+                required: true
+        outputs:
+            ecr-image:
+                description: "Full ECR image URI with tag (e.g., 123456789.dkr.ecr.eu-west-1.amazonaws.com/servicehub-backend:sha-abc123)"
+                value: ${{ jobs.publish.outputs.ecr-image }}
+
+jobs:
+    publish:
+        name: Push to ECR
+        runs-on: ubuntu-latest
+        outputs:
+            ecr-image: ${{ steps.push.outputs.ecr-image }}
+
+        permissions:
+            contents: read
+            id-token: write # Required for OIDC
+
+        steps:
+            # --- Debug inputs ---
+            - name: Debug inputs
+              run: |
+                  echo "Received image-name: '${{ inputs.image-name }}'"
+                  echo "Received image-tag: '${{ inputs.image-tag }}'"
+                  if [ -z "${{ inputs.image-name }}" ] || [ -z "${{ inputs.image-tag }}" ]; then
+                    echo "ERROR: Empty inputs received!"
+                    exit 1
+                  fi
+
+            # --- Download the pre-built image artifact ---
+            - name: Download backend image artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: backend-image
+
+            # --- Configure AWS credentials via OIDC ---
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                  aws-region: ${{ secrets.AWS_REGION }}
+
+            # --- Login to Amazon ECR ---
+            - name: Login to Amazon ECR
+              id: ecr-login
+              uses: aws-actions/amazon-ecr-login@v2
+
+            # --- Load, tag, and push the image ---
+            - name: Load and push image to ECR
+              id: push
+              env:
+                  ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+                  ECR_REPOSITORY: ${{ inputs.image-name }}
+                  IMAGE_TAG: ${{ inputs.image-tag }}
+              run: |
+                  # Load the saved image
+                  docker load < backend-image.tar
+
+                  # Source image name (as built by _reusable-build-backend-image.yml)
+                  SOURCE_IMAGE="${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+                  # Target ECR image URIs
+                  ECR_IMAGE_SHA="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+                  ECR_IMAGE_LATEST="${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+
+                  echo "Tagging ${SOURCE_IMAGE} -> ${ECR_IMAGE_SHA}"
+                  docker tag "${SOURCE_IMAGE}" "${ECR_IMAGE_SHA}"
+
+                  echo "Tagging ${SOURCE_IMAGE} -> ${ECR_IMAGE_LATEST}"
+                  docker tag "${SOURCE_IMAGE}" "${ECR_IMAGE_LATEST}"
+
+                  echo "Pushing to ECR..."
+                  docker push "${ECR_IMAGE_SHA}"
+                  docker push "${ECR_IMAGE_LATEST}"
+
+                  echo "ecr-image=${ECR_IMAGE_SHA}" >> "${GITHUB_OUTPUT}"
+
+                  echo "========================================="
+                  echo " Successfully pushed to ECR"
+                  echo " Image: ${ECR_IMAGE_SHA}"
+                  echo "========================================="

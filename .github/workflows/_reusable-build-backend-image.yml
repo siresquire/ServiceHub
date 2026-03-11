@@ -1,0 +1,67 @@
+name: Reusable - Build Backend Image
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "Local image name (without tag)."
+        required: false
+        type: string
+        default: "servicehub-backend"
+    outputs:
+      image_name:
+        description: "Built image name."
+        value: ${{ jobs.build-image.outputs.image_name }}
+      image_tag:
+        description: "Built image tag (commit SHA)."
+        value: ${{ jobs.build-image.outputs.image_tag }}
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ steps.set-outputs.outputs.image_name }}
+      image_tag: ${{ steps.set-outputs.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compute image metadata
+        id: meta
+        run: |
+          echo "Building image: ${{ inputs.image-name }}:${GITHUB_SHA}"
+
+      - name: Build backend Docker image
+        uses: ./.github/actions/log-group
+        with:
+          title: "Docker build backend"
+
+      - name: Docker build
+        run: docker build -t "${{ inputs.image-name }}:${GITHUB_SHA}" ./backend
+
+      - name: End Docker build group
+        if: always()
+        uses: ./.github/actions/log-group
+        with:
+          title: "Docker build backend"
+          end: "true"
+
+      - name: Save image as artifact
+        run: docker save "${{ inputs.image-name }}:${GITHUB_SHA}" > backend-image.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-image
+          path: backend-image.tar
+          retention-days: 1
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          IMAGE_NAME="${{ inputs.image-name }}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          echo "image_name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "image_tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image_name=${IMAGE_NAME}"
+          echo "Debug: Set image_tag=${IMAGE_TAG}"

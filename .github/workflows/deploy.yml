@@ -5,99 +5,180 @@
 #   - Only on push to main (after a PR is merged)
 #
 # Pipeline stages:
-#   1. Build and tag the Docker image
-#   2. Push to GitHub Container Registry (GHCR)
-#   3. Deploy (placeholder — extend with your deployment target)
+#   1. Build Docker image (reuses CI build logic)
+#   2. Push to Amazon ECR (via OIDC)
+#   3. Deploy to ECS Fargate (render task def → deploy → wait for stability)
+#   4. Smoke test ALB health endpoint
 #
 # Required GitHub Secrets:
-#   - None for GHCR (uses GITHUB_TOKEN automatically)
-#   - Add SSH_KEY, DEPLOY_HOST, etc. if deploying to a remote server
+#   - AWS_ROLE_ARN    — IAM role ARN for OIDC authentication
+#   - AWS_REGION      — AWS region (eu-west-1)
+#   - AWS_ACCOUNT_ID  — 12-digit AWS account ID
+#
+# Required GitHub Variables (or hardcode below):
+#   - ECS_CLUSTER     — ECS cluster name
+#   - ECS_SERVICE     — ECS service name
+#   - CONTAINER_NAME  — Container name in the task definition
 # =============================================================================
 
 name: Deploy Pipeline
 
 on:
-    push:
-        branches: [main]
+  push:
+    branches: [main]
 
 # Only one deployment at a time.
 concurrency:
-    group: deploy-${{ github.ref }}
-    cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: ${{ github.repository }}/servicehub-backend
+  ECS_CLUSTER: servicehub-staging-cluster
+  ECS_SERVICE: servicehub-staging-backend
+  CONTAINER_NAME: servicehub-backend
 
 jobs:
-    # ===========================================================================
-    # Job 1: Build & Push Docker Image
-    # ===========================================================================
-    build-and-push:
-        name: Build & Push Image
-        runs-on: ubuntu-latest
+  # ===========================================================================
+  # Job 1: Build Docker Image
+  # ===========================================================================
+  # Reuses the same build workflow as CI to ensure consistency.
+  # Produces a backend-image artifact for the ECR publish step.
+  # ===========================================================================
+  build-image:
+    name: Build backend image
+    uses: ./.github/workflows/_reusable-build-backend-image.yml
+    with:
+      image-name: servicehub-backend
 
-        permissions:
-            contents: read
-            packages: write
+  # ===========================================================================
+  # Job 2: Publish to ECR
+  # ===========================================================================
+  # Takes the build artifact and pushes it to Amazon ECR.
+  # Tags: commit SHA + latest
+  # ===========================================================================
+  publish-ecr:
+    name: Publish to ECR
+    needs: build-image
+    uses: ./.github/workflows/_reusable-publish-ecr.yml
+    with:
+      image-name: ${{ needs.build-image.outputs.image_name }}
+      image-tag: ${{ needs.build-image.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  # ===========================================================================
+  # Debug Job - Check outputs
+  # ===========================================================================
+  debug-outputs:
+    name: Debug Outputs
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show build outputs
+        run: |
+          echo "build-image.outputs.image_name: '${{ needs.build-image.outputs.image_name }}'"
+          echo "build-image.outputs.image_tag: '${{ needs.build-image.outputs.image_tag }}'"
 
-            # --- Login to GitHub Container Registry ---
-            - name: Login to GHCR
-              uses: docker/login-action@v3
-              with:
-                  registry: ${{ env.REGISTRY }}
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+  # ===========================================================================
+  # Job 3: Deploy to ECS Fargate
+  # ===========================================================================
+  # Renders a new task definition with the updated image tag,
+  # deploys it to ECS, and waits for service stability.
+  # ===========================================================================
+  deploy-ecs:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    needs: publish-ecr
 
-            # --- Extract metadata for Docker tags ---
-            - name: Extract metadata
-              id: meta
-              uses: docker/metadata-action@v5
-              with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-                  tags: |
-                      type=sha
-                      type=raw,value=latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC
 
-            # --- Build and Push ---
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v5
-              with:
-                  context: ./backend
-                  push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    # ===========================================================================
-    # Job 2: Deploy (Placeholder)
-    # ===========================================================================
-    # Extend this job for your specific deployment target.
-    # Examples:
-    #   - SSH into EC2 and run docker-compose pull && docker-compose up -d
-    #   - Deploy to Kubernetes
-    #   - Deploy to AWS ECS
-    # ===========================================================================
-    deploy:
-        name: Deploy
-        runs-on: ubuntu-latest
-        needs: build-and-push
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_SERVICE }} \
+            --query taskDefinition \
+            > task-definition.json
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+      - name: Render new task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.publish-ecr.outputs.ecr-image }}
 
-            - name: Deploy notification
-              run: |
-                  echo "========================================="
-                  echo " Deployment triggered for ServiceHub"
-                  echo " Commit: ${{ github.sha }}"
-                  echo " Branch: ${{ github.ref_name }}"
-                  echo " Actor:  ${{ github.actor }}"
-                  echo "========================================="
-                  echo ""
-                  echo "TODO: Add your deployment steps here."
-                  echo "Example: SSH to server, pull new image, restart containers."
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        run: |
+          echo "========================================="
+          echo " Deployment successful!"
+          echo " Cluster: ${{ env.ECS_CLUSTER }}"
+          echo " Service: ${{ env.ECS_SERVICE }}"
+          echo " Image:   ${{ needs.publish-ecr.outputs.ecr-image }}"
+          echo " Commit:  ${{ github.sha }}"
+          echo "========================================="
+
+  # ===========================================================================
+  # Job 4: Smoke Test
+  # ===========================================================================
+  # Verifies that the deployed service is healthy via the ALB endpoint.
+  # ===========================================================================
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: deploy-ecs
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get ALB DNS name
+        id: alb
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names servicehub-staging-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+          echo "dns=${ALB_DNS}" >> "${GITHUB_OUTPUT}"
+          echo "ALB DNS: ${ALB_DNS}"
+
+      - name: Health check
+        run: |
+          echo "Waiting 30s for tasks to register with ALB..."
+          sleep 30
+
+          echo "Checking health endpoint..."
+          for i in $(seq 1 5); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              "http://${{ steps.alb.outputs.dns }}/actuator/health" || echo "000")
+            echo "Attempt ${i}: HTTP ${HTTP_CODE}"
+            if [ "${HTTP_CODE}" = "200" ]; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "❌ Health check failed after 5 attempts"
+          exit 1

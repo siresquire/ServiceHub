@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Manage Departments</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --sidebar:#1a1f2e; --bg:#f0f2f5; --white:#ffffff;
+            --teal:#0fbf8a; --teal-bg:#e8faf4;
+            --amber:#f59e0b; --amber-bg:#fff8ec;
+            --blue:#3b82f6; --blue-bg:#eff6ff;
+            --red:#ef4444; --red-bg:#fff1f1;
+            --green:#22c55e; --green-bg:#f0fdf4;
+            --txt:#1e293b; --muted:#94a3b8; --border:#e2e8f0;
+            --font:'Inter',sans-serif; --sw:215px;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{overflow-x:hidden;}
+        body{font-family:var(--font);background:var(--bg);color:var(--txt);display:flex;min-height:100vh;}
+
+        /* SIDEBAR */
+        .sidebar{width:var(--sw);background:var(--sidebar);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:200;transition:transform .25s ease;overflow-y:auto;}
+        .logo{display:flex;align-items:center;gap:10px;padding:20px 18px 18px;flex-shrink:0;}
+        .logo-icon{width:30px;height:30px;min-width:30px;background:var(--teal);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800;}
+        .logo-text{font-size:15px;font-weight:700;color:#fff;white-space:nowrap;}
+        .nav-label{font-size:10px;font-weight:600;letter-spacing:1px;color:#4a5568;text-transform:uppercase;padding:10px 18px 4px;}
+        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:500;color:#8892a4;text-decoration:none;transition:all .12s;}
+        .nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
+        .nav-item.active{color:var(--teal);background:rgba(15,191,138,.1);}
+        .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
+        .sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px;flex-shrink:0;}
+        .s-avatar{width:30px;height:30px;min-width:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+        .s-info{flex:1;min-width:0;}
+        .s-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .s-role{font-size:11px;color:#8892a4;}
+        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;}
+        .overlay.show{display:block;}
+
+        /* MAIN */
+        .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - var(--sw));}
+
+        /* TOPBAR */
+        .topbar{display:flex;align-items:center;padding:0 16px;height:56px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:8px;overflow:hidden;}
+        .menu-btn{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt);flex-shrink:0;padding:4px;}
+        .topbar-title-wrap{flex:1;min-width:0;overflow:hidden;}
+        .page-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .page-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .topbar-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+        .icon-btn{width:34px;height:34px;min-width:34px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;flex-shrink:0;}
+        .notif-dot{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--red);border-radius:50%;font-size:8px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;}
+        .t-avatar{width:32px;height:32px;min-width:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+        .btn-new{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px;}
+        .btn-new:hover{background:#0da87a;}
+        .btn-new .btn-txt{display:inline;}
+
+        /* CONTENT */
+        .content{padding:16px;flex:1;min-width:0;}
+
+        /* DEPT GRID — 1 col mobile, 2 col tablet, 3 col desktop */
+        .dept-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+        @media(min-width:540px){.dept-grid{grid-template-columns:repeat(2,1fr);}}
+        @media(min-width:900px){.dept-grid{grid-template-columns:repeat(3,1fr);}}
+
+        /* DEPT CARD */
+        .dept-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;transition:border-color .15s;min-width:0;}
+        .dept-card:hover{border-color:var(--teal);}
+        .dept-card.inactive{opacity:.55;}
+
+        .dept-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;}
+        .dept-icon{width:38px;height:38px;min-width:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+        .ic-it{background:var(--blue-bg);}
+        .ic-hr{background:var(--teal-bg);}
+        .ic-fac{background:var(--amber-bg);}
+        .ic-other{background:#f1f5f9;}
+
+        .status-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+        .sp-active{background:var(--green-bg);color:var(--green);}
+        .sp-inactive{background:#f1f5f9;color:var(--muted);}
+
+        .dept-name{font-size:13.5px;font-weight:600;margin-bottom:2px;word-break:break-word;}
+        .dept-cat{font-size:11px;color:var(--muted);margin-bottom:8px;}
+        .dept-email{font-size:11.5px;color:var(--txt);display:flex;align-items:center;gap:5px;word-break:break-all;}
+
+        /* Actions — always 3 buttons in a row, equal width */
+        .dept-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+        .da-btn{padding:6px 4px;border-radius:7px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);transition:all .12s;text-align:center;white-space:nowrap;}
+        .da-edit{background:var(--blue-bg);color:var(--blue);}
+        .da-edit:hover{background:var(--blue);color:#fff;}
+        .da-toggle{background:var(--amber-bg);color:var(--amber);}
+        .da-toggle:hover{background:var(--amber);color:#fff;}
+        .da-delete{background:var(--red-bg);color:var(--red);}
+        .da-delete:hover{background:var(--red);color:#fff;}
+
+        /* EMPTY STATE */
+        .empty-state{text-align:center;padding:60px 20px;color:var(--muted);grid-column:1/-1;}
+        .empty-title{font-size:14px;font-weight:600;color:var(--txt);margin:10px 0 4px;}
+
+        /* MODAL */
+        .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center;padding:16px;}
+        .modal-bg.show{display:flex;}
+        .modal{background:var(--white);border-radius:14px;padding:22px;width:100%;max-width:400px;}
+        .modal-title{font-size:15px;font-weight:700;margin-bottom:16px;}
+        .form-group{margin-bottom:13px;}
+        .form-label{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:5px;display:block;}
+        .form-input,.form-select{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;color:var(--txt);background:var(--white);outline:none;}
+        .form-input:focus,.form-select:focus{border-color:var(--teal);}
+        .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+        .btn-cancel{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font);}
+        .btn-save{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:var(--teal);color:#fff;cursor:pointer;font-family:var(--font);}
+        .btn-save:hover{background:#0da87a;}
+
+        /* ══ RESPONSIVE ══ */
+        @media(max-width:768px){
+            .sidebar{transform:translateX(-100%);}
+            .sidebar.open{transform:translateX(0);}
+            .main{margin-left:0;max-width:100vw;}
+            .menu-btn{display:flex;}
+            .btn-new .btn-txt{display:none;}
+            .btn-new{padding:7px 10px;}
+        }
+        @media(max-width:480px){
+            .content{padding:10px;}
+            .topbar{padding:0 10px;}
+            .page-sub{display:none;}
+        }
+        @media(max-width:360px){
+            .page-title{font-size:13px;}
+            .dept-name{font-size:13px;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+    <div class="logo">
+        <div class="logo-icon">S</div>
+        <span class="logo-text">ServiceHub</span>
+    </div>
+    <div class="nav-label">Menu</div>
+    <a class="nav-item" href="/dashboard"><span class="nav-icon">📈</span> Analytics</a>
+    <a class="nav-item" href="/tickets"><span class="nav-icon">☰</span> Tickets</a>
+    <a class="nav-item" href="/settings"><span class="nav-icon">⚙</span> Settings</a>
+    <div class="nav-label" style="margin-top:10px;">Admin</div>
+    <a class="nav-item" href="/admin/users"><span class="nav-icon">👥</span> Users</a>
+    <a class="nav-item active" href="/admin/departments"><span class="nav-icon">🏢</span> Departments</a>
+    <div class="sidebar-footer">
+        <div class="s-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">AD</div>
+        <div class="s-info">
+            <div class="s-name" th:text="${#authentication != null ? #authentication.name : 'Admin'}">Admin</div>
+            <div class="s-role">Admin</div>
+        </div>
+        <a href="/api/auth/logout" style="color:#8892a4;font-size:14px;text-decoration:none;flex-shrink:0;">⇒</a>
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <button class="menu-btn" onclick="openSidebar()">☰</button>
+        <div class="topbar-title-wrap">
+            <div class="page-title">Manage Departments</div>
+            <div class="page-sub">Create and configure service departments</div>
+        </div>
+        <div class="topbar-actions">
+            <div class="icon-btn">🔔<div class="notif-dot">1</div></div>
+            <div class="t-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">AD</div>
+            <button class="btn-new" onclick="openCreateModal()">+<span class="btn-txt"> New Department</span></button>
+        </div>
+    </header>
+
+    <div class="content">
+        <div class="dept-grid" id="deptGrid">
+
+            <div class="dept-card"
+                 th:each="dept : ${departments}"
+                 th:classappend="${!dept.isActive}?' inactive':''">
+
+                <div class="dept-card-header">
+                    <div class="dept-icon"
+                         th:classappend="${dept.category.name()=='IT_SUPPORT'}?'ic-it':(${dept.category.name()=='HR_REQUEST'}?'ic-hr':(${dept.category.name()=='FACILITIES'}?'ic-fac':'ic-other'))">
+                        <span th:text="${dept.category.name()=='IT_SUPPORT'}?'💻':(${dept.category.name()=='HR_REQUEST'}?'👥':(${dept.category.name()=='FACILITIES'}?'🏢':'📁'))">💻</span>
+                    </div>
+                    <span class="status-pill"
+                          th:classappend="${dept.isActive}?'sp-active':'sp-inactive'"
+                          th:text="${dept.isActive}?'Active':'Inactive'">Active</span>
+                </div>
+
+                <div class="dept-name" th:text="${dept.name}">IT Support</div>
+                <div class="dept-cat"  th:text="${dept.category}">IT_SUPPORT</div>
+                <div class="dept-email" th:if="${dept.contactEmail != null}">
+                    📧 <span th:text="${dept.contactEmail}">it@amalitech.com</span>
+                </div>
+
+                <div class="dept-actions">
+                    <button class="da-btn da-edit"
+                            th:onclick="'openEditModal('+${dept.id}+',\''+${dept.name}+'\',\''+${dept.category}+'\',\''+(${dept.contactEmail}?:'')+'\')'">
+                        ✏️ Edit
+                    </button>
+                    <button class="da-btn da-toggle"
+                            th:onclick="'toggleDept('+${dept.id}+')'"
+                            th:text="${dept.isActive}?'⏸ Off':'▶ On'">⏸ Off</button>
+                    <button class="da-btn da-delete"
+                            th:onclick="'deleteDept('+${dept.id}+',\''+${dept.name}+'\')'">
+                        🗑 Del
+                    </button>
+                </div>
+            </div>
+
+            <div class="empty-state" th:if="${departments==null or departments.empty}">
+                <div style="font-size:34px;">🏢</div>
+                <div class="empty-title">No departments yet</div>
+                <div style="font-size:12px;margin-bottom:16px;">Create your first department to get started</div>
+                <button class="btn-new" style="margin:0 auto;" onclick="openCreateModal()">+ New Department</button>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-bg" id="deptModal">
+    <div class="modal">
+        <div class="modal-title" id="modalTitle">New Department</div>
+        <input type="hidden" id="editDeptId"/>
+        <div class="form-group">
+            <label class="form-label">Department Name *</label>
+            <input class="form-input" type="text" id="deptName" placeholder="e.g. IT Support"/>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select class="form-select" id="deptCategory">
+                <option value="">Select category...</option>
+                <option value="IT_SUPPORT">IT Support</option>
+                <option value="HR_REQUEST">HR Request</option>
+                <option value="FACILITIES">Facilities</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Contact Email</label>
+            <input class="form-input" type="email" id="deptEmail" placeholder="dept@amalitech.com"/>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-save" onclick="saveDepartment()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let editingId=null;
+    function openCreateModal(){
+        editingId=null;
+        document.getElementById('modalTitle').textContent='New Department';
+        document.getElementById('editDeptId').value='';
+        document.getElementById('deptName').value='';
+        document.getElementById('deptCategory').value='';
+        document.getElementById('deptEmail').value='';
+        document.getElementById('deptModal').classList.add('show');
+    }
+    function openEditModal(id,name,category,email){
+        editingId=id;
+        document.getElementById('modalTitle').textContent='Edit Department';
+        document.getElementById('deptName').value=name;
+        document.getElementById('deptCategory').value=category;
+        document.getElementById('deptEmail').value=email;
+        document.getElementById('deptModal').classList.add('show');
+    }
+    function closeModal(){document.getElementById('deptModal').classList.remove('show');editingId=null;}
+    function saveDepartment(){
+        const name=document.getElementById('deptName').value.trim();
+        const category=document.getElementById('deptCategory').value;
+        const email=document.getElementById('deptEmail').value.trim();
+        if(!name){alert('Department name is required');return;}
+        if(!category){alert('Category is required');return;}
+        const body={name,category,contactEmail:email||null};
+        const url=editingId?`/api/admin/departments/${editingId}`:'/api/admin/departments';
+        const method=editingId?'PUT':'POST';
+        fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+            .then(r=>{if(r.ok){closeModal();location.reload();}else r.text().then(t=>alert('Error: '+t));})
+            .catch(()=>alert('Network error'));
+    }
+    function toggleDept(id){
+        fetch(`/api/admin/departments/${id}/toggle`,{method:'PUT'})
+            .then(r=>{if(r.ok)location.reload();else alert('Failed');});
+    }
+    function deleteDept(id,name){
+        if(!confirm(`Delete "${name}"? Cannot be undone.`))return;
+        fetch(`/api/admin/departments/${id}`,{method:'DELETE'})
+            .then(r=>{if(r.ok)location.reload();else alert('Failed');});
+    }
+    function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
+    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
+</script>
+</body>
+</html>

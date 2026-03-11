@@ -6,7 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity @Table(name = "service_requests")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class ServiceRequest {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,17 +36,22 @@ public class ServiceRequest {
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to_id")
+    @JoinColumn(name = "assignee_id")
     private User assignedTo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
-    private LocalDateTime slaDeadline;
+    private LocalDateTime responseSlaDeadline;
+    private LocalDateTime resolutionSlaDeadline;
+    private Boolean slaBreached;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime assignedAt;
     private LocalDateTime resolvedAt;
+    private Boolean resolved;
+
 
     @PrePersist
     protected void onCreate() {

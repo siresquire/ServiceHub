@@ -15,253 +15,99 @@
 name: CI/CD Pipeline
 
 on:
-    push:
-        branches: [develop]
-    pull_request:
-        branches: [develop]
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
 
 concurrency:
-    group: ci-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-    # ===========================================================================
-    # Stage 1: Linting, Testing, and Secrets Check
-    # ===========================================================================
-    lint-test-backend:
-        name: Lint & Test (backend) - JDK ${{ matrix.java }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                java: ["17", "21"]
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      dataeng: ${{ steps.filter.outputs.dataeng }}
+      devops: ${{ steps.filter.outputs.devops }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Paths filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+              - 'docker-compose*.yml'
+            dataeng:
+              - 'data-engineering/**'
+            devops:
+              - 'devops/**'
+              - 'docker-compose*.yml'
 
-            - name: Set up JDK ${{ matrix.java }}
-              uses: actions/setup-java@v4
-              with:
-                  java-version: ${{ matrix.java }}
-                  distribution: "temurin"
+  lint-test-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_reusable-lint-test-backend.yml
 
-            - name: Cache Maven packages
-              uses: actions/cache@v4
-              with:
-                  path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-                  restore-keys: ${{ runner.os }}-maven-
+  lint-data-engineering:
+    needs: changes
+    if: needs.changes.outputs.dataeng == 'true'
+    uses: ./.github/workflows/_reusable-lint-data-engineering.yml
 
-            - name: Build and Test backend
-              working-directory: ./backend
-              run: mvn clean test -B
+  lint-devops:
+    needs: changes
+    if: needs.changes.outputs.devops == 'true'
+    uses: ./.github/workflows/_reusable-lint-devops.yml
 
-    lint-data-engineering:
-        name: Lint (data-engineering)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.10"
-            - name: Install Flake8
-              run: pip install flake8
-            - name: Run Flake8
-              working-directory: ./data-engineering
-              run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  build-images:
+    name: Build backend image
+    needs:
+      - lint-test-backend
+      - lint-data-engineering
+      - lint-devops
+    uses: ./.github/workflows/_reusable-build-backend-image.yml
+    with:
+      image-name: servicehub-backend
 
-    lint-devops:
-        name: Lint (devops)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Run yamllint
-              working-directory: ./devops
-              run: |
-                  sudo apt-get install -y yamllint
-                  yamllint . -d "{extends: relaxed, rules: {line-length: disable}}"
+  security-scans:
+    name: Security scans
+    needs: build-images
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/_reusable-security-scans.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
 
-    lint-qa:
-        name: Lint (qa)
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: QA Linting Placeholder
-              run: echo "Depending on the QA framework (Selenium, Cypress, etc.), insert the linter here."
+  integration-test:
+    name: Integration smoke test
+    needs: build-images
+    uses: ./.github/workflows/_reusable-integration-smoke.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret
 
-    gitleaks:
-        name: GitLeaks Scan
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0 # needed for gitleaks
-            - name: Run Gitleaks
-              uses: gitleaks/gitleaks-action@v2
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    sast-scan:
-        name: Static Code Security Scan (CodeQL)
-        runs-on: ubuntu-latest
-        permissions:
-            security-events: write
-            actions: read
-            contents: read
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Initialize CodeQL
-              uses: github/codeql-action/init@v3
-              with:
-                  languages: "java"
-
-            - name: Set up JDK 17
-              uses: actions/setup-java@v4
-              with:
-                  java-version: "17"
-                  distribution: "temurin"
-
-            - name: Build backend for CodeQL
-              working-directory: ./backend
-              run: mvn clean compile -B
-
-            - name: Perform CodeQL Analysis
-              uses: github/codeql-action/analyze@v3
-              with:
-                  category: "/language:java"
-                  upload: never # Skip GHAS upload (fixes permission error on private repos)
-
-            - name: Upload CodeQL Results as Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: codeql-results
-                  path: ../results/**/*.sarif
-                  retention-days: 7
-
-    # ===========================================================================
-    # Stage 2: Build Images
-    # ===========================================================================
-    build-images:
-        name: Build Images
-        runs-on: ubuntu-latest
-        needs:
-            [
-                lint-test-backend,
-                lint-data-engineering,
-                lint-devops,
-                lint-qa,
-                gitleaks,
-                sast-scan,
-            ]
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Build backend Docker image
-              run: docker build -t servicehub-backend:${{ github.sha }} ./backend
-
-            - name: Save Docker image
-              run: docker save servicehub-backend:${{ github.sha }} > backend-image.tar
-
-            - name: Upload image artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: backend-image
-                  path: backend-image.tar
-                  retention-days: 1
-
-    # ===========================================================================
-    # Stage 3: Security Scans & Integration Testing
-    # ===========================================================================
-    security-scan:
-        name: Security Scan
-        runs-on: ubuntu-latest
-        needs: [build-images]
-        steps:
-            - name: Download image artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: backend-image
-
-            - name: Load Docker image
-              run: docker load < backend-image.tar
-
-            - name: Run Trivy vulnerability scanner
-              uses: aquasecurity/trivy-action@master
-              with:
-                  image-ref: "servicehub-backend:${{ github.sha }}"
-                  format: "table"
-                  exit-code: "0"
-                  ignore-unfixed: true
-                  vuln-type: "os,library"
-                  severity: "CRITICAL,HIGH"
-
-    integration-test:
-        name: Integration Test
-        runs-on: ubuntu-latest
-        needs: [build-images]
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Download image artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: backend-image
-
-            - name: Load Docker image
-              run: docker load < backend-image.tar
-
-            - name: Setup PostgreSQL service
-              run: |
-                  docker network create servicehub-network
-                  docker run -d \
-                    --network servicehub-network \
-                    --name postgres \
-                    -e POSTGRES_DB=servicehub \
-                    -e POSTGRES_USER=servicehub \
-                    -e POSTGRES_PASSWORD=servicehub_pass \
-                    -p 5432:5432 \
-                    postgres:16-alpine
-                  sleep 5 # Wait for DB initialization
-
-            - name: Run integration tests
-              run: |
-                  echo "Spinning up loaded Docker image against temporary PostgreSQL container..."
-                  docker run -d \
-                    --network servicehub-network \
-                    --name backend-integration \
-                    -p 8080:8080 \
-                    -e SPRING_PROFILES_ACTIVE=test \
-                    -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/servicehub \
-                    -e SPRING_DATASOURCE_USERNAME=servicehub \
-                    -e SPRING_DATASOURCE_PASSWORD=servicehub_pass \
-                    -e JWT_SECRET=testsecret123 \
-                    servicehub-backend:${{ github.sha }}
-
-                  echo "Waiting 20 seconds for Spring Boot & Hibernate to actuate..."
-                  sleep 20
-
-                  echo "Checking actuator health endpoint..."
-                  curl -f http://localhost:8080/actuator/health || exit 1
-
-                  echo "Integration test check passed!"
-
-    # ===========================================================================
-    # Stage 4: Push to Container Registry
-    # ===========================================================================
-    push-ecr:
-        name: Push Images to ECR
-        runs-on: ubuntu-latest
-        needs: [security-scan, integration-test]
-        if: false # Skipped for now per requirements
-        steps:
-            - name: Placeholder
-              run: echo "Push to ECR is disabled for the develop branch until further notice."
+  publish-ecr:
+    name: Publish to ECR
+    needs:
+      - build-images
+      - integration-test
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/_reusable-publish-ecr.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret

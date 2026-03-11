@@ -1,0 +1,35 @@
+name: "Log group + summary"
+description: "Start/end a log group and optionally append to the GitHub summary."
+inputs:
+  title:
+    description: "Group title."
+    required: true
+  summary_markdown:
+    description: "Markdown to append to GITHUB_STEP_SUMMARY."
+    required: false
+    default: ""
+  end:
+    description: "Whether to end the group (true/false)."
+    required: false
+    default: "false"
+runs:
+  using: "composite"
+  steps:
+    - name: Emit group markers
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.end }}" = "true" ]; then
+          echo "::endgroup::"
+          exit 0
+        fi
+        echo "::group::${{ inputs.title }}"
+    - name: Append summary
+      if: ${{ inputs.summary_markdown != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        {
+          echo "${{ inputs.summary_markdown }}"
+          echo ""
+        } >> "${GITHUB_STEP_SUMMARY}"

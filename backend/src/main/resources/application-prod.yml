@@ -16,20 +16,25 @@
 #   - JWT_SECRET
 # =============================================================================
 
+# Uncomment when we will get a real database in production. For now, we will use H2 in-memory for simplicity.
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
   sql:
     init:
       mode: never
   thymeleaf:
     cache: true
+  flyway:
+    enabled: true
 
 # Production: Only expose health. Do NOT expose prometheus publicly without auth.
 management:

@@ -60,9 +60,30 @@ jobs:
 
       - name: Wait and call health endpoint
         run: |
-          echo "Waiting 20 seconds for Spring Boot to start..."
-          sleep 20
-          curl -f http://localhost:8080/actuator/health
+          set -euo pipefail
+          echo "Waiting up to 120s for backend health..."
+          for i in $(seq 1 24); do
+            if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend is healthy."
+              exit 0
+            fi
+            echo "Not ready yet (${i}/24). Sleeping 5s..."
+            sleep 5
+          done
+          echo "Backend did not become healthy in time."
+          exit 1
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "==== docker ps ===="
+          docker ps -a || true
+          echo ""
+          echo "==== postgres logs ===="
+          docker logs postgres --tail 200 || true
+          echo ""
+          echo "==== backend logs ===="
+          docker logs backend-integration --tail 400 || true
 
       - name: End integration smoke group
         if: always()

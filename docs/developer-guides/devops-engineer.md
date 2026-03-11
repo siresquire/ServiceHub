@@ -250,4 +250,3 @@ After creating the team repository:
 - [ ] Create GitHub environment `staging` (optional: required reviewers)
 - [ ] Run Terraform bootstrap and first apply
 - [ ] Verify deploy pipeline on a test merge to main
-

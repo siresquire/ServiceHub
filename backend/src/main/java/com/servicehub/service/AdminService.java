@@ -88,9 +88,6 @@ public class AdminService {
         return departmentRepository.findAll();
     }
 
-    public List<Department> getActiveDepartments() {
-        return departmentRepository.findByIsActiveTrue();
-    }
 
     public Department getDepartmentById(Long id) {
         return departmentRepository.findById(id)
@@ -104,8 +101,6 @@ public class AdminService {
         Department dept = Department.builder()
                 .name(request.getName())
                 .category(request.getCategory())
-                .contactEmail(request.getContactEmail())
-                .isActive(true)
                 .build();
         return departmentRepository.save(dept);
     }
@@ -115,14 +110,13 @@ public class AdminService {
                 .orElseThrow(() -> new NotFoundException("Department not found with id: " + id));
         dept.setName(request.getName());
         dept.setCategory(request.getCategory());
-        dept.setContactEmail(request.getContactEmail());
+
         return departmentRepository.save(dept);
     }
 
     public Department toggleDepartmentActive(Long id) {
         Department dept = departmentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Department not found with id: " + id));
-        dept.setIsActive(!dept.getIsActive());
         return departmentRepository.save(dept);
     }
 

@@ -59,10 +59,10 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllDepartments());
     }
 
-    @GetMapping("/departments/active")
-    public ResponseEntity<List<Department>> getActiveDepartments() {
-        return ResponseEntity.ok(adminService.getActiveDepartments());
-    }
+//    @GetMapping("/departments/active")
+//    public ResponseEntity<List<Department>> getActiveDepartments() {
+//        return ResponseEntity.ok(adminService.getActiveDepartments());
+//    }
 
     @GetMapping("/departments/{id}")
     public ResponseEntity<Department> getDepartmentById(@PathVariable Long id) {

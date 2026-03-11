@@ -33,7 +33,6 @@ public class SecurityConfig {
                         "/swagger-ui/**", "/swagger-ui.html",
                         "/v3/api-docs/**", "/api-docs/**").permitAll()
                     .requestMatchers(
-                            "/api/auth/**", "/", "/login", "/register",
                             "/api/departments/active",   // ← public for register dropdown
                             "/swagger-ui/**", "/swagger-ui.html",
                             "/v3/api-docs/**", "/api-docs/**").permitAll()

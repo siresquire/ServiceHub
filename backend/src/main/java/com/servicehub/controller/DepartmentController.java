@@ -17,10 +17,7 @@ public class DepartmentController {
 
     // Used by register form — no auth needed
 
-    @GetMapping("/active")
-    public ResponseEntity<List<Department>> getActiveDepartments() {
-        return ResponseEntity.ok(adminService.getActiveDepartments());
-    }
+
 
 
 }

@@ -32,6 +32,11 @@ on:
                 description: "Docker image tag (typically the commit SHA)"
                 required: true
                 type: string
+        secrets:
+            AWS_ROLE_ARN:
+                required: true
+            AWS_REGION:
+                required: true
         outputs:
             ecr-image:
                 description: "Full ECR image URI with tag (e.g., 123456789.dkr.ecr.eu-west-1.amazonaws.com/servicehub-backend:sha-abc123)"

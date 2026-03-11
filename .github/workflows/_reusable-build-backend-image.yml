@@ -9,19 +9,19 @@ on:
         type: string
         default: "servicehub-backend"
     outputs:
-      image-name:
+      image_name:
         description: "Built image name."
-        value: ${{ jobs.build-image.outputs.image-name }}
-      image-tag:
+        value: ${{ jobs.build-image.outputs.image_name }}
+      image_tag:
         description: "Built image tag (commit SHA)."
-        value: ${{ jobs.build-image.outputs.image-tag }}
+        value: ${{ jobs.build-image.outputs.image_tag }}
 
 jobs:
   build-image:
     runs-on: ubuntu-latest
     outputs:
-      image-name: ${{ steps.set-outputs.outputs.image-name }}
-      image-tag: ${{ steps.set-outputs.outputs.image-tag }}
+      image_name: ${{ steps.set-outputs.outputs.image_name }}
+      image_tag: ${{ steps.set-outputs.outputs.image_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
         run: |
           IMAGE_NAME="${{ inputs.image-name }}"
           IMAGE_TAG="${GITHUB_SHA}"
-          echo "image-name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
-          echo "image-tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
-          echo "Debug: Set image-name=${IMAGE_NAME}"
-          echo "Debug: Set image-tag=${IMAGE_TAG}"
+          echo "image_name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "image_tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image_name=${IMAGE_NAME}"
+          echo "Debug: Set image_tag=${IMAGE_TAG}"

@@ -94,11 +94,11 @@ services:
     container_name: servicehub-etl
     environment:
       # Database connection
-      DB_HOST: servicehub-shared.c7wm0m08amkh.eu-west-1.rds.amazonaws.com
-      DB_PORT: 5432
-      DB_NAME: servicehub
-      DB_USER: servicehub_shared
-      DB_PASSWORD: CHANGE_ME_TO_A_STRONG_PASSWORD
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:-servicehub}
+      DB_USER: ${POSTGRES_USER:-servicehub}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
     depends_on:
       postgres:
         condition: service_healthy

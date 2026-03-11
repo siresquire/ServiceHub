@@ -10,11 +10,12 @@ import java.util.concurrent.Executor;
 public class AsyncConfig {
 
   @Bean
-  public Executor asyncExecutor() {
+  public ThreadPoolTaskExecutor asyncExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     executor.setCorePoolSize(5);
     executor.setMaxPoolSize(25);
     executor.setQueueCapacity(200);
+    executor.setAwaitTerminationSeconds(60);
     executor.setThreadNamePrefix("SLA_MAIL_ASYNC-");
     executor.initialize();
     return executor;

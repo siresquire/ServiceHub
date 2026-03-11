@@ -27,7 +27,7 @@ public class User {
     private Role role;
 
     @JoinColumn(name = "department_id")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private Department department;
 
     @Column(updatable = false)

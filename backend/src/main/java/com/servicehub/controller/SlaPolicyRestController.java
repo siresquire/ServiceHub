@@ -42,7 +42,7 @@ public class SlaPolicyRestController {
   @ApiResponse(responseCode = "200", description = "SLA Policies retrieved successfully")
   @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required")
   @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
-  public ResponseEntity<ServerResponse<Page<SlaPolicyDto>>> getAllPolicies(Pageable page) {
+  public ResponseEntity<ServerResponse<Page<SlaPolicyDto>>> getAllPolicies(@ModelAttribute @RequestParam Pageable page) {
     var policies = slaPolicyService.getAll(page);
     return ResponseEntity.ok(new ServerResponse<>("SLA Policies retrieved successfully", policies));
   }
@@ -91,4 +91,5 @@ public class SlaPolicyRestController {
     slaPolicyService.delete(id);
     return ResponseEntity.ok(new ServerResponse<>("SLA Policy deleted successfully", null));
   }
+
 }

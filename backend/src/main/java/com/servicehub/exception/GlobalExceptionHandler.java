@@ -1,7 +1,6 @@
 package com.servicehub.exception;
 
 import com.servicehub.dto.ServerResponse;
-import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

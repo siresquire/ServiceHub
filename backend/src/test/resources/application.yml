@@ -32,7 +32,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
 
 
   # --- Thymeleaf Template Engine ---
@@ -40,16 +40,14 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
     cache: false
-  flyway:
-    enabled: false
   sql:
     init:
       mode: never
   mail:
-    host: ${SPRING_EMAIL_HOST}
-    port: ${SPRING_EMAIL_PORT}
-    username: ${SPRING_EMAIL_USERNAME}
-    password: ${SPRING_EMAIL_PASSWORD}
+    host: smtp.test.com
+    port: 587
+    username: test
+    password: test
     properties:
       mail:
         smtp:
@@ -60,6 +58,9 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+  flyway:
+    enabled: true
+    locations: classpath:test/db/migration
 
 # =============================================================================
 # Server Configuration
@@ -81,7 +82,7 @@ jwt:
 # =============================================================================
 springdoc:
   api-docs:
-    enabled: true
+    enabled: false
 
 # =============================================================================
 # Actuator & Monitoring
@@ -119,8 +120,8 @@ app:
       password: password123
   sla:
     sla-breach-notification:
-      enabled: true
-      admin-email: ${SPRING_EMAIL_ADMIN_ADDRESS}
+      enabled: false
+      admin-email: ${SPRING_EMAIL_ADMIN_ADDRES:test@mail.com}
     sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:900000} # 15 minutes in milliseconds
 
 
@@ -134,3 +135,4 @@ logging:
     root: INFO
     com.servicehub: INFO
     org.springframework.security: WARN
+

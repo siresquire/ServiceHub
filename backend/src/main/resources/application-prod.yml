@@ -46,8 +46,38 @@ management:
     health:
       show-details: never
 
+# =============================================================================
+# API Documentation (Swagger / OpenAPI)
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: true
+
 logging:
   level:
     root: WARN
     com.servicehub: INFO
     org.springframework.security: WARN
+
+# =============================================================================
+# Application Properties
+# =============================================================================
+# Default values for application-specific properties. Override in profile-specific configs or via environment variables.
+app:
+  accounts:
+    admin:
+      email: admin@amalitech.com
+      password: password123
+
+    user:
+      email: user@amalitech.com
+      password: password123
+
+    agent:
+      email: agent@amalitech.com
+      password: password123
+  sla:
+    sla-breach-notification:
+      enabled: true
+      admin-email: ${SPRING_EMAIL_ADMIN_ADDRESS}
+    sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:900000} # 15 minutes in milliseconds

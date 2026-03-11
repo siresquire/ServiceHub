@@ -46,6 +46,13 @@ management:
     health:
       show-details: never
 
+# =============================================================================
+# API Documentation (Swagger / OpenAPI)
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: true
+
 logging:
   level:
     root: WARN

@@ -148,4 +148,3 @@ module "github_oidc" {
   github_repository = "Phase1-Group-Projects/4-ServiceHub"
   tags              = local.common_tags
 }
-

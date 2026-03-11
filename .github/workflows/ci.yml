@@ -96,4 +96,16 @@ jobs:
     with:
       image-name: ${{ needs.build-images.outputs.image-name }}
       image-tag: ${{ needs.build-images.outputs.image-tag }}
-    secrets: inherit  # pragma: allowlist secret
+    secrets: inherit # pragma: allowlist secret
+
+  publish-ecr:
+    name: Publish to ECR
+    needs: integration-test
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/_reusable-publish-ecr.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image-name }}
+      image-tag: ${{ needs.build-images.outputs.image-tag }}
+    secrets: inherit # pragma: allowlist secret

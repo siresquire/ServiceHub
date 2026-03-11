@@ -31,13 +31,10 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/api/auth/**", "/", "/auth/login", "/auth/register",
                         "/swagger-ui/**", "/swagger-ui.html",
-                        "/v3/api-docs/**", "/api-docs/**").permitAll()
-                    .requestMatchers(
-                            "/api/departments/active",   // ← public for register dropdown
-                            "/swagger-ui/**", "/swagger-ui.html",
-                            "/v3/api-docs/**", "/api-docs/**").permitAll()
+                        "/v3/api-docs/**", "/api-docs/**",
+                        "/actuator/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/dashboard/**").hasRole("ADMIN,AGENT")
+                .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "AGENT")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

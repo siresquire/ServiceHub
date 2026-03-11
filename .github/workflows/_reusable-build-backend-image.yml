@@ -20,8 +20,8 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     outputs:
-      image-name: ${{ steps.meta.outputs.image-name }}
-      image-tag: ${{ steps.meta.outputs.image-tag }}
+      image-name: ${{ steps.set-outputs.outputs.image-name }}
+      image-tag: ${{ steps.set-outputs.outputs.image-tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,8 +29,7 @@ jobs:
       - name: Compute image metadata
         id: meta
         run: |
-          echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
-          echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "Building image: ${{ inputs.image-name }}:${GITHUB_SHA}"
 
       - name: Build backend Docker image
         uses: ./.github/actions/log-group
@@ -56,3 +55,11 @@ jobs:
           name: backend-image
           path: backend-image.tar
           retention-days: 1
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
+          echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image-name=${{ inputs.image-name }}"
+          echo "Debug: Set image-tag=${GITHUB_SHA}"

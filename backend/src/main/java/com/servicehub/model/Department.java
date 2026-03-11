@@ -18,8 +18,7 @@ public class Department {
     @Column(nullable = false)
     private RequestCategory category;
 
-    private String contactEmail;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-    @Column(nullable = false)
-    private Boolean isActive = true;
 }

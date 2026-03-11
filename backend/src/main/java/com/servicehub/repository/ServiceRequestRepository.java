@@ -1,10 +1,15 @@
 package com.servicehub.repository;
 
 import com.servicehub.model.ServiceRequest;
+import com.servicehub.model.User;
 import com.servicehub.model.enums.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
@@ -21,4 +26,23 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     Page<ServiceRequest> findAllByStatus(RequestStatus status, Pageable pageable);
 
     Page<ServiceRequest> findByStatusOrStatus(RequestStatus requestStatus, RequestStatus requestStatus1, Pageable page);
+
+    // Open requests for a user
+    List<ServiceRequest> findByRequesterAndStatusIn(User requester, List<RequestStatus> statuses);
+
+    // All requests for a user (all statuses)
+    List<ServiceRequest> findByRequester(User requester);
+
+    // Assigned to a specific agent
+    List<ServiceRequest> findByAssignedTo(User agent);
+
+    // Unassigned — no agent yet
+    List<ServiceRequest> findByAssignedToIsNull();
+
+    // SLA breached
+    List<ServiceRequest> findBySlaBreachedTrue();
+
+    // SLA warning — deadline within next 2 hours
+    @Query("SELECT s FROM ServiceRequest s WHERE s.slaBreached = false AND s.resolutionSlaDeadline IS NOT NULL AND s.resolutionSlaDeadline BETWEEN :now AND :cutoff")
+    List<ServiceRequest> findSlaWarnings(@Param("now") LocalDateTime now, @Param("cutoff") LocalDateTime cutoff);
 }

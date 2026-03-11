@@ -3,6 +3,7 @@ package com.servicehub.controller;
 import com.servicehub.dto.AuthRequest;
 import com.servicehub.dto.AuthResponse;
 import com.servicehub.dto.RegisterRequest;
+import com.servicehub.service.AdminService;
 import com.servicehub.service.AuthService;
 import com.servicehub.service.TokenBlacklistService;
 import jakarta.servlet.http.Cookie;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AuthController {
     private final AuthService authService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final AdminService adminService;
 
     @GetMapping("/register")
     public String register(Model model) {
@@ -48,6 +50,7 @@ public class AuthController {
         } catch (RuntimeException ex) {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("registerRequest", registerRequest);
+            model.addAttribute("departments", adminService.getAllDepartments());
             return "auth/register";
         }
     }

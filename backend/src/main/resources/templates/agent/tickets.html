@@ -132,6 +132,7 @@
     <div class="nav-sep">Agent</div>
     <a class="nav-item" href="/agent/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
     <a class="nav-item active" href="/agent/tickets"><span class="nav-icon">🎫</span> My Tickets</a>
+    <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sf">
         <div class="sa" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AG'}">AG</div>
         <div style="flex:1;min-width:0;">
@@ -234,9 +235,9 @@
                         th:data-priority="${t.priority}"
                         th:data-sla="${t.slaBreached}"
                         th:data-title="${t.title?.toLowerCase()}">
-                        <td class="t-id" th:text="'#' + ${t.id}">#1</td>
+                        <td class="t-id"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:var(--teal);font-weight:600;text-decoration:none;" th:text="'#' + ${t.id}">#1</a></td>
                         <td>
-                            <div class="t-title" th:text="${t.title}">Ticket title</div>
+                            <div class="t-title"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:inherit;text-decoration:none;" th:text="${t.title}">Ticket title</a></div>
                             <div class="t-dept" th:text="${t.department != null ? t.department.name : '—'}">IT Support</div>
                         </td>
                         <td>
@@ -283,9 +284,9 @@
                         th:data-priority="${t.priority}"
                         th:data-sla="${t.slaBreached}"
                         th:data-title="${t.title?.toLowerCase()}">
-                        <td class="t-id" th:text="'#' + ${t.id}">#2</td>
+                        <td class="t-id"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:var(--teal);font-weight:600;text-decoration:none;" th:text="'#' + ${t.id}">#2</a></td>
                         <td>
-                            <div class="t-title" th:text="${t.title}">Ticket title</div>
+                            <div class="t-title"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:inherit;text-decoration:none;" th:text="${t.title}">Ticket title</a></div>
                             <div class="t-dept" th:text="${t.department != null ? t.department.name : '—'}">IT Support</div>
                         </td>
                         <td>
@@ -390,15 +391,20 @@
 
     function assignToMe(ticketId) {
         if (!confirm('Assign this ticket to yourself?')) return;
-        fetch(`/api/tickets/${ticketId}/assign`, { method: 'PUT' })
-            .then(r => { if (r.ok) location.reload(); else alert('Failed to assign ticket'); });
+        fetch(`/api/requests/${ticketId}/assign`, { method: 'PUT', credentials: 'same-origin' })
+            .then(r => { if (r.ok) location.reload(); else r.json().then(e => alert(e.message || 'Failed to assign ticket')).catch(() => alert('Failed to assign ticket')); });
     }
 
     function updateStatus(ticketId, status) {
         const label = status === 'IN_PROGRESS' ? 'start working on' : 'resolve';
         if (!confirm(`Are you sure you want to ${label} this ticket?`)) return;
-        fetch(`/api/tickets/${ticketId}/status?status=${status}`, { method: 'PUT' })
-            .then(r => { if (r.ok) location.reload(); else alert('Failed to update status'); });
+        fetch(`/api/requests/${ticketId}/status`, {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newStatus: status })
+        })
+            .then(r => { if (r.ok) location.reload(); else r.json().then(e => alert(e.message || 'Failed to update status')).catch(() => alert('Failed to update status')); });
     }
 
     function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }

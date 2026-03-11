@@ -148,12 +148,14 @@
         <span class="logo-text">ServiceHub</span>
     </div>
     <div class="nav-label">Menu</div>
-    <a class="nav-item active" href="/home"><span class="nav-icon">⊞</span> Dashboard</a>
+    <a class="nav-item active" href="/admin/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
     <a class="nav-item" href="/dashboard"><span class="nav-icon">📈</span> Analytics</a>
-    <a class="nav-item" href="/tickets"><span class="nav-icon">☰</span> Tickets</a>
+    <a class="nav-item" href="/admin/tickets"><span class="nav-icon">☰</span> Tickets</a>
     <div class="nav-label" style="margin-top:10px;">Admin</div>
     <a class="nav-item" href="/admin/users"><span class="nav-icon">👥</span> Users</a>
     <a class="nav-item" href="/admin/departments"><span class="nav-icon">🏢</span> Departments</a>
+    <a class="nav-item" href="/admin/sla-policies"><span class="nav-icon">⏱</span> SLA Policies</a>
+    <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sidebar-footer">
         <div class="s-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">AD</div>
         <div class="s-info">
@@ -187,7 +189,7 @@
             </div>
             <div class="welcome-actions">
                 <a class="btn-outline" href="/dashboard">View Analytics</a>
-                <a class="btn-teal" href="/admin/users">Manage Users</a>
+                <a class="btn-teal" href="/admin/tickets">All Tickets</a>
             </div>
         </div>
 
@@ -240,7 +242,7 @@
                 <div class="qa-title">Analytics</div>
                 <div class="qa-sub">SLA & trends</div>
             </a>
-            <a class="qa-card" href="/tickets">
+            <a class="qa-card" href="/admin/tickets">
                 <div class="qa-icon">🎫</div>
                 <div class="qa-title">All Tickets</div>
                 <div class="qa-sub">View & manage</div>

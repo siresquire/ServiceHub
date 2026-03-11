@@ -104,6 +104,18 @@ public class ServiceRequestController {
         return ResponseEntity.ok(requestService.updateStatus(id, request));
     }
 
+    @Operation(
+            summary     = "Assign request to current agent",
+            description = "Agent or Admin assigns a request to themselves. Sets status to ASSIGNED."
+    )
+    @PutMapping("/{id}/assign")
+    @PreAuthorize("hasRole('AGENT') or hasRole('ADMIN')")
+    public ResponseEntity<ServiceRequestResponse> assignToMe(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User agent) {
+        return ResponseEntity.ok(requestService.updateStatus(id, agent.getId()));
+    }
+
 
     @Operation(
             summary     = "Get my requests",

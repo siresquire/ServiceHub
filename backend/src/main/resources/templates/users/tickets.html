@@ -96,6 +96,7 @@
     <div class="nav-sep">My Space</div>
     <a class="nav-item" href="/user/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
     <a class="nav-item active" href="/user/tickets"><span class="nav-icon">🎫</span> My Tickets</a>
+    <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sf">
         <div class="sa" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'ME'}">ME</div>
         <div style="flex:1;min-width:0;">
@@ -122,13 +123,22 @@
     </header>
 
     <div class="content">
+        <!-- SUCCESS / ERROR FLASH MESSAGES -->
+        <div th:if="${success}" class="alert-banner success" style="margin-bottom:16px;background:var(--green-bg);border-left:4px solid var(--green);color:#166534;padding:12px 16px;border-radius:10px;">
+            <span th:text="${success}">Request submitted successfully!</span>
+        </div>
+        <div th:if="${error}" class="alert-banner error" style="margin-bottom:16px;background:var(--red-bg);border-left:4px solid var(--red);color:#b91c1c;padding:12px 16px;border-radius:10px;">
+            <span th:text="${error}">Something went wrong.</span>
+        </div>
+
         <!-- NEW REQUEST FORM -->
         <div class="form-card" id="newRequestForm">
             <div class="form-title">
                 <span>📝 Submit a New Request</span>
                 <button onclick="toggleForm()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);">✕</button>
             </div>
-            <form th:action="@{/api/tickets}" method="post">
+            <form th:action="@{/user/requests/submit}" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <div class="form-grid">
                     <div class="form-group full">
                         <label>Title *</label>
@@ -147,6 +157,7 @@
                             <option value="LOW">Low</option>
                             <option value="MEDIUM" selected>Medium</option>
                             <option value="HIGH">High</option>
+                            <option value="CRITICAL">Critical</option>
                         </select>
                     </div>
                     <div class="form-group full">
@@ -181,20 +192,20 @@
                 <div class="tr" th:each="t : ${tickets}"
                      th:data-status="${t.status}">
                     <div class="tr-icon"
-                         th:style="${t.priority.name() == 'HIGH' or t.priority.name() == 'CRITICAL'} ? 'background:var(--red-bg)' : (${t.priority.name() == 'MEDIUM'} ? 'background:var(--amber-bg)' : 'background:var(--teal-bg)')">
-                        <span th:text="${t.priority.name() == 'HIGH' or t.priority.name() == 'CRITICAL'} ? '🔴' : (${t.priority.name() == 'MEDIUM'} ? '🟡' : '🟢')">🟡</span>
+                         th:style="${t.priority == 'HIGH' or t.priority == 'CRITICAL'} ? 'background:var(--red-bg)' : (${t.priority == 'MEDIUM'} ? 'background:var(--amber-bg)' : 'background:var(--teal-bg)')">
+                        <span th:text="${t.priority == 'HIGH' or t.priority == 'CRITICAL'} ? '🔴' : (${t.priority == 'MEDIUM'} ? '🟡' : '🟢')">🟡</span>
                     </div>
                     <div class="tr-body">
-                        <div class="tr-title" th:text="${t.title}">Ticket title</div>
-                        <div class="tr-meta" th:text="${t.category} + ' · ' + (${t.department != null ? t.department.name : 'Unassigned'}) + ' · #' + ${t.id}">Category · Dept</div>
+                        <div class="tr-title"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:inherit;text-decoration:none;" th:text="${t.title}">Ticket title</a></div>
+                        <div class="tr-meta" th:text="${t.category + ' · ' + (t.departmentName != null ? t.departmentName : 'Unassigned') + ' · #' + t.id}">Category · Dept</div>
                         <div class="tr-desc" th:text="${t.description}">Description</div>
                     </div>
                     <div class="tr-right">
                         <span class="pill"
-                              th:classappend="${t.status.name() == 'OPEN'} ? 'p-open' : (${t.status.name() == 'IN_PROGRESS'} ? 'p-prog' : 'p-done')"
-                              th:text="${t.status.name().replace('_',' ')}">OPEN</span>
+                              th:classappend="${t.status == 'OPEN'} ? 'p-open' : (${t.status == 'IN_PROGRESS'} ? 'p-prog' : 'p-done')"
+                              th:text="${t.status != null ? t.status.replace('_',' ') : 'OPEN'}">OPEN</span>
                         <span class="pill"
-                              th:classappend="${t.priority.name() == 'HIGH' or t.priority.name() == 'CRITICAL'} ? 'p-hi' : (${t.priority.name() == 'MEDIUM'} ? 'p-med' : 'p-lo')"
+                              th:classappend="${t.priority == 'HIGH' or t.priority == 'CRITICAL'} ? 'p-hi' : (${t.priority == 'MEDIUM'} ? 'p-med' : 'p-lo')"
                               th:text="${t.priority}">MEDIUM</span>
                         <span class="tr-date" th:text="${#temporals.format(t.createdAt,'MMM dd, yyyy')}">Mar 11</span>
                     </div>

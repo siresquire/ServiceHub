@@ -1,6 +1,8 @@
 package com.servicehub.controller;
 
+import com.servicehub.exception.NotFoundException;
 import com.servicehub.model.User;
+import com.servicehub.model.enums.Role;
 import com.servicehub.service.AdminService;
 import com.servicehub.service.DashboardService;
 import com.servicehub.service.ServiceRequestService;
@@ -10,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 @RequiredArgsConstructor
@@ -92,12 +95,12 @@ public class ViewController {
         return "/agent/agent-dashboard";
     }
 
-    /** Agent — ticket list (assigned + department queue) */
+    /** Agent — ticket list (assigned + unassigned queue) */
     @GetMapping("/agent/tickets")
     @PreAuthorize("hasRole('AGENT')")
     public String agentTickets(@AuthenticationPrincipal User user, Model model) {
         model.addAttribute("user", user);
-        model.addAttribute("tickets", requestService.getRequestsForUser(user));
+        model.addAttribute("tickets", requestService.getAssignedRequests(user));
         model.addAttribute("unassignedTickets", requestService.getUnassignedRequests());
         return "agent/tickets";
     }
@@ -124,5 +127,21 @@ public class ViewController {
         model.addAttribute("tickets", requestService.getRequestsForUser(user));
         model.addAttribute("departments", adminService.getAllDepartments());
         return "users/tickets";
+    }
+
+    /** Ticket detail — role-based (user: own only, agent: assigned/unassigned, admin: all) */
+    @GetMapping("/requests/{id}")
+    public String requestDetail(@PathVariable Long id, @AuthenticationPrincipal User user, Model model) {
+        var entity = requestService.getRequestEntityById(id);
+        if (user.getRole() == Role.USER && !entity.getRequester().getId().equals(user.getId())) {
+            throw new NotFoundException("Request not found");
+        }
+        if (user.getRole() == Role.AGENT && entity.getAssignedTo() != null && !entity.getAssignedTo().getId().equals(user.getId())) {
+            throw new NotFoundException("Request not found");
+        }
+        model.addAttribute("ticket", requestService.getRequestById(id));
+        model.addAttribute("ticketEntity", entity);
+        model.addAttribute("user", user);
+        return "requests/detail";
     }
 }

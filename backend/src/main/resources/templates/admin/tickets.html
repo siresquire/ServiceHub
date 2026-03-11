@@ -101,6 +101,8 @@
     <div class="nav-sep" style="margin-top:8px;">Manage</div>
     <a class="nav-item" href="/admin/users"><span class="nav-icon">👥</span> Users</a>
     <a class="nav-item" href="/admin/departments"><span class="nav-icon">🏢</span> Departments</a>
+    <a class="nav-item" href="/admin/sla-policies"><span class="nav-icon">⏱</span> SLA Policies</a>
+    <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sf">
         <div class="sa">AD</div>
         <div style="flex:1;min-width:0;">
@@ -194,8 +196,8 @@
                         th:data-dept="${t.department != null ? t.department.name : ''}"
                         th:data-priority="${t.priority}"
                         th:data-title="${t.title}">
-                        <td class="t-id" th:text="'#' + ${t.id}">#1</td>
-                        <td class="t-title" th:text="${t.title}">Ticket title</td>
+                        <td class="t-id"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:var(--teal);font-weight:600;text-decoration:none;" th:text="'#' + ${t.id}">#1</a></td>
+                        <td class="t-title"><a th:href="@{/requests/{id}(id=${t.id})}" style="color:inherit;text-decoration:none;" th:text="${t.title}">Ticket title</a></td>
                         <td class="t-dept" th:text="${t.department != null ? t.department.name : '—'}">IT Support</td>
                         <td>
                             <div class="t-req">

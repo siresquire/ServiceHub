@@ -8,103 +8,157 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --sidebar:    #1a1f2e;
-            --bg:         #f0f2f5;
-            --white:      #ffffff;
-            --teal:       #0fbf8a;
-            --teal-bg:    #e8faf4;
-            --amber:      #f59e0b;
-            --amber-bg:   #fff8ec;
-            --blue:       #3b82f6;
-            --blue-bg:    #eff6ff;
-            --green:      #22c55e;
-            --green-bg:   #f0fdf4;
-            --red:        #ef4444;
-            --txt:        #1e293b;
-            --txt-mid:    #475569;
-            --muted:      #94a3b8;
-            --border:     #e2e8f0;
-            --font:       'Inter', sans-serif;
+            --sidebar: #1a1f2e; --bg: #f0f2f5; --white: #ffffff;
+            --teal: #0fbf8a; --teal-bg: #e8faf4;
+            --amber: #f59e0b; --amber-bg: #fff8ec;
+            --blue: #3b82f6; --blue-bg: #eff6ff;
+            --red: #ef4444; --red-bg: #fff1f1;
+            --green: #22c55e; --green-bg: #f0fdf4;
+            --txt: #1e293b; --muted: #94a3b8; --border: #e2e8f0;
+            --font: 'Inter', sans-serif; --sw: 215px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { overflow-x: hidden; }
         body { font-family: var(--font); background: var(--bg); color: var(--txt); display: flex; min-height: 100vh; }
 
-        /* SIDEBAR */
-        .sidebar { width: 215px; background: var(--sidebar); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
-        .logo { display: flex; align-items: center; gap: 10px; padding: 20px 18px 18px; }
-        .logo-icon { width: 30px; height: 30px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 800; }
-        .logo-text { font-size: 15px; font-weight: 700; color: #fff; }
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sw); background: var(--sidebar);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh; z-index: 200;
+            transition: transform 0.25s ease;
+            overflow-y: auto;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 20px 18px 18px; flex-shrink: 0; }
+        .logo-icon { width: 30px; height: 30px; min-width: 30px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 800; }
+        .logo-text { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
         .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: #4a5568; text-transform: uppercase; padding: 10px 18px 4px; }
         .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 18px; font-size: 13px; font-weight: 500; color: #8892a4; text-decoration: none; transition: all 0.12s; }
         .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
         .nav-item.active { color: var(--teal); background: rgba(15,191,138,0.1); }
-        .nav-icon { font-size: 14px; width: 17px; text-align: center; }
-        .sidebar-footer { margin-top: auto; padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 9px; }
-        .s-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .nav-icon { font-size: 14px; width: 17px; text-align: center; flex-shrink: 0; }
+        .sidebar-footer { margin-top: auto; padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+        .s-avatar { width: 30px; height: 30px; min-width: 30px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }
         .s-info { flex: 1; min-width: 0; }
         .s-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .s-role { font-size: 11px; color: #8892a4; }
 
-        /* MAIN */
-        .main { margin-left: 215px; flex: 1; display: flex; flex-direction: column; }
+        /* ── OVERLAY ── */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199; }
+        .overlay.show { display: block; }
 
-        /* TOPBAR */
-        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 26px; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
-        .page-title { font-size: 17px; font-weight: 700; color: var(--txt); }
-        .page-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
-        .topbar-right { display: flex; align-items: center; gap: 10px; }
-        .search { display: flex; align-items: center; gap: 7px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 13px; font-size: 13px; color: var(--muted); width: 190px; cursor: text; }
-        .notif { position: relative; width: 34px; height: 34px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
+        /* ── MAIN ── */
+        .main { margin-left: var(--sw); flex: 1; display: flex; flex-direction: column; min-width: 0; max-width: calc(100vw - var(--sw)); }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            display: flex; align-items: center;
+            padding: 0 20px; height: 56px;
+            background: var(--white); border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            gap: 8px; overflow: hidden;
+        }
+        .menu-btn { display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--txt); flex-shrink: 0; padding: 4px; }
+        .topbar-title-wrap { flex: 1; min-width: 0; overflow: hidden; }
+        .page-title { font-size: 15px; font-weight: 700; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .page-sub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* right side — never wraps, never overflows */
+        .topbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .search-bar { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font-size: 13px; color: var(--muted); width: 170px; white-space: nowrap; }
+        .icon-btn { width: 34px; height: 34px; min-width: 34px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; position: relative; flex-shrink: 0; }
         .notif-dot { position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; background: var(--red); border-radius: 50%; font-size: 8px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
-        .t-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; cursor: pointer; }
-        .btn-new { display: flex; align-items: center; gap: 5px; background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 7px 15px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+        .t-avatar { width: 32px; height: 32px; min-width: 32px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; cursor: pointer; }
+        .btn-new { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
         .btn-new:hover { background: #0da87a; }
+        .btn-new .btn-txt { display: inline; }
 
-        /* CONTENT */
-        .content { padding: 22px 26px; flex: 1; }
+        /* ── CONTENT ── */
+        .content { padding: 20px; flex: 1; min-width: 0; }
 
-        /* STAT CARDS */
-        .cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 18px; }
-        .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; }
-        .card-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 12px; }
-        .ic-green  { background: var(--green-bg); }
-        .ic-teal   { background: var(--teal-bg); }
-        .ic-amber  { background: var(--amber-bg); }
-        .ic-blue   { background: var(--blue-bg); }
-        .card-val  { font-size: 28px; font-weight: 700; letter-spacing: -0.8px; line-height: 1; margin-bottom: 4px; }
-        .card-lbl  { font-size: 12px; color: var(--muted); font-weight: 500; }
-        .card-trend { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 600; color: var(--teal); background: var(--teal-bg); padding: 2px 7px; border-radius: 20px; }
+        /* ── CARDS ── */
+        .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+        .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; min-width: 0; }
+        .card-icon { width: 36px; height: 36px; min-width: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 10px; }
+        .ic-green { background: var(--green-bg); } .ic-teal { background: var(--teal-bg); }
+        .ic-amber { background: var(--amber-bg); } .ic-blue  { background: var(--blue-bg); }
+        .card-val { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; margin-bottom: 4px; }
+        .card-lbl { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+        .card-trend { position: absolute; top: 12px; right: 12px; font-size: 10px; font-weight: 600; color: var(--teal); background: var(--teal-bg); padding: 2px 6px; border-radius: 20px; white-space: nowrap; }
 
-        /* CHARTS ROW */
-        .charts-row { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; margin-bottom: 18px; }
-        .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; }
-        .ct { font-size: 13.5px; font-weight: 600; color: var(--txt); }
-        .cs { font-size: 12px; color: var(--muted); margin-top: 2px; margin-bottom: 16px; }
-        .chart-wrap { position: relative; height: 270px; }
+        /* ── CHARTS ── */
+        .charts-row { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; margin-bottom: 16px; }
+        .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+        .ct { font-size: 13px; font-weight: 600; }
+        .cs { font-size: 11px; color: var(--muted); margin-top: 2px; margin-bottom: 12px; }
+        .chart-wrap { position: relative; height: 250px; }
 
-        /* TRENDS */
-        .trends-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin-bottom: 18px; }
-        .card-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-        .period-btns { display: flex; gap: 5px; }
-        .pbtn { padding: 4px 11px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: var(--font); transition: all 0.12s; }
+        /* ── TRENDS ── */
+        .trends-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+        .card-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+        .period-btns { display: flex; gap: 5px; flex-shrink: 0; }
+        .pbtn { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: var(--font); transition: all 0.12s; }
         .pbtn.active, .pbtn:hover { background: var(--teal-bg); border-color: var(--teal); color: var(--teal); }
-        .trends-wrap { position: relative; height: 190px; }
+        .trends-wrap { position: relative; height: 170px; }
 
-        /* BOTTOM */
-        .bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .sla-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; }
-        .sla-val { font-size: 38px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin: 10px 0 3px; }
-        .sla-teal  { color: var(--teal); }
-        .sla-amber { color: var(--amber); }
-        .sla-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+        /* ── BOTTOM ── */
+        .bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .sla-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+        .sla-val { font-size: 34px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin: 8px 0 3px; }
+        .sla-teal { color: var(--teal); } .sla-amber { color: var(--amber); }
+        .sla-desc { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
         .prog { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
         .prog-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 1.2s ease; }
-        .mini-wrap { height: 95px; margin-top: 12px; }
+        .mini-wrap { height: 85px; margin-top: 10px; }
+
+        /* ════════ RESPONSIVE ════════ */
+
+        /* ≤ 1100px: charts stack */
+        @media (max-width: 1100px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+
+        /* ≤ 900px: 2×2 cards */
+        @media (max-width: 900px) {
+            .cards { grid-template-columns: repeat(2, 1fr); }
+            .bottom { grid-template-columns: 1fr; }
+        }
+
+        /* ≤ 768px: collapse sidebar, show hamburger */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; max-width: 100vw; }
+            .menu-btn { display: flex; }
+            .search-bar { display: none; }
+            .btn-new .btn-txt { display: none; }
+            .btn-new { padding: 7px 10px; }
+        }
+
+        /* ≤ 520px: tighter layout */
+        @media (max-width: 520px) {
+            .topbar { padding: 0 12px; gap: 6px; }
+            .content { padding: 12px; }
+            .cards { gap: 10px; }
+            .card { padding: 14px 12px; }
+            .card-val { font-size: 22px; }
+            .chart-wrap { height: 200px; }
+            .trends-wrap { height: 140px; }
+        }
+
+        /* ≤ 360px: very narrow */
+        @media (max-width: 360px) {
+            .page-title { font-size: 13px; }
+            .card-val { font-size: 20px; }
+            .card-trend { display: none; }
+        }
     </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
     <div class="logo">
         <div class="logo-icon">S</div>
         <span class="logo-text">ServiceHub</span>
@@ -124,27 +178,27 @@
             <div class="s-name" th:text="${#authentication != null ? #authentication.name : 'Admin'}">Sam Director</div>
             <div class="s-role">Admin</div>
         </div>
-        <a href="/api/auth/logout" style="color:#8892a4;font-size:14px;text-decoration:none;">⇒</a>
+        <a href="/api/auth/logout" style="color:#8892a4;font-size:14px;text-decoration:none;flex-shrink:0;">⇒</a>
     </div>
 </aside>
 
 <main class="main">
     <header class="topbar">
-        <div>
+        <button class="menu-btn" onclick="openSidebar()">☰</button>
+        <div class="topbar-title-wrap">
             <div class="page-title">Analytics</div>
             <div class="page-sub">System-wide performance metrics</div>
         </div>
-        <div class="topbar-right">
-            <div class="search"><span>🔍</span> Search tickets...</div>
-            <div class="notif">🔔<div class="notif-dot">1</div></div>
+        <div class="topbar-actions">
+            <div class="search-bar">🔍 Search tickets...</div>
+            <div class="icon-btn">🔔<div class="notif-dot">1</div></div>
             <div class="t-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">SD</div>
-            <button class="btn-new">+ New Request</button>
+            <button class="btn-new">+<span class="btn-txt"> New Request</span></button>
         </div>
     </header>
 
     <div class="content">
 
-        <!-- STAT CARDS -->
         <div class="cards">
             <div class="card">
                 <div class="card-icon ic-green">📊</div>
@@ -154,12 +208,12 @@
             <div class="card">
                 <div class="card-trend">↗ +3%</div>
                 <div class="card-icon ic-teal">📈</div>
-                <div class="card-val" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1) + '%' : '0%'}">87%</div>
+                <div class="card-val" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1)+'%' : '0%'}">87%</div>
                 <div class="card-lbl">SLA Compliance</div>
             </div>
             <div class="card">
                 <div class="card-icon ic-amber">⏱</div>
-                <div class="card-val" th:text="${stats.averageResolutionHours != null ? #numbers.formatDecimal(stats.averageResolutionHours,1,1) + 'h' : '0h'}">4.2h</div>
+                <div class="card-val" th:text="${stats.averageResolutionHours != null ? #numbers.formatDecimal(stats.averageResolutionHours,1,1)+'h' : '0h'}">4.2h</div>
                 <div class="card-lbl">Avg Resolution</div>
             </div>
             <div class="card">
@@ -169,7 +223,6 @@
             </div>
         </div>
 
-        <!-- CHARTS -->
         <div class="charts-row">
             <div class="chart-card">
                 <div class="ct">Requests by Category</div>
@@ -183,7 +236,6 @@
             </div>
         </div>
 
-        <!-- TRENDS -->
         <div class="trends-card">
             <div class="card-hdr">
                 <div>
@@ -198,13 +250,12 @@
             <div class="trends-wrap"><canvas id="trendChart"></canvas></div>
         </div>
 
-        <!-- BOTTOM -->
         <div class="bottom">
             <div class="sla-card">
                 <div class="ct">SLA Compliance Rate</div>
-                <div class="sla-val sla-teal" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1) + '%' : '0%'}">87%</div>
+                <div class="sla-val sla-teal" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1)+'%' : '0%'}">87%</div>
                 <div class="sla-desc">Tickets resolved before SLA deadline</div>
-                <div class="prog"><div class="prog-fill" th:style="'width:' + (stats.slaComplianceRate ?: 0) + '%'"></div></div>
+                <div class="prog"><div class="prog-fill" th:style="'width:'+(stats.slaComplianceRate?:0)+'%'"></div></div>
             </div>
             <div class="sla-card">
                 <div class="ct">Requests by Priority</div>
@@ -223,67 +274,49 @@
     const dailyVolume = /*[[${trends.dailyVolume}]]*/ {};
     /*]]>*/
 </script>
-
 <script>
-    const T='#0fbf8a', A='#f59e0b', B='#3b82f6', G='#22c55e', R='#ef4444', GR='#94a3b8';
+    const T='#0fbf8a',A='#f59e0b',B='#3b82f6',G='#22c55e',R='#ef4444',GR='#94a3b8';
+    const base={responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#475569',font:{family:'Inter',size:11},padding:12,usePointStyle:true,pointStyleWidth:7}}}};
 
-    const base = {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color:'#475569', font:{family:'Inter',size:12}, padding:16, usePointStyle:true, pointStyleWidth:8 }}}
-    };
+    const ck=Object.keys(byCategory||{}),cv=Object.values(byCategory||{});
+    new Chart(document.getElementById('catChart'),{type:'doughnut',
+        data:{labels:ck.map(k=>({IT_SUPPORT:'IT Support',HR_REQUEST:'HR Request',FACILITIES:'Facilities'}[k]||k)+' ('+(byCategory[k]||0)+')'),
+              datasets:[{data:cv.length?cv:[1],backgroundColor:[T,A,G,B],borderColor:'#fff',borderWidth:3,hoverOffset:5}]},
+        options:{...base,cutout:'62%',plugins:{...base.plugins,legend:{position:'bottom',labels:{color:'#475569',font:{family:'Inter',size:11},padding:14,usePointStyle:true}}}}});
 
-    // Category donut
-    const ck = Object.keys(byCategory||{}), cv = Object.values(byCategory||{});
-    new Chart(document.getElementById('catChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ck.map(k => {
-                const m={IT_SUPPORT:'IT Support',HR_REQUEST:'HR Request',FACILITIES:'Facilities'};
-                return (m[k]||k)+' ('+(byCategory[k]||0)+')';
-            }),
-            datasets: [{ data: cv.length?cv:[1], backgroundColor:[T,A,G,B], borderColor:'#fff', borderWidth:3, hoverOffset:6 }]
-        },
-        options: { ...base, cutout:'62%', plugins:{ ...base.plugins, legend:{ position:'bottom', labels:{ color:'#475569', font:{family:'Inter',size:12}, padding:20, usePointStyle:true }}}}
-    });
+    const sk=Object.keys(byStatus||{}),sv=Object.values(byStatus||{});
+    new Chart(document.getElementById('statChart'),{type:'bar',
+        data:{labels:sk.map(k=>k.replace('_',' ')),datasets:[{data:sv.length?sv:[0],backgroundColor:T,borderRadius:5,borderSkipped:false,barThickness:28}]},
+        options:{...base,plugins:{...base.plugins,legend:{display:false}},
+            scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:11}}},
+                    y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:11},stepSize:1},beginAtZero:true}}}});
 
-    // Status bar
-    const sk = Object.keys(byStatus||{}), sv = Object.values(byStatus||{});
-    new Chart(document.getElementById('statChart'), {
-        type: 'bar',
-        data: { labels: sk.map(k=>k.replace('_',' ')), datasets:[{ data:sv.length?sv:[0], backgroundColor:T, borderRadius:5, borderSkipped:false, barThickness:32 }]},
-        options: { ...base, plugins:{...base.plugins,legend:{display:false}},
-            scales:{ x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:12}}}, y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:12},stepSize:1},beginAtZero:true}}}
-    });
-
-    // Trends line
     let tChart;
-    function buildTrends(data) {
-        const labels=Object.keys(data||{}).sort(), vals=labels.map(k=>data[k]);
+    function buildTrends(data){
+        const labels=Object.keys(data||{}).sort(),vals=labels.map(k=>data[k]);
         if(tChart) tChart.destroy();
-        tChart = new Chart(document.getElementById('trendChart'), {
-            type:'line',
-            data:{ labels, datasets:[{ data:vals.length?vals:[0], borderColor:T, backgroundColor:'rgba(15,191,138,0.08)', borderWidth:2, pointBackgroundColor:T, pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:5, tension:0.4, fill:true }]},
-            options:{ ...base, plugins:{...base.plugins,legend:{display:false}},
-                scales:{ x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:11}}}, y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:11},stepSize:1},beginAtZero:true}}}
-        });
+        tChart=new Chart(document.getElementById('trendChart'),{type:'line',
+            data:{labels,datasets:[{data:vals.length?vals:[0],borderColor:T,backgroundColor:'rgba(15,191,138,0.08)',borderWidth:2,
+                  pointBackgroundColor:T,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,tension:0.4,fill:true}]},
+            options:{...base,plugins:{...base.plugins,legend:{display:false}},
+                scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:10}}},
+                        y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:10},stepSize:1},beginAtZero:true}}}});
     }
     buildTrends(dailyVolume);
 
-    // Priority donut (mini)
-    const pk=Object.keys(byPriority||{}), pv=Object.values(byPriority||{});
-    new Chart(document.getElementById('priChart'), {
-        type:'doughnut',
-        data:{ labels:pk, datasets:[{ data:pv.length?pv:[1], backgroundColor:[R,A,B,GR], borderColor:'#fff', borderWidth:2 }]},
-        options:{ ...base, cutout:'55%', plugins:{...base.plugins, legend:{ position:'right', labels:{color:'#475569',font:{family:'Inter',size:11},padding:10,usePointStyle:true}}}}
-    });
+    const pk=Object.keys(byPriority||{}),pv=Object.values(byPriority||{});
+    new Chart(document.getElementById('priChart'),{type:'doughnut',
+        data:{labels:pk,datasets:[{data:pv.length?pv:[1],backgroundColor:[R,A,B,GR],borderColor:'#fff',borderWidth:2}]},
+        options:{...base,cutout:'55%',plugins:{...base.plugins,legend:{position:'right',labels:{color:'#475569',font:{family:'Inter',size:10},padding:8,usePointStyle:true}}}}});
 
-    // Period switch
-    function switchPeriod(days, btn) {
+    function switchPeriod(days,btn){
         document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
-        fetch('/api/dashboard/trends?period='+days)
-            .then(r=>r.json()).then(d=>buildTrends(d.dailyVolume||{})).catch(()=>{});
+        fetch('/api/dashboard/trends?period='+days).then(r=>r.json()).then(d=>buildTrends(d.dailyVolume||{})).catch(()=>{});
     }
+    function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+    function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 </script>
 </body>
 </html>

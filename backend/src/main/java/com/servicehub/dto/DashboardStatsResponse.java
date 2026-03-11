@@ -10,6 +10,9 @@ public class DashboardStatsResponse {
     private Long totalRequests;
     private Long openRequests;
     private Long resolvedRequests;
+    private Long totalUsers;
+    private Long agentCount;
+    private Long totalDepartments;
     private Double avgResolutionHours;
     private Double slaComplianceRate;
     private Map<String, Long> requestsByCategory;

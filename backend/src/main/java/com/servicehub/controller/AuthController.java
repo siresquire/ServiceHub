@@ -28,6 +28,7 @@ public class AuthController {
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("registerRequest", new RegisterRequest());
+        model.addAttribute("departments", adminService.getAllDepartments());
         return "auth/register";
     }
 

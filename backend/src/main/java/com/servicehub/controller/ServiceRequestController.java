@@ -6,8 +6,6 @@ import com.servicehub.service.ServiceRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +30,9 @@ public class ServiceRequestController {
             summary     = "Get all requests (paginated)",
             description = "Admin only. Returns all service requests across the system with pagination support."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Page of service requests returned successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden — admin role required")
-    })
+    @ApiResponse(responseCode = "200", description = "Page of service requests returned successfully")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden — admin role required")
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<ServiceRequestResponse>> getAllPaginated(
@@ -51,11 +47,9 @@ public class ServiceRequestController {
             summary     = "Get request by ID",
             description = "Retrieve a single service request by its unique ID."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Service request retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required"),
-            @ApiResponse(responseCode = "404", description = "Service request not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Service request retrieved successfully")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
+    @ApiResponse(responseCode = "404", description = "Service request not found")
     @GetMapping("/{id}")
     public ResponseEntity<ServiceRequestResponse> getById(
             @Parameter(description = "Service request ID", example = "1")
@@ -70,11 +64,9 @@ public class ServiceRequestController {
             description = "Any authenticated user can submit a new service request. " +
                     "The requester is automatically derived from the JWT token."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Service request created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request body — validation failed"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
-    })
+    @ApiResponse(responseCode = "200", description = "Service request created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request body — validation failed")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
     @PostMapping
     public ResponseEntity<ServiceRequestResponse> create(
             @Valid @RequestBody ServiceRequestDto dto,
@@ -89,13 +81,11 @@ public class ServiceRequestController {
             description = "Agent or Admin can update the status of a service request " +
                     "(e.g. OPEN → IN_PROGRESS → RESOLVED)."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Status updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid status transition"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden — insufficient permissions"),
-            @ApiResponse(responseCode = "404", description = "Service request not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Status updated successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid status transition")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden — insufficient permissions")
+    @ApiResponse(responseCode = "404", description = "Service request not found")
     @PutMapping("/{id}/status")
     public ResponseEntity<ServiceRequestResponse> updateStatus(
             @Parameter(description = "Service request ID", example = "1")
@@ -116,15 +106,25 @@ public class ServiceRequestController {
         return ResponseEntity.ok(requestService.updateStatus(id, agent.getId()));
     }
 
+    @Operation(
+            summary     = "Assign request to a specific agent",
+            description = "Admin only. Assigns a request to a specific agent by their ID."
+    )
+    @PutMapping("/{id}/assign/{agentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ServiceRequestResponse> assignToAgent(
+            @PathVariable Long id,
+            @PathVariable Long agentId) {
+        return ResponseEntity.ok(requestService.updateStatus(id, agentId));
+    }
+
 
     @Operation(
             summary     = "Get my requests",
             description = "Returns all service requests submitted by the currently authenticated user."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "List of user's own service requests"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
-    })
+    @ApiResponse(responseCode = "200", description = "List of user's own service requests")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
     @GetMapping("/my-requests")
     public ResponseEntity<List<ServiceRequestResponse>> getMyRequests(
             @AuthenticationPrincipal User user) {
@@ -138,10 +138,8 @@ public class ServiceRequestController {
             description = "Returns service requests filtered by the caller's role: " +
                     "ADMIN sees all, AGENT sees assigned + department queue, USER sees own requests."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Role-filtered list of service requests"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
-    })
+    @ApiResponse(responseCode = "200", description = "Role-filtered list of service requests")
+    @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required")
     @GetMapping
     public ResponseEntity<List<ServiceRequestResponse>> getAll(
             @AuthenticationPrincipal User user) {

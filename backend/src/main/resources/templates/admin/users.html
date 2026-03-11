@@ -154,22 +154,23 @@
         <span class="logo-text">ServiceHub</span>
     </div>
     <div class="nav-label">Menu</div>
-    <a class="nav-item" href="/home"><span class="nav-icon">📈</span> Dashboard</a>
+    <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
     <a class="nav-item" href="/dashboard"><span class="nav-icon">📈</span> Analytics</a>
-    <a class="nav-item" href="/tickets"><span class="nav-icon">☰</span> Tickets</a>
-    <a class="nav-item" href="/settings"><span class="nav-icon">⚙</span> Settings</a>
+    <a class="nav-item" href="/admin/tickets"><span class="nav-icon">☰</span> Tickets</a>
     <div class="nav-label" style="margin-top:10px;">Admin</div>
     <a class="nav-item active" href="/admin/users"><span class="nav-icon">👥</span> Users</a>
     <a class="nav-item" href="/admin/departments"><span class="nav-icon">🏢</span> Departments</a>
     <a class="nav-item" href="/admin/sla-policies"><span class="nav-icon">⏱</span> SLA Policies</a>
     <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sidebar-footer">
-        <div class="s-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">AD</div>
+        <div class="s-avatar" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AD'}">AD</div>
         <div class="s-info">
-            <div class="s-name" th:text="${#authentication != null ? #authentication.name : 'Admin'}">Admin</div>
-            <div class="s-role">Admin</div>
+            <div class="s-name" th:text="${user != null ? user.fullName : 'Admin'}">Admin</div>
+            <div class="s-role" th:text="${user != null ? user.role : 'ADMIN'}">Admin</div>
         </div>
-        <a href="/api/auth/logout" style="color:#8892a4;font-size:14px;text-decoration:none;flex-shrink:0;">⇒</a>
+        <form th:action="@{/auth/logout}" method="post" style="display:inline;">
+            <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
+        </form>
     </div>
 </aside>
 

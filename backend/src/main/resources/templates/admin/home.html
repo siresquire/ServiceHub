@@ -157,12 +157,14 @@
     <a class="nav-item" href="/admin/sla-policies"><span class="nav-icon">⏱</span> SLA Policies</a>
     <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sidebar-footer">
-        <div class="s-avatar" th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'AD'}">AD</div>
+        <div class="s-avatar" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AD'}">AD</div>
         <div class="s-info">
-            <div class="s-name" th:text="${#authentication != null ? #authentication.name : 'Admin'}">Admin</div>
-            <div class="s-role">Administrator</div>
+            <div class="s-name" th:text="${user != null ? user.fullName : 'Admin'}">Admin</div>
+            <div class="s-role" th:text="${user != null ? user.role : 'ADMIN'}">Administrator</div>
         </div>
-        <a href="/auth/logout" style="color:#8892a4;font-size:14px;text-decoration:none;flex-shrink:0;">⇒</a>
+        <form th:action="@{/auth/logout}" method="post" style="display:inline;">
+            <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
+        </form>
     </div>
 </aside>
 
@@ -198,55 +200,69 @@
             <a class="stat-card" href="/admin/users">
                 <div class="stat-icon ic-blue">👥</div>
                 <div style="min-width:0;">
-                    <div class="stat-val" th:text="${users != null ? users.size() : 0}">0</div>
+                    <div class="stat-val" th:text="${stats.totalUsers ?: 0}">0</div>
                     <div class="stat-lbl">Total Users</div>
                 </div>
             </a>
             <a class="stat-card" href="/admin/users?role=AGENT">
                 <div class="stat-icon ic-teal">🎫</div>
                 <div style="min-width:0;">
-                    <div class="stat-val" th:text="${users != null ? users.stream().filter(u -> u.role == 'AGENT').count() : 0}">0</div>
+                    <div class="stat-val" th:text="${stats.agentCount ?: 0}">0</div>
                     <div class="stat-lbl">Agents</div>
                 </div>
             </a>
             <a class="stat-card" href="/admin/departments">
                 <div class="stat-icon ic-amber">🏢</div>
                 <div style="min-width:0;">
-                    <div class="stat-val" th:text="${departments != null ? departments.size() : 0}">0</div>
+                    <div class="stat-val" th:text="${stats.totalDepartments ?: 0}">0</div>
                     <div class="stat-lbl">Departments</div>
                 </div>
             </a>
-            <a class="stat-card" href="/admin/departments">
+            <div class="stat-card">
                 <div class="stat-icon ic-red">✅</div>
                 <div style="min-width:0;">
-                    <div class="stat-val" th:text="${departments != null ? departments.stream().filter(d -> d.isActive).count() : 0}">0</div>
-                    <div class="stat-lbl">Active Depts</div>
+                    <div class="stat-val" th:text="${stats.resolvedRequests ?: 0}">0</div>
+                    <div class="stat-lbl">Resolved</div>
                 </div>
-            </a>
+            </div>
         </div>
 
-        <!-- QUICK ACTIONS -->
-        <div class="quick-actions">
-            <a class="qa-card" href="/admin/users">
-                <div class="qa-icon">👥</div>
-                <div class="qa-title">Manage Users</div>
-                <div class="qa-sub">Roles & permissions</div>
-            </a>
-            <a class="qa-card" href="/admin/departments">
-                <div class="qa-icon">🏢</div>
-                <div class="qa-title">Departments</div>
-                <div class="qa-sub">Create & configure</div>
-            </a>
-            <a class="qa-card" href="/dashboard">
-                <div class="qa-icon">📈</div>
-                <div class="qa-title">Analytics</div>
-                <div class="qa-sub">SLA & trends</div>
-            </a>
-            <a class="qa-card" href="/admin/tickets">
-                <div class="qa-icon">🎫</div>
-                <div class="qa-title">All Tickets</div>
-                <div class="qa-sub">View & manage</div>
-            </a>
+        <!-- RECENT TICKETS -->
+        <div class="section-card" style="margin-bottom:18px;">
+            <div class="section-hdr">
+                <div class="section-title">Recent Tickets</div>
+                <a class="view-all" href="/admin/tickets">Manage all →</a>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                    <thead style="background:#f8fafc;border-bottom:1px solid var(--border);">
+                        <tr>
+                            <th style="padding:10px 16px;text-align:left;font-weight:600;color:var(--muted);">Ticket</th>
+                            <th style="padding:10px 16px;text-align:left;font-weight:600;color:var(--muted);">Status</th>
+                            <th style="padding:10px 16px;text-align:left;font-weight:600;color:var(--muted);">Priority</th>
+                            <th style="padding:10px 16px;text-align:left;font-weight:600;color:var(--muted);">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${recentTickets}" style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 16px;">
+                                <div style="font-weight:600;color:var(--blue);"><a th:href="@{'/requests/' + ${t.id}}" th:text="${t.title}" style="color:inherit;text-decoration:none;">Title</a></div>
+                                <div style="font-size:10.5px;color:var(--muted);" th:text="${t.category}">Category</div>
+                            </td>
+                            <td style="padding:10px 16px;">
+                                <span class="pill" th:classappend="${t.status.name()=='OPEN'}?'p-user':(${t.status.name()=='RESOLVED'}?'p-user':'p-agent')" th:text="${t.status}">OPEN</span>
+                            </td>
+                            <td style="padding:10px 16px;">
+                                <span class="pill" th:classappend="${t.priority.name()=='HIGH'}?'p-admin':(${t.priority.name()=='MEDIUM'}?'p-agent':'p-user')" th:text="${t.priority}">HIGH</span>
+                            </td>
+                            <td style="padding:10px 16px;color:var(--muted);" th:text="${#temporals.format(t.createdAt,'MMM dd, HH:mm')}">Mar 11</td>
+                        </tr>
+                        <tr th:if="${recentTickets == null or recentTickets.empty}">
+                            <td colspan="4" class="empty-row">No tickets submitted yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- USERS + DEPARTMENTS SIDE BY SIDE -->

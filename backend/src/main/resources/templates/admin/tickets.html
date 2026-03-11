@@ -83,6 +83,31 @@
         .empty{text-align:center;padding:40px;color:var(--muted);}
         .tbl-wrap{overflow-x:auto;}
 
+        /* ACTION BUTTONS */
+        .act-btn{padding:4px 10px;border-radius:6px;font-size:10.5px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .12s;}
+        .btn-assign{background:var(--teal-bg);color:var(--teal);}
+        .btn-assign:hover{background:var(--teal);color:#fff;}
+        .btn-start{background:var(--amber-bg);color:var(--amber);}
+        .btn-start:hover{background:var(--amber);color:#fff;}
+        .btn-resolve{background:var(--green-bg);color:var(--green);}
+        .btn-resolve:hover{background:var(--green);color:#fff;}
+        .btn-close{background:var(--red-bg);color:var(--red);}
+        .btn-close:hover{background:var(--red);color:#fff;}
+        .act-group{display:flex;gap:4px;flex-wrap:wrap;}
+
+        /* MODAL */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;justify-content:center;align-items:center;}
+        .modal-overlay.show{display:flex;}
+        .modal-box{background:var(--w);border-radius:14px;padding:24px;min-width:340px;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+        .modal-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+        .modal-group{margin-bottom:14px;}
+        .modal-group label{display:block;font-size:12px;font-weight:500;margin-bottom:6px;}
+        .modal-group select{width:100%;border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--txt);background:var(--w);outline:none;}
+        .modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+        .modal-btns button{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);}
+        .modal-btn-cancel{background:#f1f5f9;color:var(--txt);}
+        .modal-btn-confirm{background:var(--teal);color:#fff;}
+
         @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr);}}
         @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr);}}
         @media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main{margin-left:0;max-width:100vw;}.menu-btn{display:flex;}.content{padding:12px;}.topbar{padding:0 12px;}.tb-sub{display:none;}}
@@ -104,10 +129,10 @@
     <a class="nav-item" href="/admin/sla-policies"><span class="nav-icon">⏱</span> SLA Policies</a>
     <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
     <div class="sf">
-        <div class="sa">AD</div>
+        <div class="sa" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AD'}">AD</div>
         <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#fff;">Admin</div>
-            <div style="font-size:11px;color:#8892a4;">Administrator</div>
+            <div style="font-size:12px;font-weight:600;color:#fff;" th:text="${user != null ? user.fullName : 'Admin'}">Admin</div>
+            <div style="font-size:11px;color:#8892a4;" th:text="${user != null ? user.role : 'ADMIN'}">Administrator</div>
         </div>
         <form th:action="@{/auth/logout}" method="post" style="display:inline;">
             <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
@@ -123,7 +148,7 @@
             <div class="tb-sub">System-wide service request management</div>
         </div>
         <div class="tb-actions">
-            <div class="t-av">AD</div>
+            <div class="t-av" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AD'}">AD</div>
         </div>
     </header>
 
@@ -188,10 +213,12 @@
                         <th>Priority</th>
                         <th>SLA</th>
                         <th>Created</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody id="ticketBody">
                     <tr th:each="t : ${tickets}"
+                        th:data-id="${t.id}"
                         th:data-status="${t.status}"
                         th:data-dept="${t.department != null ? t.department.name : ''}"
                         th:data-priority="${t.priority}"
@@ -220,6 +247,22 @@
                                       th:text="${t.slaBreached}?'⚠ Breached':(${t.resolutionSlaDeadline!=null}?'✓ On track':'—')">✓</span>
                         </td>
                         <td class="t-date" th:text="${#temporals.format(t.createdAt,'MMM dd, yyyy')}">Mar 11</td>
+                        <td>
+                            <div class="act-group">
+                                <button class="act-btn btn-assign"
+                                        th:if="${t.assignedTo == null}"
+                                        th:onclick="'openAssignModal(' + ${t.id} + ')'">+ Assign</button>
+                                <button class="act-btn btn-start"
+                                        th:if="${t.status.name() == 'OPEN' or t.status.name() == 'ASSIGNED'}"
+                                        th:onclick="'updateTicketStatus(' + ${t.id} + ', \x27IN_PROGRESS\x27)'">⚙ Start</button>
+                                <button class="act-btn btn-resolve"
+                                        th:if="${t.status.name() == 'IN_PROGRESS'}"
+                                        th:onclick="'updateTicketStatus(' + ${t.id} + ', \x27RESOLVED\x27)'">✓ Resolve</button>
+                                <button class="act-btn btn-close"
+                                        th:if="${t.status.name() != 'CLOSED' and t.status.name() != 'RESOLVED'}"
+                                        th:onclick="'updateTicketStatus(' + ${t.id} + ', \x27CLOSED\x27)'">✕ Close</button>
+                            </div>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -229,11 +272,29 @@
     </div>
 </main>
 
+<!-- ASSIGN AGENT MODAL -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal-box">
+        <div class="modal-title">👤 Assign Agent</div>
+        <div class="modal-group">
+            <label for="agentSelect">Select Agent</label>
+            <select id="agentSelect" name="agentId">
+                <option value="">Loading agents...</option>
+            </select>
+        </div>
+        <div class="modal-btns">
+            <button class="modal-btn-cancel" onclick="closeAssignModal()">Cancel</button>
+            <button class="modal-btn-confirm" onclick="confirmAssign()">Assign</button>
+        </div>
+    </div>
+</div>
+
 <script>
     function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
     function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 
     let activeStatus='all', activeDept='', activePriority='', activeSearch='';
+    let assignTicketId = null;
 
     function applyFilters(){
         const rows=document.querySelectorAll('#ticketBody tr');
@@ -258,6 +319,77 @@
     function filterDept(d){activeDept=d;applyFilters();}
     function filterPriority(p){activePriority=p;applyFilters();}
     function search(v){activeSearch=v.toLowerCase();applyFilters();}
+
+    // --- Admin ticket management ---
+    function updateTicketStatus(ticketId, newStatus) {
+        const labels = { IN_PROGRESS: 'start working on', RESOLVED: 'resolve', CLOSED: 'close' };
+        if (!confirm('Are you sure you want to ' + (labels[newStatus] || newStatus.toLowerCase()) + ' ticket #' + ticketId + '?')) return;
+        fetch('/api/requests/' + ticketId + '/status', {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newStatus: newStatus })
+        })
+        .then(r => { if (r.ok) location.reload(); else r.json().then(d => alert(d.message || 'Failed to update status')).catch(() => alert('Failed to update status')); })
+        .catch(() => alert('Network error'));
+    }
+
+    function openAssignModal(ticketId) {
+        assignTicketId = ticketId;
+        const row = document.querySelector(`#ticketBody tr[data-id="${ticketId}"]`) || 
+                    document.querySelector(`#ticketBody tr:has(.t-id a[href$="/${ticketId}"])`);
+        const ticketDept = row ? row.dataset.dept : '';
+        
+        const modal = document.getElementById('assignModal');
+        modal.classList.add('show');
+        
+        const sel = document.getElementById('agentSelect');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        
+        fetch('/api/admin/users', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(users => {
+                // Filter agents by role and department (if applicable)
+                const agents = users.filter(u => {
+                    if (u.role !== 'AGENT' && u.role !== 'ADMIN') return false;
+                    // If ticket has a department, only show agents in that department (or admins)
+                    if (ticketDept && u.role === 'AGENT') {
+                        return u.department === ticketDept;
+                    }
+                    return true;
+                });
+                
+                sel.innerHTML = '<option value="">— Select an agent —</option>';
+                if (agents.length === 0) {
+                    sel.innerHTML = '<option value="">No agents found in this department</option>';
+                } else {
+                    agents.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.fullName + ' (' + (a.department || a.role) + ')';
+                        sel.appendChild(opt);
+                    });
+                }
+            })
+            .catch(() => { sel.innerHTML = '<option value="">Failed to load agents</option>'; });
+    }
+
+    function closeAssignModal() {
+        document.getElementById('assignModal').classList.remove('show');
+        assignTicketId = null;
+    }
+
+    function confirmAssign() {
+        const agentId = document.getElementById('agentSelect').value;
+        if (!assignTicketId || !agentId) {
+            alert('Please select an agent');
+            return;
+        }
+        fetch('/api/requests/' + assignTicketId + '/assign/' + agentId, {
+            method: 'PUT', credentials: 'same-origin'
+        })
+        .then(r => { if (r.ok) location.reload(); else alert('Failed to assign ticket'); })
+        .catch(() => alert('Network error'));
+    }
 </script>
 </body>
 </html>

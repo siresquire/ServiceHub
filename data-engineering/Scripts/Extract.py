@@ -28,7 +28,7 @@ def extract_requests():
         logger.info(f"Extracted {len(df)} service requests")
         return df
 
-    except Exception as e:
+    except Exception:
         logger.exception("Error extracting service requests")
         raise
 

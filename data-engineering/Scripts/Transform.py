@@ -40,11 +40,6 @@ def transform_daily_volume(requests_df):
 
     return df.groupby(["date", "category"]).size().reset_index(name="request_count")
 
-# Todo's
-# - Implement transform_agent_performance
-# - Implement transform_sla_breaches    
-# - Implement transform_department_workload
-
 def transform_agent_performance(requests_df):
     logger.info("Transforming agent performance...")
 
@@ -76,14 +71,17 @@ def transform_agent_performance(requests_df):
 
 def transform_sla_breaches(requests_df, sla_df):
     """Detect requests that exceeded SLA resolution time."""
+    logger.info("Transforming SLA breaches...")
 
     if requests_df.empty or sla_df.empty:
         return pd.DataFrame()
 
-    requests_df["created_at"] = pd.to_datetime(requests_df["created_at"])
-    requests_df["resolved_at"] = pd.to_datetime(requests_df["resolved_at"])
+    df = requests_df.copy()
+    df["created_at"] = pd.to_datetime(df["created_at"])
+    df["resolved_at"] = pd.to_datetime(df["resolved_at"])
 
-    merged = requests_df.merge(sla_df, on=["category", "priority"], how="left")
+    sla_cols = sla_df[["category", "priority", "resolution_time_hours"]].copy()
+    merged = df.merge(sla_cols, on=["category", "priority"], how="left")
 
     merged["resolution_hours"] = (
         merged["resolved_at"] - merged["created_at"]
@@ -105,18 +103,61 @@ def transform_department_workload(requests_df):
     if requests_df.empty:
         return pd.DataFrame()
 
-    requests_df["created_at"] = pd.to_datetime(requests_df["created_at"])
-    requests_df["resolved_at"] = pd.to_datetime(requests_df["resolved_at"])
+    df = requests_df.copy()
+    df["created_at"] = pd.to_datetime(df["created_at"])
+    df["resolved_at"] = pd.to_datetime(df["resolved_at"])
 
-    requests_df["resolution_hours"] = (
-        requests_df["resolved_at"] - requests_df["created_at"]
+    df["resolution_hours"] = (
+        df["resolved_at"] - df["created_at"]
     ).dt.total_seconds() / 3600
 
-    workload = requests_df.groupby("department_name").agg(
+    workload = df.groupby("department_name").agg(
         total_requests=("id", "count"),
-        open_requests=("status", lambda x: (x != "resolved").sum()),
-        resolved_requests=("status", lambda x: (x == "resolved").sum()),
+        open_requests=("status", lambda x: (x != "RESOLVED").sum()),
+        resolved_requests=("status", lambda x: (x == "RESOLVED").sum()),
         avg_resolution_hours=("resolution_hours", "mean"),
     ).reset_index()
 
     return workload
+
+
+def transform_sla_compliance(requests_df, sla_df):
+    """Compute SLA compliance rates and avg resolution times per category."""
+    logger.info("Transforming SLA compliance...")
+
+    if requests_df.empty or sla_df.empty:
+        return pd.DataFrame()
+
+    df = requests_df.copy()
+    df["created_at"] = pd.to_datetime(df["created_at"])
+    df["resolved_at"] = pd.to_datetime(df["resolved_at"])
+
+    sla_cols = sla_df[["category", "priority", "resolution_time_hours"]].copy()
+    merged = df.merge(sla_cols, on=["category", "priority"], how="left")
+
+    resolved = merged[merged["resolved_at"].notna()].copy()
+
+    if resolved.empty:
+        return pd.DataFrame()
+
+    resolved["resolution_hours"] = (
+        resolved["resolved_at"] - resolved["created_at"]
+    ).dt.total_seconds() / 3600
+
+    resolved["within_sla"] = (
+        resolved["resolution_hours"] <= resolved["resolution_time_hours"]
+    )
+
+    compliance = resolved.groupby("category").agg(
+        total_resolved=("id", "count"),
+        sla_compliant=("within_sla", "sum"),
+        avg_resolution_hours=("resolution_hours", "mean"),
+        max_resolution_hours=("resolution_hours", "max"),
+        min_resolution_hours=("resolution_hours", "min"),
+    ).reset_index()
+
+    compliance["sla_compliance_rate"] = (
+        compliance["sla_compliant"] / compliance["total_resolved"] * 100
+    ).round(2)
+
+    return compliance

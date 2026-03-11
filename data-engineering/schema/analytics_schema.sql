@@ -32,7 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_dim_date_week ON dim_date (week_start_date);
 
 CREATE TABLE IF NOT EXISTS dim_category (
   category_key  SERIAL       PRIMARY KEY,
-  category_name ticket_category NOT NULL UNIQUE,
+  category_name VARCHAR(100)    NOT NULL UNIQUE,
   description   TEXT
 );
 
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS dim_category (
 
 CREATE TABLE IF NOT EXISTS dim_priority (
   priority_key  SERIAL       PRIMARY KEY,
-  priority_name ticket_priority NOT NULL UNIQUE,
+  priority_name VARCHAR(100)    NOT NULL UNIQUE,
   sla_hours     NUMERIC(6,2),  -- Target SLA threshold in hours for this priority
   description   TEXT
 );

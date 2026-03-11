@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from config import DATABASE_URL
 from Scripts.Utils import logger, retry
 
@@ -13,10 +13,13 @@ def load_table(df, table_name):
         return
 
     try:
+        with engine.begin() as conn:
+            conn.execute(text(f"TRUNCATE TABLE {table_name}"))
+
         df.to_sql(
             table_name,
             engine,
-            if_exists="replace",
+            if_exists="append",
             index=False
         )
 

@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     name          VARCHAR(50)  NOT NULL,
     password      VARCHAR(255)  NOT NULL,          -- bcrypt hash
     role          user_role     NOT NULL DEFAULT 'USER',
-    department_id INT           REFERENCES departments (id) ON DELETE SET NULL,
+    department_id BIGINT           REFERENCES departments (id) ON DELETE SET NULL,
     is_active     BOOLEAN       NOT NULL DEFAULT TRUE,
     avatar_url    TEXT,
     phone         VARCHAR(30),
@@ -64,9 +64,9 @@ CREATE TABLE IF NOT EXISTS service_requests (
     status                ticket_status    NOT NULL DEFAULT 'OPEN',
 
     -- Assignments (Who is involved?)
-    requester_id          INT              NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
-    assignee_id           INT              REFERENCES users (id) ON DELETE SET NULL,  -- Support Agent
-    department_id         INT              REFERENCES departments (id) ON DELETE SET NULL,
+    requester_id          BIGINT              NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    assignee_id           BIGINT              REFERENCES users (id) ON DELETE SET NULL,  -- Support Agent
+    department_id         BIGINT              REFERENCES departments (id) ON DELETE SET NULL,
 
     -- Life-cycle Timestamps
     created_at              TIMESTAMPTZ      NOT NULL DEFAULT NOW(),

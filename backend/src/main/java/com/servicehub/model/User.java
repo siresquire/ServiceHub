@@ -26,7 +26,9 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    private String department;
+    @JoinColumn(nullable = false, name = "department_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Department department;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;

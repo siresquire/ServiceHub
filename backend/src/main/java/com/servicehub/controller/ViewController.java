@@ -48,6 +48,7 @@ public class ViewController {
         return "dashboard";
     }
 
+
     /** Admin — all tickets */
     @GetMapping("/admin/tickets")
     @PreAuthorize("hasRole('ADMIN')")
@@ -56,6 +57,7 @@ public class ViewController {
         model.addAttribute("departments", adminService.getAllDepartments());
         return "admin/tickets";
     }
+
 
     /** Admin — user management */
     @GetMapping("/admin/users")

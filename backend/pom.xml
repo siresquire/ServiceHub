@@ -82,6 +82,11 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
         <!-- =================================================================
              Observability: Actuator exposes /actuator/health, /actuator/info,
              /actuator/prometheus for health checks, readiness probes, and

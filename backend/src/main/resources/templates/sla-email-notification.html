@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>SLA Breach Notification — ServiceHub</title>
+    <!--[if mso]>
+    <noscript>
+        <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* ── Reset ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #f0f0eb; margin: 0; }
+
+        .wrapper   { width: 100%; background: #f0f0eb; padding: 32px 16px; }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            background: #0d1b22;
+            border-radius: 14px 14px 0 0;
+            padding: 24px 36px;
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #2dd4b8, #1aa38c);
+            border-radius: 9px;
+            display: inline-block; vertical-align: middle;
+            text-align: center; line-height: 40px;
+            font-size: 16px; color: #fff; font-weight: 800;
+            letter-spacing: -.5px;
+        }
+        .logo-text {
+            display: inline-block; vertical-align: middle;
+            margin-left: 11px;
+            font-size: 1.05rem; font-weight: 700;
+            color: #ffffff; letter-spacing: -.2px;
+        }
+
+        /* Alert strip — colour driven by priority via th:style */
+        .alert-strip {
+            padding: 13px 36px;
+            text-align: center;
+            font-size: .78rem; font-weight: 800;
+            letter-spacing: .12em; text-transform: uppercase;
+        }
+
+        /* Body */
+        .body-card { background: #ffffff; padding: 36px 36px 28px; }
+
+        .breach-badge {
+            display: inline-block;
+            font-size: .7rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .09em;
+            padding: 4px 12px; border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        h1.email-title {
+            font-size: 1.4rem; font-weight: 700;
+            color: #0d1b22; letter-spacing: -.3px;
+            margin-bottom: 10px; line-height: 1.3;
+        }
+        .email-intro {
+            font-size: .88rem; color: #4b5563; line-height: 1.65;
+            margin-bottom: 28px;
+        }
+
+        /* Request card */
+        .request-card {
+            background: #f8f8f4;
+            border: 1.5px solid #e8e8e0;
+            border-radius: 12px;
+            padding: 22px 24px;
+            margin-bottom: 24px;
+        }
+        .req-number {
+            font-size: .7rem; color: #9ca3af; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .07em;
+            margin-bottom: 5px;
+        }
+        .req-title {
+            font-size: 1rem; font-weight: 700; color: #111;
+            margin-bottom: 8px; line-height: 1.35;
+        }
+        .req-desc {
+            font-size: .83rem; color: #6b7280; line-height: 1.6;
+            margin-bottom: 18px;
+        }
+        .req-desc.na { font-style: italic; color: #c4c4bc; }
+
+        .card-divider { border: none; border-top: 1.5px solid #e8e8e0; margin: 16px 0; }
+
+        /* Two-column meta table (email-safe) */
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { width: 50%; padding: 6px 0; vertical-align: top; }
+        .meta-label {
+            display: block;
+            font-size: .68rem; font-weight: 700; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: .06em;
+            margin-bottom: 3px;
+        }
+        .meta-value { font-size: .84rem; color: #1f2937; font-weight: 500; }
+        .meta-value.na { color: #c4c4bc; font-style: italic; font-weight: 400; }
+
+        /* Badges — priority */
+        .badge {
+            display: inline-block;
+            font-size: .68rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .05em;
+            padding: 3px 10px; border-radius: 20px;
+        }
+        .badge-critical { background: #fee2e2; color: #b91c1c; }
+        .badge-high     { background: #fff7ed; color: #c2410c; }
+        .badge-medium   { background: #fefce8; color: #92400e; }
+        .badge-low      { background: #f0fdf9; color: #065f46; }
+        /* Status */
+        .badge-open       { background: #eff6ff; color: #1d4ed8; }
+        .badge-in_progress{ background: #f5f3ff; color: #6d28d9; }
+        .badge-pending    { background: #fefce8; color: #92400e; }
+        .badge-resolved   { background: #d1faf3; color: #0f7a68; }
+        .badge-closed     { background: #f3f4f6; color: #374151; }
+        .badge-default    { background: #f3f4f6; color: #374151; }
+
+        /* Status change row */
+        .status-change {
+            background: #f8f8f4; border: 1.5px solid #e8e8e0;
+            border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;
+        }
+        .sc-label {
+            font-size: .68rem; font-weight: 700; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px;
+        }
+        .sc-table { width: 100%; border-collapse: collapse; }
+        .sc-table td { vertical-align: middle; }
+        .sc-arrow { text-align: center; width: 36px; color: #9ca3af; font-size: 1.1rem; }
+
+        /* SLA section */
+        .sla-section { margin-bottom: 24px; }
+        .section-label {
+            font-size: .68rem; font-weight: 700; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px;
+        }
+        .sla-item {
+            width: 100%; border-collapse: collapse;
+            background: #fff; border: 1.5px solid #e8e8e0;
+            border-radius: 10px; margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .sla-bar  { width: 5px; border-radius: 10px 0 0 10px; }
+        .sla-body { padding: 12px 16px; vertical-align: middle; }
+        .sla-name { font-size: .8rem; font-weight: 600; color: #374151; }
+        .sla-time { font-size: .76rem; color: #9ca3af; margin-top: 3px; }
+        .sla-chip-cell { padding-right: 14px; vertical-align: middle; white-space: nowrap; }
+        .chip {
+            display: inline-block;
+            font-size: .65rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: .07em;
+            padding: 3px 9px; border-radius: 20px;
+        }
+        .chip-breached { background: #fee2e2; color: #b91c1c; }
+        .chip-ok       { background: #d1faf3; color: #0f7a68; }
+        .chip-na       { background: #f3f4f6; color: #9ca3af; }
+
+        /* CTA */
+        .cta-wrap { text-align: center; margin-bottom: 28px; }
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #2dd4b8, #1aa38c);
+            color: #ffffff !important; text-decoration: none;
+            font-size: .88rem; font-weight: 700;
+            padding: 13px 32px; border-radius: 10px;
+            letter-spacing: .01em;
+        }
+
+        /* Footer */
+        .footer {
+            background: #f0f0eb;
+            border-top: 1.5px solid #e8e8e0;
+            border-radius: 0 0 14px 14px;
+            padding: 20px 36px;
+            text-align: center;
+        }
+        .footer p { font-size: .73rem; color: #9ca3af; line-height: 1.65; }
+        .footer a  { color: #2dd4b8; text-decoration: none; }
+
+        /* Responsive */
+        @media only screen and (max-width: 480px) {
+            .header, .body-card, .footer, .alert-strip { padding-left: 20px !important; padding-right: 20px !important; }
+            .meta-table td { display: block; width: 100%; padding-bottom: 10px; }
+            .sla-chip-cell { display: none; }
+            h1.email-title { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="container">
+
+        <!-- ══════════════════════════════
+             HEADER
+        ══════════════════════════════ -->
+        <div class="header">
+            <span class="logo-icon">SH</span>
+            <span class="logo-text">ServiceHub</span>
+        </div>
+
+        <!-- ══════════════════════════════
+             ALERT STRIP  (red = CRITICAL/HIGH · orange = others)
+        ══════════════════════════════ -->
+        <div class="alert-strip"
+             th:style="${serviceRequest.priority == 'CRITICAL' or serviceRequest.priority == 'HIGH'}
+                  ? 'background:#dc2626;color:#fff;'
+                  : 'background:#f97316;color:#fff;'">
+            &#9888;&nbsp; SLA Breach Notification
+        </div>
+
+        <!-- ══════════════════════════════
+             BODY
+        ══════════════════════════════ -->
+        <div class="body-card">
+
+            <!-- Breach badge -->
+            <div class="breach-badge"
+                 th:style="${serviceRequest.priority == 'CRITICAL' or serviceRequest.priority == 'HIGH'}
+                    ? 'background:#fee2e2;border:1.5px solid #fca5a5;color:#b91c1c;'
+                    : 'background:#fff7ed;border:1.5px solid #fdba74;color:#c2410c;'">
+                &#9888;&nbsp; SLA Breached
+            </div>
+
+            <h1 class="email-title">Service Request SLA Violated</h1>
+            <p class="email-intro">
+                The following service request has exceeded its SLA deadline and requires immediate attention.
+                Please review the details below and take the necessary action.
+            </p>
+
+            <!-- ══ REQUEST CARD ══ -->
+            <div class="request-card">
+
+                <!-- ID -->
+                <div class="req-number"
+                     th:text="${serviceRequest.id != null} ? 'Request #' + ${serviceRequest.id} : 'Request ID Unavailable'">
+                </div>
+
+                <!-- Title -->
+                <div class="req-title"
+                     th:text="${serviceRequest.title != null and !#strings.isEmpty(serviceRequest.title)}
+                     ? ${serviceRequest.title} : '(No title provided)'">
+                </div>
+
+                <!-- Description -->
+                <div th:class="${serviceRequest.description != null and !#strings.isEmpty(serviceRequest.description)}
+                      ? 'req-desc' : 'req-desc na'"
+                     th:text="${serviceRequest.description != null and !#strings.isEmpty(serviceRequest.description)}
+                     ? ${serviceRequest.description} : 'No description provided'">
+                </div>
+
+                <hr class="card-divider"/>
+
+                <!-- Row 1 · Priority + Status -->
+                <table class="meta-table">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Priority</span>
+                            <span th:if="${serviceRequest.priority != null}"
+                                  th:class="'badge badge-' + ${serviceRequest.priority.toLowerCase()}"
+                                  th:text="${serviceRequest.priority}"></span>
+                            <span th:if="${serviceRequest.priority == null}" class="meta-value na">N/A</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Status</span>
+                            <span th:if="${serviceRequest.status != null}"
+                                  th:class="'badge badge-' + ${serviceRequest.status.toLowerCase().replace('_','-')}"
+                                  th:text="${serviceRequest.status}"></span>
+                            <span th:if="${serviceRequest.status == null}" class="meta-value na">N/A</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Row 2 · Category + Department -->
+                <table class="meta-table" style="margin-top:12px;">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Category</span>
+                            <span th:class="${serviceRequest.category != null} ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.category != null} ? ${serviceRequest.category} : 'N/A'"></span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Department</span>
+                            <span th:class="${serviceRequest.departmentName != null and !#strings.isEmpty(serviceRequest.departmentName)}
+                             ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.departmentName != null and !#strings.isEmpty(serviceRequest.departmentName)}
+                             ? ${serviceRequest.departmentName} : 'Unassigned'"></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Row 3 · Requester + Assigned To -->
+                <table class="meta-table" style="margin-top:12px;">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Requester</span>
+                            <span th:class="${serviceRequest.requesterName != null and !#strings.isEmpty(serviceRequest.requesterName)}
+                             ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.requesterName != null and !#strings.isEmpty(serviceRequest.requesterName)}
+                             ? ${serviceRequest.requesterName} : 'Unknown'"></span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Assigned To</span>
+                            <span th:class="${serviceRequest.assignedToName != null and !#strings.isEmpty(serviceRequest.assignedToName)}
+                             ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.assignedToName != null and !#strings.isEmpty(serviceRequest.assignedToName)}
+                             ? ${serviceRequest.assignedToName} : 'Unassigned'"></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Row 4 · Created + Updated -->
+                <table class="meta-table" style="margin-top:12px;">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Created At</span>
+                            <span th:class="${serviceRequest.createdAt != null} ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.createdAt != null}
+                             ? ${#temporals.format(serviceRequest.createdAt, 'MMM d, yyyy HH:mm')}
+                             : 'N/A'"></span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Last Updated</span>
+                            <span th:class="${serviceRequest.updatedAt != null} ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.updatedAt != null}
+                             ? ${#temporals.format(serviceRequest.updatedAt, 'MMM d, yyyy HH:mm')}
+                             : 'N/A'"></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Row 5 · Resolved At (only when resolved) -->
+                <table th:if="${serviceRequest.resolved}" class="meta-table" style="margin-top:12px;">
+                    <tr>
+                        <td colspan="2">
+                            <span class="meta-label">Resolved At</span>
+                            <span th:class="${serviceRequest.resolvedAt != null} ? 'meta-value' : 'meta-value na'"
+                                  th:text="${serviceRequest.resolvedAt != null}
+                             ? ${#temporals.format(serviceRequest.resolvedAt, 'MMM d, yyyy HH:mm')}
+                             : 'N/A'"></span>
+                        </td>
+                    </tr>
+                </table>
+
+            </div><!-- /request-card -->
+
+            <!-- ══ STATUS CHANGE (only shown when previousStatus differs from current) ══ -->
+            <div th:if="${previousStatus != null and previousStatus.name() != serviceRequest.status}"
+                 class="status-change">
+                <div class="sc-label">Status Change Detected</div>
+                <table class="sc-table">
+                    <tr>
+                        <td>
+            <span th:class="'badge badge-' + ${previousStatus.name().toLowerCase().replace('_','-')}"
+                  th:text="${previousStatus.name()}"></span>
+                        </td>
+                        <td class="sc-arrow">&#8594;</td>
+                        <td>
+            <span th:class="'badge badge-' + ${serviceRequest.status.toLowerCase().replace('_','-')}"
+                  th:text="${serviceRequest.status}"></span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- ══ SLA DEADLINES ══ -->
+            <div class="sla-section">
+                <div class="section-label">SLA Deadlines</div>
+
+                <!-- Response SLA -->
+                <table class="sla-item">
+                    <tr>
+                        <td class="sla-bar"
+                            th:style="${serviceRequest.responseSlaDeadline != null} ? 'background:#dc2626;' : 'background:#d1d5db;'">
+                            &nbsp;
+                        </td>
+                        <td class="sla-body">
+                            <div class="sla-name">Response SLA</div>
+                            <div class="sla-time"
+                                 th:text="${serviceRequest.responseSlaDeadline != null}
+                            ? 'Deadline: ' + ${#temporals.format(serviceRequest.responseSlaDeadline, 'MMM d, yyyy HH:mm')}
+                            : 'Deadline not set'">
+                            </div>
+                        </td>
+                        <td class="sla-chip-cell">
+                            <span th:if="${serviceRequest.responseSlaDeadline != null}" class="chip chip-breached">Breached</span>
+                            <span th:if="${serviceRequest.responseSlaDeadline == null}"  class="chip chip-na">N/A</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Resolution SLA -->
+                <table class="sla-item">
+                    <tr>
+                        <td class="sla-bar"
+                            th:style="${serviceRequest.resolutionSlaDeadline != null} ? 'background:#dc2626;' : 'background:#d1d5db;'">
+                            &nbsp;
+                        </td>
+                        <td class="sla-body">
+                            <div class="sla-name">Resolution SLA</div>
+                            <div class="sla-time"
+                                 th:text="${serviceRequest.resolutionSlaDeadline != null}
+                            ? 'Deadline: ' + ${#temporals.format(serviceRequest.resolutionSlaDeadline, 'MMM d, yyyy HH:mm')}
+                            : 'Deadline not set'">
+                            </div>
+                        </td>
+                        <td class="sla-chip-cell">
+                            <span th:if="${serviceRequest.resolutionSlaDeadline != null}" class="chip chip-breached">Breached</span>
+                            <span th:if="${serviceRequest.resolutionSlaDeadline == null}"  class="chip chip-na">N/A</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- ══ CTA ══ -->
+            <div class="cta-wrap">
+                <a th:href="${baseUrl + '/requests/' + serviceRequest.id}" class="cta-btn">
+                    View Request &rarr;
+                </a>
+            </div>
+
+            <!-- Notification meta -->
+            <p style="font-size:.77rem;color:#9ca3af;text-align:center;line-height:1.6;">
+                Notification sent on
+                <strong th:text="${notifiedAt}"></strong>
+                to
+                <strong th:text="${adminEmail != null} ? ${adminEmail} : 'the system administrator'"></strong>.
+                <br/>This alert was generated automatically by ServiceHub.
+            </p>
+
+        </div><!-- /body-card -->
+
+        <!-- ══════════════════════════════
+             FOOTER
+        ══════════════════════════════ -->
+        <div class="footer">
+            <p>
+                &copy; <span th:text="${#dates.year(#dates.createNow())}"></span>
+                ServiceHub &mdash; Internal Service Management Platform
+            </p>
+            <p style="margin-top:6px;">
+                <a th:href="${baseUrl + '/admin/dashboard'}">View Dashboard</a>
+            </p>
+            <p style="margin-top:8px;color:#c4c4bc;">
+                You received this email because SLA breach alerts are enabled in the system.
+            </p>
+        </div>
+
+    </div><!-- /container -->
+</div><!-- /wrapper -->
+</body>
+</html>

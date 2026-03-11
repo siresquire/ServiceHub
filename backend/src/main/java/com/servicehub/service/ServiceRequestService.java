@@ -99,7 +99,7 @@ public class ServiceRequestService {
         return switch (user.getRole()) {
             case ADMIN -> requestRepository.findAll()
                     .stream().map(this::toResponse).collect(Collectors.toList());
-            case AGENT -> getRequestsByDepartment(null);
+            case AGENT -> getRequestsByDepartment(user.getDepartment().getName());
             case USER -> getRequestsByRequester(user.getId());
         };
     }

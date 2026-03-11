@@ -21,6 +21,7 @@ public class ServiceRequestService {
     private final ServiceRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final SlaPolicyService slaPolicyService;
 
     public Page<ServiceRequestResponse> getAllRequests(int page, int size) {
         return requestRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
@@ -38,11 +39,14 @@ public class ServiceRequestService {
                 .description(dto.getDescription())
                 .category(RequestCategory.valueOf(dto.getCategory()))
                 .priority(Priority.valueOf(dto.getPriority()))
-                .status(RequestStatus.SUBMITTED)
+                .status(RequestStatus.OPEN)
                 .requester(requester)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), req.getPriority()));
+        req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), req.getPriority()));
         return toResponse(requestRepository.save(req));
     }
 
@@ -62,7 +66,6 @@ public class ServiceRequestService {
         if(update.getNewStatus().equals(RequestStatus.ASSIGNED) && agent == null) {
             throw new BadRequestException("Agent must be provided when assigning a request");
         }
-
 
         req.setStatus(update.getNewStatus());
 
@@ -123,6 +126,7 @@ public class ServiceRequestService {
 
 
 
+    // TODO: Implement getRequestsByRequester(Long userId)
     // TODO: Implement getDashboardStats()
     // TODO: Implement SLA breach detection
 
@@ -140,7 +144,7 @@ public class ServiceRequestService {
         }
 
         switch (current) {
-            case SUBMITTED:
+            case OPEN:
                 if (newStatus != RequestStatus.ASSIGNED && newStatus != RequestStatus.CLOSED) {
                     throw new InvalidServiceRequestTransition(current, newStatus);
                 }
@@ -172,6 +176,10 @@ public class ServiceRequestService {
                 .requesterName(req.getRequester().getFullName())
                 .assignedToName(req.getAssignedTo() != null ? req.getAssignedTo().getFullName() : null)
                 .departmentName(req.getDepartment() != null ? req.getDepartment().getName() : null)
+                .slaBreached(req.getSlaBreached() != null ? req.getSlaBreached() : false)
+                .resolved(req.getResolved() != null ? req.getResolved() : false)
+                .resolutionSlaDeadline(req.getResolutionSlaDeadline())
+                .responseSlaDeadline(req.getResponseSlaDeadline())
                 .createdAt(req.getCreatedAt())
                 .updatedAt(req.getUpdatedAt())
                 .resolvedAt(req.getResolvedAt())

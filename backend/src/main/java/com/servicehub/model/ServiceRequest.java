@@ -1,25 +1,16 @@
 package com.servicehub.model;
 
-
-import com.servicehub.model.enums.Priority;
-import com.servicehub.model.enums.RequestCategory;
-import com.servicehub.model.enums.RequestStatus;
+import com.servicehub.model.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "service_requests")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Entity @Table(name = "service_requests")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class ServiceRequest {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -52,11 +43,15 @@ public class ServiceRequest {
     @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
-    private LocalDateTime slaDeadline;
+    private LocalDateTime responseSlaDeadline;
+    private LocalDateTime resolutionSlaDeadline;
+    private Boolean slaBreached;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime assignedAt;
     private LocalDateTime resolvedAt;
+    private Boolean resolved;
+
 
     @PrePersist
     protected void onCreate() {
@@ -69,4 +64,3 @@ public class ServiceRequest {
         updatedAt = LocalDateTime.now();
     }
 }
-

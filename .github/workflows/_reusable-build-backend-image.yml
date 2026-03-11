@@ -61,3 +61,5 @@ jobs:
         run: |
           echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
           echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image-name=${{ inputs.image-name }}"
+          echo "Debug: Set image-tag=${GITHUB_SHA}"

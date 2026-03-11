@@ -1,21 +1,26 @@
 package com.servicehub.controller;
 
 import com.servicehub.model.Department;
-import com.servicehub.repository.DepartmentRepository;
+import com.servicehub.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/departments")
 @RequiredArgsConstructor
 public class DepartmentController {
-    private final DepartmentRepository departmentRepository;
 
-    @GetMapping
-    public ResponseEntity<List<Department>> getAll() {
-        return ResponseEntity.ok(departmentRepository.findAll());
+    private final AdminService adminService;
+
+    // Used by register form — no auth needed
+
+    @GetMapping("/active")
+    public ResponseEntity<List<Department>> getActiveDepartments() {
+        return ResponseEntity.ok(adminService.getActiveDepartments());
     }
-    // TODO: Add CRUD for departments (admin only)
+
+
 }

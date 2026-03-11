@@ -36,7 +36,7 @@ public class ServiceRequest {
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to_id")
+    @JoinColumn(name = "assignee_id")
     private User assignedTo;
 
     @ManyToOne(fetch = FetchType.LAZY)

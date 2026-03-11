@@ -66,6 +66,19 @@ jobs:
     secrets: inherit # pragma: allowlist secret
 
   # ===========================================================================
+  # Debug Job - Check outputs
+  # ===========================================================================
+  debug-outputs:
+    name: Debug Outputs
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show build outputs
+        run: |
+          echo "build-image.outputs.image-name: '${{ needs.build-image.outputs.image-name }}'"
+          echo "build-image.outputs.image-tag: '${{ needs.build-image.outputs.image-tag }}'"
+
+  # ===========================================================================
   # Job 3: Deploy to ECS Fargate
   # ===========================================================================
   # Renders a new task definition with the updated image tag,

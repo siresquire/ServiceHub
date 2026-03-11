@@ -52,8 +52,12 @@ jobs:
             # --- Debug inputs ---
             - name: Debug inputs
               run: |
-                  echo "Received image-name: ${{ inputs.image-name }}"
-                  echo "Received image-tag: ${{ inputs.image-tag }}"
+                  echo "Received image-name: '${{ inputs.image-name }}'"
+                  echo "Received image-tag: '${{ inputs.image-tag }}'"
+                  if [ -z "${{ inputs.image-name }}" ] || [ -z "${{ inputs.image-tag }}" ]; then
+                    echo "ERROR: Empty inputs received!"
+                    exit 1
+                  fi
 
             # --- Download the pre-built image artifact ---
             - name: Download backend image artifact

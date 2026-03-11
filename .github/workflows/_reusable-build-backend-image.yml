@@ -59,7 +59,9 @@ jobs:
       - name: Set outputs
         id: set-outputs
         run: |
-          echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
-          echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
-          echo "Debug: Set image-name=${{ inputs.image-name }}"
-          echo "Debug: Set image-tag=${GITHUB_SHA}"
+          IMAGE_NAME="${{ inputs.image-name }}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          echo "image-name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "image-tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image-name=${IMAGE_NAME}"
+          echo "Debug: Set image-tag=${IMAGE_TAG}"

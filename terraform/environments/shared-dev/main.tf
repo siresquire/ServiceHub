@@ -79,18 +79,20 @@ resource "aws_route_table_association" "public_b" {
 module "rds" {
   source = "../../modules/rds"
 
-  vpc_id        = aws_vpc.this.id
+  vpc_id = aws_vpc.this.id
   db_subnet_ids = [
     aws_subnet.public_a.id,
     aws_subnet.public_b.id,
   ]
 
-  db_name       = "servicehub"
-  username      = "servicehub_shared"
-  password      = var.rds_password
+  db_name  = "servicehub"
+  username = "servicehub_shared"
+  password = var.rds_password
 
   # TEMP: open to all IPs; tighten later by changing this list
-  allowed_cidrs = ["0.0.0.0/0"]
+  allowed_cidrs           = ["0.0.0.0/0"]
+  allowed_security_groups = []
+  publicly_accessible     = true
 }
 
 output "rds_endpoint" {

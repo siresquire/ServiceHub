@@ -15,13 +15,12 @@ spring:
   application:
     name: servicehub
   datasource:
-    url: jdbc:h2:mem:tempdb
+    url: jdbc:h2:mem:tempdb;MODE=PostgreSQL
     driverClassName: org.h2.Driver
     username: sa
     password: ""
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
 
@@ -77,6 +76,26 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+# =============================================================================
+# Application Properties
+# =============================================================================
+# Default values for application-specific properties. Override in profile-specific configs or via environment variables.
+app:
+  accounts:
+    admin:
+      email: admin@amalitech.com
+      password: password123
+
+    user:
+      email: user@amalitech.com
+      password: password123
+
+    agent:
+      email: employee@amalitech.com
+      password: password123
+
+
 
 # =============================================================================
 # Logging

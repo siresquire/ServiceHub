@@ -12,7 +12,7 @@
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:tempdb}
+    url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME:servicehub}
     password: ${SPRING_DATASOURCE_PASSWORD:servicehub_dev}  # pragma: allowlist secret
     driver-class-name: org.postgresql.Driver

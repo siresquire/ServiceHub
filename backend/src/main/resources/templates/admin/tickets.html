@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — All Tickets</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--sb:#1a1f2e;--bg:#f0f2f5;--w:#fff;--teal:#0fbf8a;--teal-bg:#e8faf4;
+            --amber:#f59e0b;--amber-bg:#fff8ec;--blue:#3b82f6;--blue-bg:#eff6ff;
+            --red:#ef4444;--red-bg:#fff1f1;--green:#22c55e;--green-bg:#f0fdf4;
+            --txt:#1e293b;--muted:#94a3b8;--bdr:#e2e8f0;--sw:215px;--font:'DM Sans',sans-serif;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        html,body{overflow-x:hidden;}
+        body{font-family:var(--font);background:var(--bg);color:var(--txt);display:flex;min-height:100vh;}
+        .sidebar{width:var(--sw);background:var(--sb);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:200;transition:transform .25s ease;overflow-y:auto;}
+        .logo{display:flex;align-items:center;gap:10px;padding:20px 18px 16px;}
+        .logo-icon{width:32px;height:32px;min-width:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:800;}
+        .logo-text{font-size:15px;font-weight:700;color:#fff;}
+        .nav-sep{font-size:10px;font-weight:600;letter-spacing:1px;color:#3d4a5c;text-transform:uppercase;padding:12px 18px 4px;}
+        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:500;color:#8892a4;text-decoration:none;transition:all .12s;}
+        .nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
+        .nav-item.active{color:var(--teal);background:rgba(15,191,138,.1);}
+        .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
+        .sf{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px;}
+        .sa{width:30px;height:30px;min-width:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;}
+        .overlay.show{display:block;}
+        .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - var(--sw));}
+        .topbar{display:flex;align-items:center;padding:0 20px;height:56px;background:var(--w);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:8px;overflow:hidden;}
+        .menu-btn{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt);flex-shrink:0;}
+        .tb-wrap{flex:1;min-width:0;}
+        .tb-title{font-size:15px;font-weight:700;}
+        .tb-sub{font-size:11px;color:var(--muted);}
+        .tb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+        .t-av{width:32px;height:32px;min-width:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+        .content{padding:20px;flex:1;}
+
+        /* STATS */
+        .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
+        .sc{background:var(--w);border:1px solid var(--bdr);border-radius:12px;padding:13px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:border-color .12s;}
+        .sc:hover,.sc.active{border-color:var(--teal);}
+        .si{width:34px;height:34px;min-width:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+        .ic-t{background:var(--teal-bg);}.ic-a{background:var(--amber-bg);}.ic-b{background:var(--blue-bg);}.ic-r{background:var(--red-bg);}.ic-g{background:var(--green-bg);}
+        .sv{font-size:20px;font-weight:700;line-height:1;}
+        .sl{font-size:10.5px;color:var(--muted);margin-top:2px;}
+
+        /* TOOLBAR */
+        .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+        .search-wrap{flex:1;min-width:160px;position:relative;}
+        .search-wrap input{width:100%;border:1px solid var(--bdr);border-radius:8px;padding:8px 12px 8px 32px;font-size:13px;font-family:var(--font);color:var(--txt);background:var(--w);outline:none;}
+        .search-wrap input:focus{border-color:var(--teal);}
+        .search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;}
+        select.filter{border:1px solid var(--bdr);border-radius:8px;padding:8px 12px;font-size:12px;font-family:var(--font);color:var(--txt);background:var(--w);outline:none;cursor:pointer;}
+        select.filter:focus{border-color:var(--teal);}
+
+        /* TABLE */
+        .panel{background:var(--w);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;}
+        .ph{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);}
+        .pt{font-size:13px;font-weight:600;}
+        .tc{font-size:11px;color:var(--muted);}
+        .tbl{width:100%;border-collapse:collapse;}
+        .tbl th{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:9px 16px;text-align:left;border-bottom:1px solid var(--bdr);background:#fafbfc;white-space:nowrap;}
+        .tbl td{padding:11px 16px;font-size:12.5px;border-bottom:1px solid var(--bdr);vertical-align:middle;}
+        .tbl tr:last-child td{border-bottom:none;}
+        .tbl tr:hover td{background:#fafbfc;}
+        .t-id{font-size:11px;font-weight:600;color:var(--muted);}
+        .t-title{font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .t-dept{font-size:11.5px;color:#64748b;}
+        .t-req{display:flex;align-items:center;gap:6px;}
+        .t-av2{width:22px;height:22px;min-width:22px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;}
+        .pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
+        .p-open{background:var(--blue-bg);color:var(--blue);}
+        .p-prog{background:var(--amber-bg);color:var(--amber);}
+        .p-done{background:var(--green-bg);color:var(--green);}
+        .p-hi{background:var(--red-bg);color:var(--red);}
+        .p-med{background:var(--amber-bg);color:var(--amber);}
+        .p-lo{background:var(--teal-bg);color:var(--teal);}
+        .sla-ok{color:var(--green);font-size:11px;font-weight:600;}
+        .sla-warn{color:var(--amber);font-size:11px;font-weight:600;}
+        .sla-breach{color:var(--red);font-size:11px;font-weight:600;}
+        .t-date{font-size:11px;color:var(--muted);white-space:nowrap;}
+        .empty{text-align:center;padding:40px;color:var(--muted);}
+        .tbl-wrap{overflow-x:auto;}
+
+        @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr);}}
+        @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr);}}
+        @media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main{margin-left:0;max-width:100vw;}.menu-btn{display:flex;}.content{padding:12px;}.topbar{padding:0 12px;}.tb-sub{display:none;}}
+        @media(max-width:480px){.stats{grid-template-columns:1fr 1fr;}}
+    </style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+    <div class="logo"><div class="logo-icon">S</div><span class="logo-text">ServiceHub</span></div>
+    <div class="nav-sep">Admin</div>
+    <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+    <a class="nav-item" href="/dashboard"><span class="nav-icon">📈</span> Analytics</a>
+    <a class="nav-item active" href="/admin/tickets"><span class="nav-icon">🎫</span> All Tickets</a>
+    <div class="nav-sep" style="margin-top:8px;">Manage</div>
+    <a class="nav-item" href="/admin/users"><span class="nav-icon">👥</span> Users</a>
+    <a class="nav-item" href="/admin/departments"><span class="nav-icon">🏢</span> Departments</a>
+    <div class="sf">
+        <div class="sa">AD</div>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#fff;">Admin</div>
+            <div style="font-size:11px;color:#8892a4;">Administrator</div>
+        </div>
+        <form th:action="@{/auth/logout}" method="post" style="display:inline;">
+            <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
+        </form>
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <button class="menu-btn" onclick="openSidebar()">☰</button>
+        <div class="tb-wrap">
+            <div class="tb-title">All Tickets</div>
+            <div class="tb-sub">System-wide service request management</div>
+        </div>
+        <div class="tb-actions">
+            <div class="t-av">AD</div>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- STATS -->
+        <div class="stats">
+            <div class="sc active" onclick="filterStatus('all',this)">
+                <div class="si ic-b">🎫</div>
+                <div><div class="sv" th:text="${tickets != null ? tickets.size() : 0}">0</div><div class="sl">All Tickets</div></div>
+            </div>
+            <div class="sc" onclick="filterStatus('OPEN',this)">
+                <div class="si ic-b">📬</div>
+                <div><div class="sv" th:text="${tickets != null ? tickets.stream().filter(t -> t.status.name() == 'OPEN').count() : 0}">0</div><div class="sl">Open</div></div>
+            </div>
+            <div class="sc" onclick="filterStatus('IN_PROGRESS',this)">
+                <div class="si ic-a">⚙️</div>
+                <div><div class="sv" th:text="${tickets != null ? tickets.stream().filter(t -> t.status.name() == 'IN_PROGRESS').count() : 0}">0</div><div class="sl">In Progress</div></div>
+            </div>
+            <div class="sc" onclick="filterStatus('RESOLVED',this)">
+                <div class="si ic-g">✅</div>
+                <div><div class="sv" th:text="${tickets != null ? tickets.stream().filter(t -> t.status.name() == 'RESOLVED').count() : 0}">0</div><div class="sl">Resolved</div></div>
+            </div>
+            <div class="sc" onclick="filterStatus('CLOSED',this)">
+                <div class="si ic-t">🔒</div>
+                <div><div class="sv" th:text="${tickets != null ? tickets.stream().filter(t -> t.status.name() == 'CLOSED').count() : 0}">0</div><div class="sl">Closed</div></div>
+            </div>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="Search tickets..." oninput="search(this.value)"/>
+            </div>
+            <select class="filter" onchange="filterDept(this.value)">
+                <option value="">All Departments</option>
+                <option th:each="d : ${departments}" th:value="${d.name}" th:text="${d.name}">IT Support</option>
+            </select>
+            <select class="filter" onchange="filterPriority(this.value)">
+                <option value="">All Priorities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+            </select>
+        </div>
+
+        <!-- TABLE -->
+        <div class="panel">
+            <div class="ph">
+                <div class="pt">🎫 Service Requests</div>
+                <span class="tc" id="ticketCount" th:text="${tickets != null ? tickets.size() + ' tickets' : '0 tickets'}">0 tickets</span>
+            </div>
+            <div class="tbl-wrap">
+                <table class="tbl" id="ticketTable">
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Requester</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>SLA</th>
+                        <th>Created</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ticketBody">
+                    <tr th:each="t : ${tickets}"
+                        th:data-status="${t.status}"
+                        th:data-dept="${t.department != null ? t.department.name : ''}"
+                        th:data-priority="${t.priority}"
+                        th:data-title="${t.title}">
+                        <td class="t-id" th:text="'#' + ${t.id}">#1</td>
+                        <td class="t-title" th:text="${t.title}">Ticket title</td>
+                        <td class="t-dept" th:text="${t.department != null ? t.department.name : '—'}">IT Support</td>
+                        <td>
+                            <div class="t-req">
+                                <div class="t-av2" th:text="${t.requester != null ? t.requester.fullName.substring(0,2).toUpperCase() : 'NA'}">NA</div>
+                                <span style="font-size:11.5px;" th:text="${t.requester != null ? t.requester.fullName : 'N/A'}">User</span>
+                            </div>
+                        </td>
+                        <td>
+                                <span class="pill"
+                                      th:classappend="${t.status.name()=='OPEN'}?'p-open':(${t.status.name()=='IN_PROGRESS'}?'p-prog':'p-done')"
+                                      th:text="${t.status.name().replace('_',' ')}">OPEN</span>
+                        </td>
+                        <td>
+                                <span class="pill"
+                                      th:classappend="${t.priority.name()=='HIGH' or t.priority.name()=='CRITICAL'}?'p-hi':(${t.priority.name()=='MEDIUM'}?'p-med':'p-lo')"
+                                      th:text="${t.priority}">MED</span>
+                        </td>
+                        <td>
+                                <span th:classappend="${t.slaBreached}?'sla-breach':(${t.resolutionSlaDeadline!=null and #temporals.createNow().isAfter(t.resolutionSlaDeadline.minusHours(2))}?'sla-warn':'sla-ok')"
+                                      th:text="${t.slaBreached}?'⚠ Breached':(${t.resolutionSlaDeadline!=null}?'✓ On track':'—')">✓</span>
+                        </td>
+                        <td class="t-date" th:text="${#temporals.format(t.createdAt,'MMM dd, yyyy')}">Mar 11</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty" th:if="${tickets==null or tickets.empty}">No tickets found</div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
+    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
+
+    let activeStatus='all', activeDept='', activePriority='', activeSearch='';
+
+    function applyFilters(){
+        const rows=document.querySelectorAll('#ticketBody tr');
+        let visible=0;
+        rows.forEach(row=>{
+            const s=row.dataset.status, d=row.dataset.dept, p=row.dataset.priority, t=row.dataset.title?.toLowerCase()||'';
+            const show=(activeStatus==='all'||s===activeStatus)&&
+                       (activeDept===''||d===activeDept)&&
+                       (activePriority===''||p===activePriority)&&
+                       (activeSearch===''||t.includes(activeSearch));
+            row.style.display=show?'':'none';
+            if(show) visible++;
+        });
+        document.getElementById('ticketCount').textContent=visible+' tickets';
+    }
+    function filterStatus(s,btn){
+        activeStatus=s;
+        document.querySelectorAll('.sc').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilters();
+    }
+    function filterDept(d){activeDept=d;applyFilters();}
+    function filterPriority(p){activePriority=p;applyFilters();}
+    function search(v){activeSearch=v.toLowerCase();applyFilters();}
+</script>
+</body>
+</html>

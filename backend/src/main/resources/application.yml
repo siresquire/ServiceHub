@@ -45,6 +45,21 @@ spring:
   sql:
     init:
       mode: never
+  mail:
+    host: ${SPRING_EMAIL_HOST}
+    port: ${SPRING_EMAIL_PORT}
+    username: ${SPRING_EMAIL_USERNAME}
+    password: ${SPRING_EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 # =============================================================================
 # Server Configuration
@@ -100,11 +115,12 @@ app:
       password: password123
 
     agent:
-      email: employee@amalitech.com
+      email: agent@amalitech.com
       password: password123
   sla:
     sla-breach-notification:
       enabled: true
+      admin-email: ${SPRING_EMAIL_ADMIN_ADDRESS}
     sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:900000} # 15 minutes in milliseconds
 
 

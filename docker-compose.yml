@@ -71,6 +71,11 @@ services:
       SPRING_DATASOURCE_URL: ${POSTGRES_URL:-jdbc:postgresql://postgres:5432/servicehub}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-servicehub}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_dev}
+      SPRING_EMAIL_HOST: ${EMAIL_HOST:-smtp.example.com}
+      SPRING_EMAIL_PORT: ${EMAIL_PORT:-587}
+      SPRING_EMAIL_USERNAME: ${EMAIL_USERNAME}
+      SPRING_EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      SPRING_EMAIL_ADMIN_ADDRESS: ${EMAIL_ADMIN_ADDRESS}
       # Security — JWT signing key (provided via .env for local, GitHub Secrets/infra for CI/prod)
       JWT_SECRET: ${JWT_SECRET:-localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION}
     depends_on:

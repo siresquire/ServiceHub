@@ -5,6 +5,8 @@ import com.servicehub.model.enums.RequestCategory;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity @Table(name = "sla_policies")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
@@ -26,4 +28,8 @@ public class SlaPolicy {
 
     @Column(nullable = false, name = "resolution_hours")
     private Double resolutionTimeHours;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
 }

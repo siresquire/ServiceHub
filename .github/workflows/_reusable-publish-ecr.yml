@@ -49,6 +49,12 @@ jobs:
             id-token: write # Required for OIDC
 
         steps:
+            # --- Debug inputs ---
+            - name: Debug inputs
+              run: |
+                  echo "Received image-name: ${{ inputs.image-name }}"
+                  echo "Received image-tag: ${{ inputs.image-tag }}"
+
             # --- Download the pre-built image artifact ---
             - name: Download backend image artifact
               uses: actions/download-artifact@v4

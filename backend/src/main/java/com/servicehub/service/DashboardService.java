@@ -49,12 +49,12 @@ public class DashboardService {
 
         // slaCompliance — requests resolved before deadline
         double withDeadLine = all.stream()
-                .filter(r->r.getSlaDeadline() !=null && r.getResolvedAt() !=null)
+                .filter(r->r.getResolutionSlaDeadline() !=null && r.getResolvedAt() !=null)
                 .count();
 
         double compliant = all.stream()
-                .filter(r->r.getSlaDeadline() !=null && r.getResolvedAt() !=null
-                        && r.getResolvedAt().isBefore(r.getSlaDeadline()))
+                .filter(r->r.getResolutionSlaDeadline() !=null && r.getResolvedAt() !=null
+                        && r.getResolvedAt().isBefore(r.getResolutionSlaDeadline()))
                 .count();
 
         double slaComplianceRate = withDeadLine > 0 ? (compliant/withDeadLine) * 100 : 0.0;
@@ -101,16 +101,16 @@ public class DashboardService {
 
             double withDeadLine = all.stream()
                     .filter(r->r.getCategory() ==category)
-                    .filter(r->r.getSlaDeadline() !=null &&
+                    .filter(r->r.getResolutionSlaDeadline() !=null &&
                             r.getResolvedAt() !=null)
                     .count();
 
             double complaint = all.stream()
                     .filter(r->r.getCategory() ==category)
                     .filter(
-                            r->r.getSlaDeadline() !=null &&
+                            r->r.getResolutionSlaDeadline() !=null &&
                                     r.getResolvedAt()!=null &&
-                                    r.getResolvedAt().isBefore(r.getSlaDeadline()))
+                                    r.getResolvedAt().isBefore(r.getResolutionSlaDeadline()))
                     .count();
 
             double slaRate =withDeadLine > 0 ?(complaint/withDeadLine)*100 : 0.0;

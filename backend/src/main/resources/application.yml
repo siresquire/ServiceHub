@@ -78,6 +78,26 @@ management:
       application: ${spring.application.name}
 
 # =============================================================================
+# Application Properties
+# =============================================================================
+# Default values for application-specific properties. Override in profile-specific configs or via environment variables.
+app:
+  accounts:
+    admin:
+      email: admin@amalitech.com
+      password: password123
+
+    user:
+      email: user@amalitech.com
+      password: password123
+
+    agent:
+      email: employee@amalitech.com
+      password: password123
+
+
+
+# =============================================================================
 # Logging
 # =============================================================================
 # Default log level. Override per-package in profile-specific configs.

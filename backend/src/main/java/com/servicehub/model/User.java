@@ -19,14 +19,16 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name="name")
     private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
-    private String department;
+    @JoinColumn(name = "department_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Department department;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;

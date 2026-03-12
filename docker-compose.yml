@@ -88,17 +88,13 @@ services:
   # Designed to run as a one-shot job (exits after completion).
   # ---------------------------------------------------------------------------
   data-engineering:
+    env_file:
+      - .env
     build:
       context: ./data-engineering
       dockerfile: Dockerfile
     container_name: servicehub-etl
-    environment:
-      # Database connection
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${POSTGRES_DB:-servicehub}
-      DB_USER: ${POSTGRES_USER:-servicehub}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_pass}
+    # environment block removed to allow .env to provide DB connection
     depends_on:
       postgres:
         condition: service_healthy

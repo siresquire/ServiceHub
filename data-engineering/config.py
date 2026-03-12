@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 # Resolve .env from the project root (one level above data-engineering/)
-_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+_env_path = os.path.join(os.path.dirname(__file__), "..", ".env.example")
 load_dotenv(dotenv_path=_env_path)
 
 DB_CONFIG = {

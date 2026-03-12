@@ -33,7 +33,7 @@ public class DashboardController {
     }
 
     @GetMapping("/trends")
-    @PreAuthorize("hasAnyRole('ADMIN','AGENT'")
+    @PreAuthorize("hasAnyRole('ADMIN','AGENT')")
     public ResponseEntity<DashboardTrendsResponse> getTrends(
             @RequestParam(defaultValue = "7") int period) {
         return ResponseEntity.ok(dashboardService.getTrends(period));

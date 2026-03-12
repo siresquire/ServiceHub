@@ -25,7 +25,8 @@ name: Deploy Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/servicehub-updates]
+  workflow_dispatch:
 
 # Only one deployment at a time.
 concurrency:

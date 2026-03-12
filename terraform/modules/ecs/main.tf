@@ -164,20 +164,16 @@ resource "aws_ecs_task_definition" "this" {
         {
           name  = "SERVER_PORT"
           value = tostring(var.container_port)
-        }
-      ]
-
-      secrets = [
-        {
-          name      = "SPRING_DATASOURCE_PASSWORD"
-          valueFrom = "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/servicehub/${var.environment}/db/password"
         },
         {
-          name      = "JWT_SECRET"
-          valueFrom = "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/servicehub/${var.environment}/jwt/secret"
+          name  = "SPRING_DATASOURCE_PASSWORD"
+          value = var.db_password
+        },
+        {
+          name  = "JWT_SECRET"
+          value = var.jwt_secret
         }
       ]
-
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/actuator/health || exit 1"]
         interval    = 30

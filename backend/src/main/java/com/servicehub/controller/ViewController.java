@@ -35,6 +35,14 @@ public class ViewController {
     public String adminHome(Model model) {
         model.addAttribute("users", adminService.getAllUsers());
         model.addAttribute("departments", adminService.getAllDepartments());
+
+        // Add admin dashboard card statistics
+        var stats = dashboardService.getAdminDashboardCardStats();
+        model.addAttribute("totalTickets", stats.get("totalTickets"));
+        model.addAttribute("openTickets", stats.get("openTickets"));
+        model.addAttribute("slaBreaches", stats.get("slaBreaches"));
+        model.addAttribute("avgResolutionHours", stats.get("avgResolutionHours"));
+
         return "admin/home";
     }
 
@@ -43,6 +51,14 @@ public class ViewController {
     public String agentDashboard(@AuthenticationPrincipal User user, Model model) {
         model.addAttribute("requests", requestService.getRequestsForUser(user));
         model.addAttribute("user", user);
+
+        // Add agent dashboard statistics
+        var stats = requestService.getAgentDashboardStats(user);
+        model.addAttribute("assignedToMe", stats.get("assignedToMe"));
+        model.addAttribute("unassigned", stats.get("unassigned"));
+        model.addAttribute("slaBreaches", stats.get("slaBreaches"));
+        model.addAttribute("slaWarnings", stats.get("slaWarnings"));
+
         return "agent-dashboard";
     }
 
@@ -51,6 +67,14 @@ public class ViewController {
     public String userDashboard(@AuthenticationPrincipal User user, Model model) {
         model.addAttribute("requests", requestService.getRequestsForUser(user));
         model.addAttribute("user", user);
+
+        // Add user dashboard statistics
+        var stats = requestService.getUserDashboardStats(user);
+        model.addAttribute("openRequests", stats.get("openRequests"));
+        model.addAttribute("resolvedRequests", stats.get("resolvedRequests"));
+        model.addAttribute("slaBreaches", stats.get("slaBreaches"));
+        model.addAttribute("totalRequests", stats.get("totalRequests"));
+
         return "user-dashboard";
     }
 
@@ -62,11 +86,38 @@ public class ViewController {
         return "admin/users";
     }
 
+    // ── ADMIN TICKETS PAGE ──
+    @GetMapping("/admin/tickets")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminTickets(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("requests", requestService.getRequestsForUser(user));
+        return "admin/tickets";
+    }
+
     // ── ADMIN DEPARTMENTS PAGE ──
     @GetMapping("/admin/departments")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminDepartments(Model model) {
         model.addAttribute("departments", adminService.getAllDepartments());
         return "admin/departments";
+    }
+
+    // ── USER TICKET CREATION PAGE ──
+    @GetMapping("/tickets/new")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'AGENT')")
+    public String newTicketForm(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("categories", java.util.List.of("IT_SUPPORT", "FACILITIES", "HR", "FINANCE", "OTHER"));
+        model.addAttribute("priorities", java.util.List.of("LOW", "MEDIUM", "HIGH", "CRITICAL"));
+        model.addAttribute("user", user);
+        return "tickets/new";
+    }
+
+    // ── USER MY TICKETS PAGE ──
+    @GetMapping("/tickets/my")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'AGENT')")
+    public String myTickets(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("requests", requestService.getRequestsByRequester(user.getId()));
+        model.addAttribute("user", user);
+        return "tickets/my";
     }
 }

@@ -130,6 +130,48 @@ public class DashboardService {
                 .build();
     }
 
+    /**
+     * Get admin dashboard card statistics
+     * @return map containing totalTickets, openTickets, slaBreaches, avgResolutionHours
+     */
+    public java.util.Map<String, Object> getAdminDashboardCardStats() {
+        List<ServiceRequest> all = requestRepository.findAll();
+        java.util.Map<String, Object> stats = new HashMap<>();
+
+        // Total tickets
+        stats.put("totalTickets", (long) all.size());
+
+        // Open tickets (not resolved/closed)
+        long openTickets = all.stream()
+            .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+            .count();
+        stats.put("openTickets", openTickets);
+
+        // SLA Breaches (not resolved/closed and breached)
+        long slaBreaches = all.stream()
+            .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+            .filter(r -> r.getSlaBreached() != null && r.getSlaBreached())
+            .count();
+        stats.put("slaBreaches", slaBreaches);
+
+        // Average resolution time in hours
+        double avgResolutionHours = all.stream()
+                .filter(avg->avg.getResolvedAt() !=null && avg.getCreatedAt() !=null)
+                .mapToLong(r-> ChronoUnit.HOURS.between(r.getCreatedAt(),r.getResolvedAt()))
+                .average()
+                .orElse(0.0);
+        stats.put("avgResolutionHours", avgResolutionHours);
+
+        // Tickets resolved today
+        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+        long resolvedToday = all.stream()
+            .filter(r -> r.getResolvedAt() != null && r.getResolvedAt().isAfter(today))
+            .count();
+        stats.put("resolvedToday", resolvedToday);
+
+        return stats;
+    }
+
     public DashboardTrendsResponse getTrends(int days){
 
         List<ServiceRequest> all = requestRepository.findAll();

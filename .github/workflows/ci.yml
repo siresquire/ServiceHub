@@ -16,7 +16,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, feature/servicehub-updates]
   pull_request:
     branches: [develop]
 

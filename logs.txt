@@ -1,0 +1,10 @@
+﻿ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.0)
+
+{"timestamp":"2026-03-12T01:01:46.724+0000","level":"INFO","logger":"c.servicehub.ServiceHubApplication","thread":"main","message":"Starting ServiceHubApplication v1.0.0 using Java 17.0.18 with PID 1 (/app/app.jar started by appuser in /app)","app":"servicehub"}
+{"timestamp":"2026-03-12T01:01:46.729+0000","level":"INFO","logger":"c.servicehub.ServiceHubApplication","thread":"main","message":"The following 1 profile is active: "prod"","app":"servicehub"}
+{"timestamp":"2026-03-12T01:01:55.095+0000","level":"WARN","logger":"o.f.c.i.database.base.Database","thread":"main","message":"Flyway upgrade recommended: PostgreSQL 17.6 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 15.","app":"servicehub"}

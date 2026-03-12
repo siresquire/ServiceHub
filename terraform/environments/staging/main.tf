@@ -75,22 +75,22 @@ module "ecr" {
   tags = local.common_tags
 }
 
-# ─── RDS Module ──────────────────────────────────────────────────────────────
-module "rds" {
-  source = "../../modules/rds"
+# ─── RDS Module (Deactivated — Using Shared RDS Instance) ────────
+# module "rds" {
+#   source = "../../modules/rds"
+#
+#   vpc_id        = module.networking.vpc_id
+#   db_subnet_ids = module.networking.private_subnet_ids
+#
+#   db_name  = "servicehub"
+#   username = "servicehub_staging"
+#   password = var.rds_password
+#
+#   allowed_cidrs           = []
+#   allowed_security_groups = [module.networking.ecs_sg_id]
+#   publicly_accessible     = false
+# }
 
-  vpc_id        = module.networking.vpc_id
-  db_subnet_ids = module.networking.private_subnet_ids
-
-  db_name  = "servicehub"
-  username = "servicehub_staging"
-  password = var.rds_password
-
-  # Production: no CIDR access, only ECS security group
-  allowed_cidrs           = []
-  allowed_security_groups = [module.networking.ecs_sg_id]
-  publicly_accessible     = false
-}
 
 # ─── ALB Module ──────────────────────────────────────────────────────────────
 module "alb" {
@@ -123,10 +123,12 @@ module "ecs" {
   target_group_arn      = module.alb.target_group_arn
 
   # Database
-  rds_endpoint = module.rds.endpoint
-  rds_port     = module.rds.port
-  db_name      = "servicehub"
-  db_username  = "servicehub_staging"
+  rds_endpoint = "servicehub-shared.c7wm0m08amkh.eu-west-1.rds.amazonaws.com"
+  rds_port     = 5432
+  db_name      = "servicehub?sslmode=require"
+  db_username  = "servicehub_shared"
+  db_password  = var.rds_password
+  jwt_secret   = var.jwt_secret
 
   # Sizing
   cpu           = 512

@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
 
-        log.error("Runtime exception occurred", ex.getMessage());
+        log.error("Runtime exception occurred", ex);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                 "status", 400,
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
 
-        log.error("Unexpected system error", ex.getMessage());
+        log.error("Unexpected system error", ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                 "status", 500,

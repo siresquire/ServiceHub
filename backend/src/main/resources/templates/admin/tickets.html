@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ServiceHub — All Tickets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --sidebar: #1a1f2e;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --teal: #0fbf8a;
+            --teal-bg: #e8faf4;
+            --amber: #f59e0b;
+            --amber-bg: #fff8ec;
+            --blue: #3b82f6;
+            --blue-bg: #eff6ff;
+            --red: #ef4444;
+            --red-bg: #fef2f2;
+            --txt: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --font: 'Inter', sans-serif;
+            --sw: 240px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--txt);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR (Matches Screenshots exactly) */
+        .sidebar {
+            width: var(--sw);
+            background: var(--sidebar);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 200;
+            transition: transform 0.25s ease;
+            border-right: 1px solid #2d3748;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 24px 20px 20px;
+            flex-shrink: 0;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            background: var(--teal);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #718096;
+            text-transform: uppercase;
+            padding: 16px 20px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #a0aec0;
+            text-decoration: none;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-item.active {
+            color: var(--teal);
+            background: rgba(15, 191, 138, 0.1);
+            border-radius: 8px;
+            margin: 0 12px;
+            padding: 10px 16px;
+            width: calc(100% - 24px);
+        }
+
+        .nav-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .s-avatar {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border-radius: 50%;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--teal);
+        }
+
+        .s-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .s-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .s-role {
+            font-size: 11px;
+            color: #a0aec0;
+        }
+
+        .btn-logout {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* COLLAPSE BTN */
+        .collapse-btn {
+            position: absolute;
+            right: -12px;
+            top: 30px;
+            width: 24px;
+            height: 24px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            z-index: 201;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 199;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sw);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            max-width: calc(100vw - var(--sw));
+        }
+
+        /* TOPBAR */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 72px;
+            background: var(--white);
+            border-bottom: 1px solid #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--txt);
+            padding: 4px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--txt);
+            line-height: 1.2;
+        }
+
+        .page-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .search-input {
+            width: 240px;
+            height: 36px;
+            padding: 0 16px 0 36px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f8fafc;
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--txt);
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--teal);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(15, 191, 138, 0.1);
+        }
+
+        .btn-new {
+            background: var(--teal);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            height: 36px;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-new:hover {
+            background: #0da87a;
+        }
+
+        .notif-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            color: var(--muted);
+        }
+
+        .notif-btn .dot {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 16px;
+            height: 16px;
+            background: var(--red);
+            border-radius: 50%;
+            border: 2px solid var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .t-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--txt);
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 32px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* FILTER BAR */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .filters-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-icon {
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .filter-select {
+            height: 36px;
+            padding: 0 32px 0 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--white);
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--txt);
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .ticket-count {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* TABLE */
+        .table-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 16px 24px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #94a3b8;
+            border-bottom: 1px solid var(--border);
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px 24px;
+            font-size: 13px;
+            color: var(--txt);
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Highlight specific severely breached rows based on mockup */
+        tr.breached-bg {
+            background: #fffcfc;
+        }
+
+        tr.breached-bg:hover {
+            background: #fff5f5;
+        }
+
+        .t-id {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .t-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--txt);
+        }
+
+        .t-assignee {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .t-empty {
+            color: var(--muted);
+        }
+
+        /* PILLS Matches mockup exactly */
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Category styling */
+        .cat-it {
+            color: #0ea5e9;
+            border: 1px solid #e0f2fe;
+            background: #f0f9ff;
+        }
+
+        .cat-fac {
+            color: #d97706;
+            border: 1px solid #fef3c7;
+            background: #fffbeb;
+        }
+
+        .cat-hr {
+            color: var(--teal);
+            border: 1px solid #ccfbf1;
+            background: #f0fdfa;
+        }
+
+        .cat-other {
+            color: #64748b;
+            border: 1px solid #f1f5f9;
+            background: #f8fafc;
+        }
+
+        /* Priority styling */
+        .pri-crit {
+            background: var(--red-bg);
+            color: var(--red);
+            padding: 4px 16px;
+        }
+
+        .pri-high {
+            background: #fff7ed;
+            color: #ea580c;
+            padding: 4px 16px;
+        }
+
+        .pri-med {
+            background: #f8fafc;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 4px 16px;
+        }
+
+        .pri-low {
+            background: #f8fafc;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 4px 16px;
+        }
+
+        /* Status styling */
+        .stat-open {
+            background: var(--blue);
+            color: white;
+        }
+
+        .stat-prog {
+            background: var(--teal);
+            color: white;
+        }
+
+        .stat-assig {
+            background: var(--amber);
+            color: white;
+        }
+
+        .stat-resolv {
+            background: #16a34a;
+            color: white;
+        }
+
+        /* SLA styling */
+        .sla-breached {
+            color: var(--red);
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sla-normal {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--txt);
+            margin-bottom: 8px;
+        }
+
+        .empty-sub {
+            font-size: 14px;
+            color: var(--muted);
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--white);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 720px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modal-id {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .modal-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--txt);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--txt);
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            min-height: 0;
+        }
+
+        .modal-left {
+            padding: 24px 28px;
+            border-right: 1px solid var(--border);
+        }
+
+        .modal-right {
+            padding: 24px 28px;
+            background: #fafbfc;
+        }
+
+        .modal-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--txt);
+            margin-bottom: 10px;
+        }
+
+        .modal-desc {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .modal-meta-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            margin-top: 20px;
+        }
+
+        .modal-meta-label:first-child {
+            margin-top: 0;
+        }
+
+        .modal-meta-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--txt);
+        }
+
+        .modal-meta-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--teal-bg);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .modal-meta-sub {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .modal-sla {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal-sla-ok {
+            color: var(--teal);
+        }
+
+        .modal-sla-breach {
+            color: var(--red);
+        }
+
+        .modal-actions {
+            margin-top: 24px;
+        }
+
+        .modal-action-btn {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .btn-start {
+            background: var(--teal);
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #0da87a;
+        }
+
+        .btn-assign {
+            background: var(--blue);
+            color: white;
+        }
+
+        .btn-assign:hover {
+            background: #2563eb;
+        }
+
+        .btn-resolve {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-resolve:hover {
+            background: #15803d;
+        }
+
+        .btn-close-ticket {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .btn-close-ticket:hover {
+            background: #fecaca;
+        }
+
+        /* Activity */
+        .activity-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .activity-who {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--txt);
+        }
+
+        .activity-when {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 13px;
+            color: var(--txt);
+            resize: none;
+            min-height: 44px;
+            margin-top: 8px;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .btn-comment {
+            background: var(--txt);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            float: right;
+        }
+
+        /* Clickable rows */
+        tbody tr {
+            cursor: pointer;
+        }
+
+        /* Mobile */
+        @media (max-width: 1024px) {
+            .search-input {
+                width: 180px;
+            }
+
+            .content {
+                padding: 24px;
+            }
+
+            th,
+            td {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .collapse-btn {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+                max-width: 100vw;
+            }
+
+            .menu-btn {
+                display: block;
+            }
+
+            .search-wrap {
+                display: none;
+            }
+
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .filters-left {
+                flex-direction: column;
+                width: 100%;
+                align-items: flex-start;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .modal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-left {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- Matches Sidebar in Screenshot -->
+    <aside class="sidebar" id="sidebar">
+        <div class="collapse-btn">◀</div>
+        <div class="logo">
+            <div class="logo-icon">S</div>
+            <span class="logo-text">ServiceHub</span>
+        </div>
+
+        <div class="nav-label">Menu</div>
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+        <a class="nav-item active" href="/admin/tickets"><span class="nav-icon">🎫</span> Tickets</a>
+        <a class="nav-item" href="/dashboard"><span class="nav-icon">📈</span> Analytics</a>
+        <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+
+        <div class="nav-label">Departments</div>
+        <a class="nav-item" href="/admin/departments"><span class="nav-icon">🎧</span> IT Support</a>
+        <a class="nav-item" href="/admin/departments"><span class="nav-icon">🏢</span> Facilities</a>
+        <a class="nav-item" href="/admin/departments"><span class="nav-icon">👥</span> HR Requests</a>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="s-avatar"
+                    th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'SD'}">SD
+                </div>
+                <div class="s-info">
+                    <div class="s-name" th:text="${#authentication != null ? #authentication.name : 'Sam Director'}">Sam
+                        Director</div>
+                    <div class="s-role">Admin</div>
+                </div>
+                <form action="/auth/logout" method="post" style="margin:0;">
+                    <button type="submit" class="btn-logout" title="Logout">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-btn" onclick="openSidebar()">☰</button>
+                <div>
+                    <h1 class="page-title">Tickets</h1>
+                    <div class="page-sub">Manage all service requests</div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Search tickets...">
+                </div>
+                <button class="notif-btn">
+                    🔔
+                    <span class="dot">1</span>
+                </button>
+                <div class="t-avatar"
+                    th:text="${#authentication != null ? #authentication.name.substring(0,2).toUpperCase() : 'SD'}">SD
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="filter-bar">
+                <div class="filters-left">
+                    <div class="filter-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                        Filter:
+                    </div>
+                    <select class="filter-select">
+                        <option>All Status</option>
+                        <option>Open</option>
+                        <option>In Progress</option>
+                        <option>Resolved</option>
+                    </select>
+                    <select class="filter-select">
+                        <option>All Priority</option>
+                        <option>Critical</option>
+                        <option>High</option>
+                        <option>Medium</option>
+                    </select>
+                </div>
+                <div class="ticket-count" th:text="${requests != null ? requests.size() + ' tickets' : '0 tickets'}">8
+                    tickets</div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TICKET</th>
+                                <th>CATEGORY</th>
+                                <th>PRIORITY</th>
+                                <th>STATUS</th>
+                                <th>ASSIGNEE</th>
+                                <th>SLA</th>
+                            </tr>
+                        </thead>
+                        <tbody th:if="${requests != null and !requests.empty}">
+                            <tr th:each="req : ${requests}"
+                                th:classappend="${req.slaBreached and req.priority == 'CRITICAL'} ? 'breached-bg' : ''"
+                                th:onclick="'openTicketModal(' + ${req.id} + ')'">
+
+                                <td>
+                                    <span class="t-id" th:text="'SH-' + (1000 + req.id)">SH-1001</span>
+                                    <span class="t-title" th:text="${req.title}">VPN connection dropping</span>
+                                </td>
+                                <td>
+                                    <span class="pill" th:classappend="${req.category == 'IT_SUPPORT'} ? 'cat-it' :
+                                                      (${req.category == 'FACILITIES'} ? 'cat-fac' :
+                                                      (${req.category == 'HR_REQUEST'} ? 'cat-hr' : 'cat-other'))"
+                                        th:text="${#strings.capitalize(#strings.replace(req.category, '_', ' '))}">IT
+                                        Support</span>
+                                </td>
+                                <td>
+                                    <span class="pill" th:classappend="${req.priority == 'CRITICAL'} ? 'pri-crit' :
+                                                      (${req.priority == 'HIGH'} ? 'pri-high' :
+                                                      (${req.priority == 'MEDIUM'} ? 'pri-med' : 'pri-low'))"
+                                        th:text="${#strings.capitalize(req.priority.toLowerCase())}">High</span>
+                                </td>
+                                <td>
+                                    <span class="pill" th:classappend="${req.status == 'OPEN' or req.status == 'SUBMITTED'} ? 'stat-open' :
+                                                      (${req.status == 'IN_PROGRESS'} ? 'stat-prog' :
+                                                      (${req.status == 'ASSIGNED'} ? 'stat-assig' :
+                                                      (${req.status == 'RESOLVED'} ? 'stat-resolv' : '')))"
+                                        th:text="${#strings.capitalize(#strings.replace(req.status, '_', ' '))}">In
+                                        Progress</span>
+                                </td>
+                                <td>
+                                    <div class="t-assignee" th:if="${req.assignedToName != null}">
+                                        <span th:text="${req.assignedToName}">Alex Morgan</span>
+                                    </div>
+                                    <span class="t-empty" th:unless="${req.assignedToName != null}">—</span>
+                                </td>
+                                <td>
+                                    <span class="sla-breached" th:if="${req.slaBreached}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        BREACHED
+                                    </span>
+                                    <span class="sla-normal" th:unless="${req.slaBreached}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        19h 24m
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody th:if="${requests == null or requests.empty}">
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">🎟️</div>
+                                        <div class="empty-title">No tickets found</div>
+                                        <div class="empty-sub">There are currently no service requests in the system.
+                                            When users submit new requests, they will appear here.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Ticket Detail Modal -->
+    <div class="modal-overlay" id="ticketModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <span class="modal-id" id="m-id">SH-1001</span>
+                        <div class="modal-pills" id="m-pills"></div>
+                    </div>
+                    <div class="modal-title" id="m-title">Loading...</div>
+                </div>
+                <button class="modal-close" onclick="closeTicketModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-grid">
+                    <div class="modal-left">
+                        <div class="modal-section-title">Description</div>
+                        <div class="modal-desc" id="m-desc"></div>
+                        <div class="modal-section-title" style="display:flex;align-items:center;gap:6px;">💬 Activity
+                        </div>
+                        <div id="m-activity">
+                            <div class="activity-card">
+                                <div class="activity-header">
+                                    <span class="activity-who">System</span>
+                                    <span class="activity-when" id="m-activity-date"></span>
+                                </div>
+                                <div class="activity-text" id="m-activity-text">Ticket created</div>
+                            </div>
+                        </div>
+                        <textarea class="comment-input" placeholder="Add a comment..."></textarea>
+                        <button class="btn-comment">Post Comment</button>
+                        <div style="clear:both;"></div>
+                    </div>
+                    <div class="modal-right">
+                        <div class="modal-meta-label">REQUESTER</div>
+                        <div class="modal-meta-value">
+                            <div class="modal-meta-avatar" id="m-req-avatar">PP</div>
+                            <div>
+                                <div id="m-req-name">—</div>
+                            </div>
+                        </div>
+                        <div class="modal-meta-label">ASSIGNEE</div>
+                        <div class="modal-meta-value">
+                            <div class="modal-meta-avatar" id="m-assign-avatar"
+                                style="background:#eff6ff;color:#3b82f6;">—</div>
+                            <div>
+                                <div id="m-assign-name">Unassigned</div>
+                            </div>
+                        </div>
+                        <div class="modal-meta-label">CREATED</div>
+                        <div class="modal-meta-value">
+                            <span style="font-size:16px;">📅</span>
+                            <span id="m-created">—</span>
+                        </div>
+                        <div class="modal-meta-label">SLA DEADLINE</div>
+                        <div class="modal-sla" id="m-sla">
+                            <span style="font-size:16px;">⏱</span>
+                            <span id="m-sla-text">—</span>
+                        </div>
+                        <div class="modal-actions" id="m-actions"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+        function closeTicketModal() { document.getElementById('ticketModal').classList.remove('show'); }
+        document.getElementById('ticketModal').addEventListener('click', function (e) {
+            if (e.target === this) closeTicketModal();
+        });
+
+        async function openTicketModal(id) {
+            const modal = document.getElementById('ticketModal');
+            modal.classList.add('show');
+            document.getElementById('m-title').textContent = 'Loading...';
+            document.getElementById('m-desc').textContent = '';
+
+            try {
+                const res = await fetch('/api/requests/' + id);
+                if (!res.ok) throw new Error('Failed to load');
+                const d = await res.json();
+
+                document.getElementById('m-id').textContent = 'SH-' + (1000 + d.id);
+                document.getElementById('m-title').textContent = d.title;
+                document.getElementById('m-desc').textContent = d.description || 'No description provided.';
+
+                // Pills
+                const pillsEl = document.getElementById('m-pills');
+                const catClass = { 'IT_SUPPORT': 'cat-it', 'FACILITIES': 'cat-fac', 'HR_REQUEST': 'cat-hr' }[d.category] || 'cat-other';
+                const priClass = { 'CRITICAL': 'pri-crit', 'HIGH': 'pri-high', 'MEDIUM': 'pri-med', 'LOW': 'pri-low' }[d.priority] || 'pri-low';
+                const statClass = { 'OPEN': 'stat-open', 'SUBMITTED': 'stat-open', 'IN_PROGRESS': 'stat-prog', 'ASSIGNED': 'stat-assig', 'RESOLVED': 'stat-resolv' }[d.status] || '';
+                pillsEl.innerHTML = `
+                    <span class="pill ${catClass}">${d.category.replace(/_/g, ' ')}</span>
+                    <span class="pill ${priClass}">${d.priority.charAt(0) + d.priority.slice(1).toLowerCase()}</span>
+                    <span class="pill ${statClass}">${d.status.replace(/_/g, ' ')}</span>
+                `;
+
+                // Requester
+                const rName = d.requesterName || 'Unknown';
+                document.getElementById('m-req-name').textContent = rName;
+                document.getElementById('m-req-avatar').textContent = rName.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+
+                // Assignee
+                const aName = d.assignedToName || 'Unassigned';
+                document.getElementById('m-assign-name').textContent = aName;
+                document.getElementById('m-assign-avatar').textContent = aName !== 'Unassigned' ? aName.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2) : '—';
+
+                // Created
+                if (d.createdAt) {
+                    const dt = new Date(d.createdAt);
+                    document.getElementById('m-created').textContent = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                }
+
+                // SLA
+                const slaEl = document.getElementById('m-sla');
+                if (d.slaBreached) {
+                    slaEl.className = 'modal-sla modal-sla-breach';
+                    document.getElementById('m-sla-text').textContent = 'BREACHED';
+                } else if (d.resolutionSlaDeadline) {
+                    slaEl.className = 'modal-sla modal-sla-ok';
+                    const now = new Date();
+                    const deadline = new Date(d.resolutionSlaDeadline);
+                    const diffMs = deadline - now;
+                    if (diffMs > 0) {
+                        const hrs = Math.floor(diffMs / 3600000);
+                        const mins = Math.floor((diffMs % 3600000) / 60000);
+                        document.getElementById('m-sla-text').textContent = hrs + 'h ' + mins + 'm';
+                    } else {
+                        slaEl.className = 'modal-sla modal-sla-breach';
+                        document.getElementById('m-sla-text').textContent = 'OVERDUE';
+                    }
+                } else {
+                    document.getElementById('m-sla-text').textContent = 'No SLA';
+                }
+
+                // Activity
+                let actText = 'Ticket created';
+                if (d.assignedToName) actText = 'Assigned to ' + d.assignedToName;
+                document.getElementById('m-activity-text').textContent = actText;
+                if (d.createdAt) {
+                    const dt = new Date(d.createdAt);
+                    document.getElementById('m-activity-date').textContent = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                }
+
+                // Action buttons based on status
+                const actionsEl = document.getElementById('m-actions');
+                let btns = '';
+                if (d.status === 'OPEN' || d.status === 'SUBMITTED') {
+                    btns = '<button class="modal-action-btn btn-assign" onclick="updateTicketStatus(' + d.id + ',\'ASSIGNED\')">⚡ Assign Ticket</button>';
+                } else if (d.status === 'ASSIGNED') {
+                    btns = '<button class="modal-action-btn btn-start" onclick="updateTicketStatus(' + d.id + ',\'IN_PROGRESS\')">▶ Start Work</button>';
+                } else if (d.status === 'IN_PROGRESS') {
+                    btns = '<button class="modal-action-btn btn-resolve" onclick="updateTicketStatus(' + d.id + ',\'RESOLVED\')">✓ Resolve</button>';
+                }
+                if (d.status !== 'RESOLVED' && d.status !== 'CLOSED') {
+                    btns += '<button class="modal-action-btn btn-close-ticket" onclick="updateTicketStatus(' + d.id + ',\'CLOSED\')">✕ Close Ticket</button>';
+                }
+                actionsEl.innerHTML = btns;
+
+            } catch (err) {
+                document.getElementById('m-title').textContent = 'Error loading ticket';
+                document.getElementById('m-desc').textContent = err.message;
+            }
+        }
+
+        async function updateTicketStatus(id, newStatus) {
+            try {
+                const res = await fetch('/api/requests/' + id + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newStatus: newStatus })
+                });
+                if (res.ok) {
+                    closeTicketModal();
+                    window.location.reload();
+                } else {
+                    const err = await res.text();
+                    alert('Error: ' + err);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>

@@ -51,8 +51,25 @@ public class ServiceRequestController {
 
 
 
-    // TODO: Add assign endpoint - PUT /api/requests/{id}/assign
+    // DELETE /api/requests/{id} — Delete a ticket (only for requester or admin)
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Void> deleteRequest(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        requestService.deleteRequest(id, user);
+        return ResponseEntity.noContent().build();
+    }
 
+    // PUT /api/requests/{id} — Update a ticket (only for requester or admin)
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ServiceRequestResponse> updateRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody ServiceRequestDto dto,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(requestService.updateRequest(id, dto, user));
+    }
 
     // GET /api/requests/my-requests — USER sees own tickets
     @GetMapping("/my-requests")

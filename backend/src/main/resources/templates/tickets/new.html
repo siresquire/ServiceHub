@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ServiceHub — Create New Request</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --sidebar: #1a1f2e;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --teal: #0fbf8a;
+            --teal-bg: #e8faf4;
+            --amber: #f59e0b;
+            --amber-bg: #fff8ec;
+            --blue: #3b82f6;
+            --blue-bg: #eff6ff;
+            --red: #ef4444;
+            --red-bg: #fff1f1;
+            --txt: #1e293b;
+            --muted: #94a3b8;
+            --border: #e2e8f0;
+            --font: 'Inter', sans-serif;
+            --sw: 215px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--txt);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sw);
+            background: var(--sidebar);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 200;
+            transition: transform 0.25s ease;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 18px 18px;
+            flex-shrink: 0;
+        }
+
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            background: var(--teal);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #4a5568;
+            text-transform: uppercase;
+            padding: 10px 18px 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8892a4;
+            text-decoration: none;
+            transition: all 0.12s;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-item.active {
+            color: var(--teal);
+            background: rgba(15, 191, 138, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 14px;
+            width: 17px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 14px 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            flex-shrink: 0;
+        }
+
+        .s-avatar {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .s-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .s-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .s-role {
+            font-size: 11px;
+            color: #8892a4;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 199;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sw);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            max-width: calc(100vw - var(--sw));
+        }
+
+        /* TOPBAR */
+        .topbar {
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            height: 56px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--txt);
+            flex-shrink: 0;
+            padding: 4px;
+        }
+
+        .topbar-title-wrap {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .page-title {
+            font-size: 15px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .page-sub {
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--txt);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 24px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* FORM STYLES */
+        .form-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--txt);
+            margin-bottom: 6px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 14px;
+            background: var(--white);
+            color: var(--txt);
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(15, 191, 138, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+        }
+
+        .btn-primary:hover {
+            background: #0da87a;
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--txt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                max-width: 100vw;
+            }
+
+            .menu-btn {
+                display: block;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <div class="logo-icon">S</div>
+            <span class="logo-text">ServiceHub</span>
+        </div>
+        <div class="nav-label">Menu</div>
+        <a class="nav-item"
+            th:href="${user != null ? (user.role.name() == 'ADMIN' ? '/admin/dashboard' : (user.role.name() == 'AGENT' ? '/agent/dashboard' : '/user/dashboard')) : '/user/dashboard'}">
+            <span class="nav-icon">⊞</span> Dashboard
+        </a>
+        <a class="nav-item" href="/tickets/my"><span class="nav-icon">📋</span> My Requests</a>
+        <a class="nav-item active" href="/tickets/new"><span class="nav-icon">➕</span> New Request</a>
+        <div class="sidebar-footer">
+            <div class="s-avatar">ME</div>
+            <div class="s-info">
+                <div class="s-name">User</div>
+                <div class="s-role">User</div>
+            </div>
+            <form action="/auth/logout" method="post" style="margin:0;">
+                <button type="submit"
+                    style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;flex-shrink:0;"
+                    title="Logout">🚪</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <button class="menu-btn" onclick="openSidebar()">☰</button>
+            <div class="topbar-title-wrap">
+                <div class="page-title">Create New Request</div>
+                <div class="page-sub">Submit a service request ticket</div>
+            </div>
+            <div class="topbar-actions">
+                <a th:href="${user != null ? (user.role.name() == 'ADMIN' ? '/admin/dashboard' : (user.role.name() == 'AGENT' ? '/agent/dashboard' : '/user/dashboard')) : '/user/dashboard'}"
+                    class="back-btn">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="form-card">
+                <h1 class="form-title">New Service Request</h1>
+                <p class="form-subtitle">Fill in the details below to submit your request</p>
+
+                <div id="errorAlert" class="alert alert-error" style="display:none;"></div>
+                <div id="successAlert" class="alert alert-success" style="display:none;"></div>
+
+                <form id="ticketForm">
+                    <div class="form-group">
+                        <label class="form-label" for="title">Title *</label>
+                        <input type="text" id="title" name="title" class="form-input"
+                            placeholder="Enter a brief title for your request" required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="description">Description *</label>
+                        <textarea id="description" name="description" class="form-textarea"
+                            placeholder="Describe your request in detail..." required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="category">Category *</label>
+                            <select id="category" name="category" class="form-select" required
+                                onchange="updateSlaPreview()">
+                                <option value="">Select category...</option>
+                                <option value="IT_SUPPORT">IT Support</option>
+                                <option value="FACILITIES">Facilities</option>
+                                <option value="HR">Human Resources</option>
+                                <option value="FINANCE">Finance</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="priority">Priority *</label>
+                            <select id="priority" name="priority" class="form-select" required
+                                onchange="updateSlaPreview()">
+                                <option value="">Select priority...</option>
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="slaPreview"
+                        style="display:none; background:var(--blue-bg); padding:12px 16px; border-radius:8px; border:1px solid var(--blue);">
+                        <div style="font-size:12px; font-weight:600; color:var(--blue); margin-bottom:4px;">SLA Target
+                            Times</div>
+                        <div id="slaText" style="font-size:13px; color:var(--txt);"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Submit Request</button>
+                        <a th:href="${user != null ? (user.role.name() == 'ADMIN' ? '/admin/dashboard' : (user.role.name() == 'AGENT' ? '/agent/dashboard' : '/user/dashboard')) : '/user/dashboard'}"
+                            class="btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script th:inline="javascript">
+        function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+        // SLA Preview configuration based on backend SLA policies
+        const slaConfig = {
+            'CRITICAL': { response: '15 minutes', resolution: '4 hours' },
+            'HIGH': { response: '1 hour', resolution: '8 hours' },
+            'MEDIUM': { response: '4 hours', resolution: '24 hours' },
+            'LOW': { response: '8 hours', resolution: '72 hours' }
+        };
+
+        function updateSlaPreview() {
+            const category = document.getElementById('category').value;
+            const priority = document.getElementById('priority').value;
+            const slaPreview = document.getElementById('slaPreview');
+            const slaText = document.getElementById('slaText');
+
+            if (category && priority && slaConfig[priority]) {
+                const sla = slaConfig[priority];
+                slaText.innerHTML = `
+                <strong>Response Time:</strong> ${sla.response}<br>
+                <strong>Resolution Time:</strong> ${sla.resolution}<br>
+                <small style="color:var(--muted);">SLA targets are calculated based on priority level</small>
+            `;
+                slaPreview.style.display = 'block';
+            } else {
+                slaPreview.style.display = 'none';
+            }
+        }
+
+        document.getElementById('ticketForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const errorAlert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+            errorAlert.style.display = 'none';
+            successAlert.style.display = 'none';
+
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                priority: document.getElementById('priority').value
+            };
+
+            try {
+                const response = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    successAlert.textContent = 'Request submitted successfully! Redirecting to dashboard...';
+                    successAlert.style.display = 'block';
+                    document.getElementById('ticketForm').reset();
+                    setTimeout(() => {
+                        const returnUrl = /*[[${user != null ? (user.role.name() == 'ADMIN' ? '/admin/dashboard' : (user.role.name() == 'AGENT' ? '/agent/dashboard' : '/user/dashboard')) : '/user/dashboard'}]]*/ '/user/dashboard';
+                        window.location.href = returnUrl;
+                    }, 2000);
+                } else {
+                    const error = await response.text();
+                    errorAlert.textContent = 'Error: ' + error;
+                    errorAlert.style.display = 'block';
+                }
+            } catch (err) {
+                errorAlert.textContent = 'Error: ' + err.message;
+                errorAlert.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -78,7 +78,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String email = jwtService.extractEmail(token);
 
-                User user = userRepository.findByEmail(email).orElse(null);
+                // Use method that eagerly fetches department to avoid LazyInitializationException in templates
+                User user = userRepository.findByEmailWithDepartment(email).orElse(null);
 
                 if (user == null) {
                     filterChain.doFilter(request, response);
@@ -98,5 +99,3 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-
-

@@ -43,6 +43,8 @@ public class ServiceRequestService {
                 .requester(requester)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .slaBreached(false)
+                .resolved(false)
                 .build();
 
         req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), req.getPriority()));
@@ -105,6 +107,68 @@ public class ServiceRequestService {
     }
 
     /**
+     * Get agent dashboard statistics for the dashboard cards
+     * @param agent the agent user
+     * @return map containing assignedToMe, unassigned, slaBreaches, slaWarnings counts
+     */
+    public java.util.Map<String, Long> getAgentDashboardStats(User agent) {
+        java.util.Map<String, Long> stats = new java.util.HashMap<>();
+
+        // Count assigned to me
+        stats.put("assignedToMe", requestRepository.countByAssignedToId(agent.getId()));
+
+        // Count unassigned in department (OPEN or ASSIGNED but no agent assigned)
+        stats.put("unassigned", requestRepository.countUnassignedByDepartment(
+            agent.getDepartment().getName(),
+            java.util.List.of(RequestStatus.OPEN, RequestStatus.ASSIGNED, RequestStatus.IN_PROGRESS)
+        ));
+
+        // Count SLA breaches for agent
+        stats.put("slaBreaches", requestRepository.countSlaBreachesByAgent(agent.getId()));
+
+        // Count SLA warnings (deadline within 24 hours)
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime warningTime = now.plusHours(24);
+        stats.put("slaWarnings", requestRepository.countSlaWarningsByAgent(agent.getId(), now, warningTime));
+
+        return stats;
+    }
+
+    /**
+     * Get user dashboard statistics for the dashboard cards
+     * @param user the user
+     * @return map containing openRequests, resolvedRequests, slaBreaches, totalRequests counts
+     */
+    public java.util.Map<String, Long> getUserDashboardStats(User user) {
+        java.util.Map<String, Long> stats = new java.util.HashMap<>();
+
+        java.util.List<ServiceRequestResponse> userRequests = getRequestsByRequester(user.getId());
+
+        // Count open requests (not resolved/closed)
+        long openRequests = userRequests.stream()
+            .filter(r -> !r.getStatus().equals("RESOLVED") && !r.getStatus().equals("CLOSED"))
+            .count();
+        stats.put("openRequests", openRequests);
+
+        // Count resolved requests
+        long resolvedRequests = userRequests.stream()
+            .filter(r -> r.getStatus().equals("RESOLVED") || r.getStatus().equals("CLOSED"))
+            .count();
+        stats.put("resolvedRequests", resolvedRequests);
+
+        // Count SLA breaches
+        long slaBreaches = userRequests.stream()
+            .filter(r -> r.isSlaBreached())
+            .count();
+        stats.put("slaBreaches", slaBreaches);
+
+        // Total requests
+        stats.put("totalRequests", (long) userRequests.size());
+
+        return stats;
+    }
+
+    /**
      * Helper for assign a request to an agent which internally calls the updateStatus
      * @param id Service request id to update
      * @param agentId agent to assign the request to. The status will be updated to ASSIGNED and the agent will be set as the assignedTo field of the request
@@ -164,6 +228,67 @@ public class ServiceRequestService {
         }
     }
 
+
+    /**
+     * Delete a service request. Only the requester or an admin can delete.
+     * Can only delete requests that are not ASSIGNED or IN_PROGRESS.
+     *
+     * @param id the request id
+     * @param user the user attempting to delete
+     */
+    public void deleteRequest(Long id, User user) {
+        ServiceRequest request = requestRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("ServiceRequest not found with id: " + id));
+
+        // Check permissions: only requester or admin can delete
+        if (!request.getRequester().getId().equals(user.getId()) && user.getRole() != Role.ADMIN) {
+            throw new BadRequestException("You can only delete your own requests");
+        }
+
+        // Cannot delete if already assigned or in progress
+        if (request.getStatus() == RequestStatus.ASSIGNED || request.getStatus() == RequestStatus.IN_PROGRESS) {
+            throw new BadRequestException("Cannot delete a request that is already assigned or in progress");
+        }
+
+        requestRepository.delete(request);
+    }
+
+    /**
+     * Update a service request. Only the requester or an admin can update.
+     * Can only update OPEN or SUBMITTED requests.
+     *
+     * @param id the request id
+     * @param dto the updated data
+     * @param user the user attempting to update
+     * @return the updated response
+     */
+    public ServiceRequestResponse updateRequest(Long id, ServiceRequestDto dto, User user) {
+        ServiceRequest request = requestRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("ServiceRequest not found with id: " + id));
+
+        // Check permissions: only requester or admin can update
+        if (!request.getRequester().getId().equals(user.getId()) && user.getRole() != Role.ADMIN) {
+            throw new BadRequestException("You can only update your own requests");
+        }
+
+        // Cannot edit if already assigned or in progress
+        if (request.getStatus() == RequestStatus.ASSIGNED || request.getStatus() == RequestStatus.IN_PROGRESS) {
+            throw new BadRequestException("Cannot edit a request that is already assigned or in progress");
+        }
+
+        // Update fields
+        request.setTitle(dto.getTitle());
+        request.setDescription(dto.getDescription());
+        if (dto.getCategory() != null) {
+            request.setCategory(RequestCategory.valueOf(dto.getCategory()));
+        }
+        if (dto.getPriority() != null) {
+            request.setPriority(Priority.valueOf(dto.getPriority()));
+        }
+
+        ServiceRequest saved = requestRepository.save(request);
+        return toResponse(saved);
+    }
 
     private ServiceRequestResponse toResponse(ServiceRequest req) {
         return ServiceRequestResponse.builder()

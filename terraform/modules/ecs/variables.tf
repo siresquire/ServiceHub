@@ -92,6 +92,16 @@ variable "db_username" {
   default     = "servicehub_staging"
 }
 
+variable "db_password" {
+  description = "Database password for SPRING_DATASOURCE_PASSWORD"
+  type        = string
+}
+
+variable "jwt_secret" {
+  description = "JWT Secret for application authentication"
+  type        = string
+}
+
 variable "rds_endpoint" {
   description = "RDS endpoint address"
   type        = string

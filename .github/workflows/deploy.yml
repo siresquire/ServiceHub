@@ -60,6 +60,9 @@ jobs:
   publish-ecr:
     name: Publish to ECR
     needs: build-image
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC authentication with AWS
     uses: ./.github/workflows/_reusable-publish-ecr.yml
     with:
       image-name: ${{ needs.build-image.outputs.image_name }}

@@ -58,6 +58,6 @@ resource "aws_db_instance" "this" {
 
   storage_encrypted       = true
   backup_retention_period = 7
-  deletion_protection     = true
-  skip_final_snapshot     = false
+  deletion_protection     = false
+  skip_final_snapshot     = true
 }

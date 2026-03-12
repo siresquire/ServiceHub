@@ -143,11 +143,11 @@ public class ViewController {
         List<ServiceRequestResponse> assigned = requestService.getAssignedRequests(user).stream()
                 .map(ServiceRequestResponse::toResponse).toList();
         model.addAttribute("assignedTickets", assigned);
-        model.addAttribute("unassignedTickets", requestService.getUnassignedRequests().stream()
+        model.addAttribute("unassignedTickets", requestService.getUnassignedRequests(user.getDepartment(), user.getRole()).stream()
                 .map(ServiceRequestResponse::toResponse).toList());
-        model.addAttribute("slaBreaches", requestService.getSlaBreachedRequests().stream()
+        model.addAttribute("slaBreaches", requestService.getSlaBreachedRequests(user).stream()
                 .map(ServiceRequestResponse::toResponse).toList());
-        model.addAttribute("slaWarnings", requestService.getSlaWarningRequests().stream()
+        model.addAttribute("slaWarnings", requestService.getSlaWarningRequests(user).stream()
                 .map(ServiceRequestResponse::toResponse).toList());
 
         // Pre-calculate resolved count to avoid SpEL parsing issues with streams
@@ -166,7 +166,7 @@ public class ViewController {
     public String agentTickets(@AuthenticationPrincipal User user, Model model) {
         var assigned = requestService.getAssignedRequests(user).stream()
                 .map(ServiceRequestResponse::toResponse).toList();
-        var unassigned = requestService.getUnassignedRequests().stream()
+        var unassigned = requestService.getUnassignedRequests(user.getDepartment(), user.getRole()).stream()
                 .map(ServiceRequestResponse::toResponse).toList();
         // Merge assigned + unassigned for full list
         var allTickets = new java.util.ArrayList<>(assigned);

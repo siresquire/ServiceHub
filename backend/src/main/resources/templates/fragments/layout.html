@@ -75,10 +75,7 @@
         <span class="nav-icon"><i class="bi bi-grid-fill"></i></span> Dashboard
     </a>
     <a class="nav-item" th:classappend="${activePage == 'tickets'} ? 'active'" href="/agent/tickets">
-        <span class="nav-icon"><i class="bi bi-ticket-detailed"></i></span> View My Queue
-    </a>
-    <a class="nav-item" href="/agent/tickets">
-        <span class="nav-icon"><i class="bi bi-list-ul"></i></span> Display All
+        <span class="nav-icon"><i class="bi bi-ticket-detailed"></i></span> My Queue
     </a>
     <a class="nav-item" th:classappend="${activePage == 'analytics'} ? 'active'" href="/analytics">
         <span class="nav-icon"><i class="bi bi-bar-chart-line-fill"></i></span> Analytics

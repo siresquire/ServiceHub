@@ -150,18 +150,22 @@ public class ServiceRequestService {
                 .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
-    /**
-     * Returns all service requests belonging to a specific department.
-     * Used by agents to see their department's ticket queue.
-     * Cached by department name.
-     *
-     * @param department the name of the department to filter by
-     * @return list of service request responses for the given department
-     */
     @Transactional
-    public List<ServiceRequestResponse> getRequestsByDepartment(String department) {
-        return requestRepository.findByDepartment_Name(department)
-                .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
+    public List<ServiceRequestResponse> getRequestsByDepartment(String department, User user) {
+        if (user.getRole() == Role.ADMIN) {
+            return requestRepository.findByDepartment_Name(department)
+                    .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
+        }
+        
+        // An agent's department queue should only show items assigned to them
+        // or OPEN items in the department that are unassigned
+        List<ServiceRequest> assigned = requestRepository.findByAssignedTo(user);
+        List<ServiceRequest> unassignedOpen = requestRepository.findByDepartmentAndAssignedToIsNullAndStatus(user.getDepartment(), RequestStatus.OPEN);
+
+        var combined = new java.util.ArrayList<>(assigned);
+        combined.addAll(unassignedOpen);
+
+        return combined.stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
     /**
@@ -180,7 +184,7 @@ public class ServiceRequestService {
         return switch (user.getRole()) {
             case ADMIN -> requestRepository.findAll()
                     .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
-            case AGENT -> getRequestsByDepartment( user.getDepartment() != null ? user.getDepartment().getName() : null);
+            case AGENT -> getRequestsByDepartment( user.getDepartment() != null ? user.getDepartment().getName() : null, user);
             case USER -> getRequestsByRequester(user.getId());
         };
     }
@@ -288,15 +292,20 @@ public class ServiceRequestService {
         return requestRepository.findByAssignedTo(agent);
     }
 
-    /**
-     * Returns all service requests that have not yet been assigned to an agent.
-     * Used to populate the unassigned ticket queue for agents and admins.
-     *
-     * @return list of unassigned service requests
-     */
     @Transactional
     public List<ServiceRequest> getUnassignedRequests() {
         return requestRepository.findByAssignedToIsNull();
+    }
+
+    @Transactional
+    public List<ServiceRequest> getUnassignedRequests(Department department, Role role) {
+        if (department == null) return getUnassignedRequests();
+        if (role == Role.ADMIN) {
+            // Admin sees all unassigned in department
+            return requestRepository.findByDepartmentAndAssignedToIsNull(department);
+        }
+        // Agents see only OPEN unassigned in department
+        return requestRepository.findByDepartmentAndAssignedToIsNullAndStatus(department, RequestStatus.OPEN);
     }
 
     /**
@@ -308,6 +317,19 @@ public class ServiceRequestService {
     @Transactional
     public List<ServiceRequest> getSlaBreachedRequests() {
         return requestRepository.findBySlaBreachedTrue();
+    }
+
+    @Transactional
+    public List<ServiceRequest> getSlaBreachedRequests(User user) {
+        if (user == null || user.getRole() == Role.ADMIN) return getSlaBreachedRequests();
+        if (user.getDepartment() == null) return getSlaBreachedRequests();
+        
+        List<ServiceRequest> assigned = requestRepository.findByAssignedToAndSlaBreachedTrue(user);
+        List<ServiceRequest> unassignedOpen = requestRepository.findByDepartmentAndAssignedToIsNullAndStatusAndSlaBreachedTrue(user.getDepartment(), RequestStatus.OPEN);
+        
+        var combined = new java.util.ArrayList<>(assigned);
+        combined.addAll(unassignedOpen);
+        return combined;
     }
 
     /**
@@ -322,6 +344,22 @@ public class ServiceRequestService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime cutoff = now.plusHours(2);
         return requestRepository.findSlaWarnings(now, cutoff);
+    }
+
+    @Transactional
+    public List<ServiceRequest> getSlaWarningRequests(User user) {
+        if (user == null || user.getRole() == Role.ADMIN) return getSlaWarningRequests();
+        if (user.getDepartment() == null) return getSlaWarningRequests();
+        
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = now.plusHours(2);
+        
+        List<ServiceRequest> assigned = requestRepository.findSlaWarningsForAgent(user, now, cutoff);
+        List<ServiceRequest> unassignedOpen = requestRepository.findSlaWarningsForDepartmentUnassigned(user.getDepartment(), RequestStatus.OPEN, now, cutoff);
+        
+        var combined = new java.util.ArrayList<>(assigned);
+        combined.addAll(unassignedOpen);
+        return combined;
     }
 
 

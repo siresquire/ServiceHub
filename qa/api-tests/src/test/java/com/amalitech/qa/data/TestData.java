@@ -61,6 +61,17 @@ public class TestData {
     public static final String CATEGORY_ACCESS = "ACCESS";
     public static final String CATEGORY_OTHER = "OTHER";
     
+    // Request categories (for departments)
+    public static final String REQUEST_CATEGORY_IT_SUPPORT = "IT_SUPPORT";
+    public static final String REQUEST_CATEGORY_FACILITIES = "FACILITIES";
+    public static final String REQUEST_CATEGORY_HR_REQUEST = "HR_REQUEST";
+    
+    // Department test data
+    public static final String NEW_DEPARTMENT_NAME = "Quality Assurance";
+    public static final String NEW_DEPARTMENT_EMAIL = "qa@servicehub.com";
+    public static final String UPDATED_DEPARTMENT_NAME = "Quality Assurance Updated";
+    public static final String DUPLICATE_DEPARTMENT_NAME = "Information Technology"; // Assuming this exists
+    
     // Request statuses
     public static final String STATUS_OPEN = "OPEN";
     public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";

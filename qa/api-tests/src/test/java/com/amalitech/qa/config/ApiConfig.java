@@ -21,6 +21,10 @@ public class ApiConfig {
     public static final String DASHBOARD = "/dashboard";
     public static final String ADMIN = "/admin";
     
+    // Admin endpoints
+    public static final String ADMIN_USERS = "/api/admin/users";
+    public static final String ADMIN_DEPARTMENTS = "/api/admin/departments";
+    
     // Default headers
     public static Map<String, String> getDefaultHeaders() {
         Map<String, String> headers = new HashMap<>();

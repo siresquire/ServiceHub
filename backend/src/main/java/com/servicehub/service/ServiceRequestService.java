@@ -9,7 +9,6 @@ import com.servicehub.model.enums.*;
 import com.servicehub.repository.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,8 +22,8 @@ import java.util.stream.Collectors;
 public class ServiceRequestService {
     private final ServiceRequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final SlaPolicyService slaPolicyService;
     private final DepartmentRepository departmentRepository;
+    private final SlaPolicyService slaPolicyService;
 
     /**
      * Retrieves all service requests with pagination, ordered by creation date descending.
@@ -250,7 +249,6 @@ public class ServiceRequestService {
      * @return list of resolved/closed service requests for the user
      */
     @Transactional
-    @Cacheable(key = "'resolved:user:' + #user.id")
     public List<ServiceRequest> getResolvedRequestsForUser(User user) {
         return requestRepository.findByRequesterAndStatusIn(
                 user,
@@ -272,7 +270,6 @@ public class ServiceRequestService {
      * @return list of service requests assigned to the agent
      */
     @Transactional
-//    @Cacheable(key = "'assigned:agent:' + #agent.id")
     public List<ServiceRequest> getAssignedRequests(User agent) {
         return requestRepository.findByAssignedTo(agent);
     }

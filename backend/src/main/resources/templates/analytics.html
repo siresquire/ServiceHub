@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Analytics</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .ct { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+        .cs { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+        .chart-wrap { height: 260px; position: relative; }
+        .trends-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .period-btns { display: flex; gap: 4px; }
+        .pbtn { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--white); color: var(--muted); cursor: pointer; transition: all .12s; font-family: var(--font); }
+        .pbtn.active, .pbtn:hover { background: var(--teal-bg); color: var(--teal); border-color: var(--teal); }
+        .trends-wrap { height: 280px; position: relative; }
+        .bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .sla-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .sla-val { font-size: 36px; font-weight: 800; margin: 12px 0 4px; }
+        .sla-teal { color: var(--teal); }
+        .sla-desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+        .prog { height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+        .prog-fill { height: 100%; background: linear-gradient(90deg, var(--teal), #0da87a); border-radius: 10px; transition: width .6s ease; }
+        .mini-wrap { height: 200px; position: relative; }
+
+        @media(max-width:768px) {
+            .charts-row, .bottom { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Analytics & Insights', 'Performance metrics and trends')}"></header>
+
+    <div class="content">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon ic-green"><i class="bi bi-bar-chart-line-fill"></i></div>
+                <div><div class="stat-val" th:text="${stats.totalRequests ?: 0}">0</div><div class="stat-lbl">Total Requests</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-teal"><i class="bi bi-graph-up-arrow"></i></div>
+                <div><div class="stat-val" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1)+'%' : '0%'}">0%</div><div class="stat-lbl">SLA Compliance</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-amber"><i class="bi bi-clock-history"></i></div>
+                <div><div class="stat-val" th:text="${stats.avgResolutionHours != null ? #numbers.formatDecimal(stats.avgResolutionHours,1,1)+'h' : '0h'}">0h</div><div class="stat-lbl">Avg Resolution</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-blue"><i class="bi bi-clock"></i></div>
+                <div><div class="stat-val" th:text="${stats.openRequests ?: 0}">0</div><div class="stat-lbl">Active Tickets</div></div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="ct">Requests by Category</div>
+                <div class="cs">Distribution across departments</div>
+                <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="ct">Tickets by Status</div>
+                <div class="cs">Current pipeline breakdown</div>
+                <div class="chart-wrap"><canvas id="statChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="trends-card">
+            <div class="card-hdr">
+                <div>
+                    <div class="ct">Request Volume Trends</div>
+                    <div class="cs" th:text="${trends.period ?: '7 days'}">7 days</div>
+                </div>
+                <div class="period-btns">
+                    <button class="pbtn active" onclick="switchPeriod(7,this)">7D</button>
+                    <button class="pbtn" onclick="switchPeriod(30,this)">30D</button>
+                </div>
+            </div>
+            <div class="trends-wrap"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <div class="bottom">
+            <div class="sla-card">
+                <div class="ct">SLA Compliance Rate</div>
+                <div class="sla-val sla-teal" th:text="${stats.slaComplianceRate != null ? #numbers.formatDecimal(stats.slaComplianceRate,1,1)+'%' : '0%'}">0%</div>
+                <div class="sla-desc">Tickets resolved before SLA deadline</div>
+                <div class="prog"><div class="prog-fill" th:style="'width:'+(stats.slaComplianceRate?:0)+'%'"></div></div>
+            </div>
+            <div class="sla-card">
+                <div class="ct">Requests by Priority</div>
+                <div class="mini-wrap"><canvas id="priChart"></canvas></div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const byCategory  = /*[[${stats.requestsByCategory}]]*/ {};
+    const byStatus    = /*[[${stats.requestsByStatus}]]*/ {};
+    const byPriority  = /*[[${stats.requestsByPriority}]]*/ {};
+    const dailyVolume = /*[[${trends.dailyVolume}]]*/ {};
+    /*]]>*/
+</script>
+<script>
+    const T='#0fbf8a',A='#f59e0b',B='#3b82f6',G='#22c55e',R='#ef4444',GR='#94a3b8';
+    const base={responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#475569',font:{family:'Inter',size:11},padding:12,usePointStyle:true,pointStyleWidth:7}}}};
+
+    const ck=Object.keys(byCategory||{}),cv=Object.values(byCategory||{});
+    new Chart(document.getElementById('catChart'),{type:'doughnut',
+        data:{labels:ck.map(k=>({IT_SUPPORT:'IT Support',HR_REQUEST:'HR Request',FACILITIES:'Facilities'}[k]||k)+' ('+(byCategory[k]||0)+')'),
+              datasets:[{data:cv.length?cv:[1],backgroundColor:[T,A,G,B],borderColor:'#fff',borderWidth:3,hoverOffset:5}]},
+        options:{...base,cutout:'62%',plugins:{...base.plugins,legend:{position:'bottom',labels:{color:'#475569',font:{family:'Inter',size:11},padding:14,usePointStyle:true}}}}});
+
+    const sk=Object.keys(byStatus||{}),sv=Object.values(byStatus||{});
+    new Chart(document.getElementById('statChart'),{type:'bar',
+        data:{labels:sk.map(k=>k.replace('_',' ')),datasets:[{data:sv.length?sv:[0],backgroundColor:T,borderRadius:5,borderSkipped:false,barThickness:28}]},
+        options:{...base,plugins:{...base.plugins,legend:{display:false}},
+            scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:11}}},
+                    y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:11},stepSize:1},beginAtZero:true}}}});
+
+    let tChart;
+    function buildTrends(data){
+        const labels=Object.keys(data||{}).sort(),vals=labels.map(k=>data[k]);
+        if(tChart) tChart.destroy();
+        tChart=new Chart(document.getElementById('trendChart'),{type:'line',
+            data:{labels,datasets:[{data:vals.length?vals:[0],borderColor:T,backgroundColor:'rgba(15,191,138,0.08)',borderWidth:2,
+                  pointBackgroundColor:T,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,tension:0.4,fill:true}]},
+            options:{...base,plugins:{...base.plugins,legend:{display:false}},
+                scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:10}}},
+                        y:{grid:{color:'#f1f5f9'},ticks:{color:'#94a3b8',font:{family:'Inter',size:10},stepSize:1},beginAtZero:true}}}});
+    }
+    buildTrends(dailyVolume);
+
+    const pk=Object.keys(byPriority||{}),pv=Object.values(byPriority||{});
+    new Chart(document.getElementById('priChart'),{type:'doughnut',
+        data:{labels:pk,datasets:[{data:pv.length?pv:[1],backgroundColor:[R,A,B,GR],borderColor:'#fff',borderWidth:2}]},
+        options:{...base,cutout:'55%',plugins:{...base.plugins,legend:{position:'right',labels:{color:'#475569',font:{family:'Inter',size:10},padding:8,usePointStyle:true}}}}});
+
+    function switchPeriod(days,btn){
+        document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        fetch('/api/dashboard/trends?period='+days).then(r=>r.json()).then(d=>buildTrends(d.dailyVolume||{})).catch(()=>{});
+    }
+    </script>
+    <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

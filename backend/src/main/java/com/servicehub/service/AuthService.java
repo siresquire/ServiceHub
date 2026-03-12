@@ -61,6 +61,7 @@ public class AuthService {
     public AuthResponse login(AuthRequest request) {
 
         // 1. Find user by email or throw RuntimeException("User not found")
+        System.out.println("="+request.getEmail()+"=");
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(()->new InvalidCredentialsException("user not found"));
 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — SLA Policies</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <style>
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 600; }
+        .form-group select, .form-group input[type="number"] { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; background: var(--white); font-family: var(--font); font-size: 13px; }
+        .form-group select:focus, .form-group input[type="number"]:focus { border-color: var(--teal); }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Update SLA Policy', 'Configure response and resolution targets')}"></header>
+
+    <div class="content">
+        <div th:if="${success}" class="alert-banner success"><i class="bi bi-check-circle-fill"></i> <span th:text="${success}">Success</span></div>
+        <div th:if="${error}" class="alert-banner error"><i class="bi bi-exclamation-circle-fill"></i> <span th:text="${error}">Error</span></div>
+
+        <!-- CREATE FORM -->
+        <div class="panel" style="margin-bottom: 24px; padding: 20px;">
+            <div class="pt" style="font-size: 15px; margin-bottom: 16px;"><i class="bi bi-plus-circle"></i> Add New SLA Policy</div>
+            <form th:action="@{/admin/sla-policies}" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: flex-end;">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" required>
+                            <option value="">Select...</option>
+                            <option th:each="c : ${categories}" th:value="${c}" th:text="${c}">IT_SUPPORT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select name="priority" required>
+                            <option value="">Select...</option>
+                            <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}">MEDIUM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Response (Hours)</label>
+                        <input type="number" name="responseTimeHours" step="0.5" min="0" value="2" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Resolution (Hours)</label>
+                        <input type="number" name="resolutionTimeHours" step="0.5" min="0" value="24" required/>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-teal" style="width: 100%;"><i class="bi bi-check-lg"></i> Create Policy</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- POLICY LIST -->
+        <div class="panel">
+            <div class="ph">
+                <div class="pt"><i class="bi bi-clock-history"></i> Active Policies</div>
+                <span class="pill p-user" th:text="${policies != null ? policies.totalElements + ' Total' : '0 Total'}">0 Total</span>
+            </div>
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Target Response</th>
+                        <th>Target Resolution</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <th:block th:each="p : ${policies?.content}">
+                        <tr th:id="'row-' + ${p.id}">
+                            <td th:text="${p.category}">IT_SUPPORT</td>
+                            <td>
+                                <span class="pill" 
+                                      th:classappend="${p.priority.name() == 'HIGH' ? 'p-admin' : (p.priority.name() == 'MEDIUM' ? 'p-agent' : 'p-user')}"
+                                      th:text="${p.priority}">MEDIUM</span>
+                            </td>
+                            <td th:text="${p.responseTimeHours + 'h'}">2h</td>
+                            <td th:text="${p.resolutionTimeHours + 'h'}">24h</td>
+                            <td>
+                                <div class="actions">
+                                    <button type="button" class="act-btn btn-view-ticket" th:onclick="'toggleEdit(' + ${p.id} + ')'">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                    <form th:action="@{/admin/sla-policies/{id}/delete(id=${p.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this SLA policy?');">
+                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <button type="submit" class="act-btn btn-close-ticket"><i class="bi bi-trash3"></i> Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:id="'edit-row-' + ${p.id}" style="display:none; background: var(--teal-bg);">
+                            <td colspan="5" style="padding: 16px;">
+                                <form th:action="@{/admin/sla-policies/{id}/update(id=${p.id})}" method="post" style="display: flex; gap: 16px; align-items: flex-end;">
+                                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <div style="flex:1;">
+                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: var(--teal);"><i class="bi bi-pencil"></i> Editing SLA Policy</div>
+                                        <div style="font-size: 12px; color: var(--txt);"><span th:text="${p.category}"></span> • <span th:text="${p.priority}"></span></div>
+                                    </div>
+                                    <div class="form-group" style="margin: 0; min-width: 120px;">
+                                        <label>Response (Hours)</label>
+                                        <input type="number" name="responseTimeHours" th:value="${p.responseTimeHours}" step="0.5" min="0" required/>
+                                    </div>
+                                    <div class="form-group" style="margin: 0; min-width: 120px;">
+                                        <label>Resolution (Hours)</label>
+                                        <input type="number" name="resolutionTimeHours" th:value="${p.resolutionTimeHours}" step="0.5" min="0" required/>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button type="submit" class="btn-teal" style="padding: 9px 12px;"><i class="bi bi-check-lg"></i> Save</button>
+                                        <button type="button" class="btn-outline" style="padding: 9px 12px;" th:onclick="'toggleEdit(' + ${p.id} + ')'">Cancel</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty" th:if="${policies == null or policies.content.empty}">
+                <div class="empty-icon"><i class="bi bi-clock-history"></i></div>
+                No SLA policies yet. Create one above.
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    function toggleEdit(id) {
+        const row = document.getElementById('row-' + id);
+        const editRow = document.getElementById('edit-row-' + id);
+        if (editRow.style.display === 'none' || editRow.style.display === '') {
+            editRow.style.display = 'table-row';
+            row.style.display = 'none';
+        } else {
+            editRow.style.display = 'none';
+            row.style.display = 'table-row';
+        }
+    }
+</script>
+</body>
+</html>

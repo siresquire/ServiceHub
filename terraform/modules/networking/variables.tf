@@ -37,6 +37,12 @@ variable "app_port" {
   default     = 8080
 }
 
+variable "enable_nat_gateway" {
+  description = "Create a NAT Gateway so private subnets can reach the internet (required for external RDS, package downloads, etc.)"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

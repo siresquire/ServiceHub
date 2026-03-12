@@ -12,7 +12,6 @@ public class ServiceRequestDto {
     private String category;
     @NotNull
     private String priority;
-
+    /** Optional: when provided, department is set on the request and category can be derived from it */
     private Long departmentId;
-
 }

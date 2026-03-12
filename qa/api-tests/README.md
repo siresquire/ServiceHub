@@ -1,53 +1,119 @@
 # ServiceHub API Tests
 
-REST API test automation for the ServiceHub application using REST Assured and JUnit 5.
+Comprehensive API test suite for the ServiceHub application using RestAssured + JUnit 5 with Allure reporting.
 
-## Prerequisites
+## Test Structure
 
-- Java 17 or higher
-- Maven 3.6+
-- ServiceHub backend running on http://localhost:8080
-
-## Project Structure
-
-```
-api-tests/
-├── src/test/java/com/amalitech/qa/
-│   ├── base/              # Base test classes
-│   ├── config/            # Test configuration
-│   └── ServiceRequestApiTest.java
-├── src/test/resources/
-│   └── test.properties    # Test configuration properties
-└── pom.xml
-```
+Tests are organized by feature areas:
+- **Authentication** - User registration, login, logout
+- **Departments** - Department CRUD operations
+- **Users** - User management and role updates
+- **Service Requests** - Request creation, assignment, status updates
+- **SLA Policies** - SLA policy management
+- **Dashboard** - Analytics and reporting endpoints
 
 ## Running Tests
 
-### Run all tests
+### Prerequisites
+- Java 17+
+- Maven 3.6+
+- ServiceHub backend running on `http://localhost:8080`
+
+### Execute Tests
 ```bash
+# Run all tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=AuthApiTest
+
+# Run specific test method
+mvn test -Dtest=AuthApiTest#testSuccessfulLogin
+```
+
+## Allure Reporting
+
+### Generate Allure Report
+```bash
+# Run tests and generate Allure results
 mvn clean test
+
+# Generate and serve Allure report (requires Allure CLI)
+mvn allure:serve
+
+# Or generate static report
+mvn allure:report
 ```
 
-### Run with custom properties
+### Install Allure CLI (Optional)
 ```bash
-mvn clean test -Dbase.uri=http://localhost:8080
+# Using npm
+npm install -g allure-commandline
+
+# Using Homebrew (macOS)
+brew install allure
+
+# Manual download from https://github.com/allure-framework/allure2/releases
 ```
 
-### Run specific test class
-```bash
-mvn test -Dtest=ServiceRequestApiTest
-```
+### View Reports
+- **Live server**: `mvn allure:serve` opens report in browser
+- **Static files**: Generated in `target/site/allure-maven-plugin/`
+- **Results**: Raw JSON files in `target/allure-results/`
+
+## Test Features
+
+### Allure Annotations
+- `@Epic` - High-level feature grouping
+- `@Feature` - Specific functionality area
+- `@Story` - User story or test scenario
+- `@Severity` - Test importance level
+- `@Description` - Detailed test description
+
+### Attachments
+- Request payloads (JSON)
+- Response bodies (JSON)
+- HTTP status codes
+- Authentication tokens
+- Error messages
+
+### Test Data
+- Centralized test data in `data/` package
+- Reusable request builders
+- Environment-specific configuration
 
 ## Configuration
 
-Edit `src/test/resources/test.properties` to configure:
-- Base URI
-- Test credentials
-- Timeouts
+### Base URL
+Default: `http://localhost:8080`
+Configure in `ApiConfig.java`
 
-## Adding New Tests
+### Authentication
+- Admin token management via `TokenManager`
+- Automatic token refresh
+- Role-based test execution
 
-1. Extend `BaseApiTest` class
-2. Use REST Assured for API calls
-3. Use JUnit 5 annotations (@Test, @BeforeAll, @AfterAll)
-4. Follow naming convention: `*Test.java`
+### Allure Properties
+Configure in `src/test/resources/allure.properties`:
+```properties
+allure.results.directory=target/allure-results
+allure.link.issue.pattern=https://github.com/ServiceHub/issues/{}
+allure.link.tms.pattern=https://github.com/ServiceHub/testcases/{}
+```
+
+## Test Categories
+
+### Critical Tests
+- User authentication flows
+- Service request creation
+- Dashboard summary retrieval
+
+### Normal Tests
+- Data validation scenarios
+- Error handling
+- Edge cases
+
+### Authorization Tests
+- Role-based access control
+- Token validation
+- Forbidden access scenarios

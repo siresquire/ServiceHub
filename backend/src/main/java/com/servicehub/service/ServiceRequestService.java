@@ -24,6 +24,7 @@ public class ServiceRequestService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final SlaPolicyService slaPolicyService;
+    private final EmailService emailService;
 
     /**
      * Retrieves all service requests with pagination, ordered by creation date descending.
@@ -116,6 +117,9 @@ public class ServiceRequestService {
         ServiceRequest req = requestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
 
+        // Store previous status for email notification
+        RequestStatus previousStatus = req.getStatus();
+
         // Validations: Transition rules, agent assignment for ASSIGNED status
         this.validateStatusTransition(req.getStatus(), update.getNewStatus());
         if(update.getNewStatus().equals(RequestStatus.ASSIGNED) && agent == null) {
@@ -134,7 +138,18 @@ public class ServiceRequestService {
             req.setAssignedAt(LocalDateTime.now());
         }
 
-        return ServiceRequestResponse.toResponse(requestRepository.save(req));
+        ServiceRequest savedRequest = requestRepository.save(req);
+        ServiceRequestResponse response = ServiceRequestResponse.toResponse(savedRequest);
+
+        // Send email notification asynchronously
+        try {
+            emailService.sendStatusUpdateNotification(previousStatus, update.getNewStatus(), response);
+        } catch (Exception e) {
+            // Log error but don't fail the transaction
+            // Email sending is non-critical
+        }
+
+        return response;
     }
 
     /**
@@ -321,10 +336,24 @@ public class ServiceRequestService {
 
     @Transactional
     public List<ServiceRequest> getSlaBreachedRequests(User user) {
-        if (user == null || user.getRole() == Role.ADMIN) return getSlaBreachedRequests();
-        if (user.getDepartment() == null) return getSlaBreachedRequests();
+        if (user == null || user.getRole() == Role.ADMIN) {
+            // For admin, exclude resolved/closed tickets from SLA breach display
+            return getSlaBreachedRequests().stream()
+                    .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                    .collect(Collectors.toList());
+        }
+        if (user.getDepartment() == null) {
+            return getSlaBreachedRequests().stream()
+                    .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                    .collect(Collectors.toList());
+        }
         
-        List<ServiceRequest> assigned = requestRepository.findByAssignedToAndSlaBreachedTrue(user);
+        // For agents, get assigned tickets that are breached (excluding resolved/closed)
+        List<ServiceRequest> assigned = requestRepository.findByAssignedToAndSlaBreachedTrue(user).stream()
+                .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                .collect(Collectors.toList());
+        
+        // Get unassigned open tickets that are breached
         List<ServiceRequest> unassignedOpen = requestRepository.findByDepartmentAndAssignedToIsNullAndStatusAndSlaBreachedTrue(user.getDepartment(), RequestStatus.OPEN);
         
         var combined = new java.util.ArrayList<>(assigned);
@@ -348,13 +377,27 @@ public class ServiceRequestService {
 
     @Transactional
     public List<ServiceRequest> getSlaWarningRequests(User user) {
-        if (user == null || user.getRole() == Role.ADMIN) return getSlaWarningRequests();
-        if (user.getDepartment() == null) return getSlaWarningRequests();
+        if (user == null || user.getRole() == Role.ADMIN) {
+            // For admin, exclude resolved/closed tickets from SLA warnings
+            return getSlaWarningRequests().stream()
+                    .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                    .collect(Collectors.toList());
+        }
+        if (user.getDepartment() == null) {
+            return getSlaWarningRequests().stream()
+                    .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                    .collect(Collectors.toList());
+        }
         
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime cutoff = now.plusHours(2);
         
-        List<ServiceRequest> assigned = requestRepository.findSlaWarningsForAgent(user, now, cutoff);
+        // For agents, get assigned tickets with warnings (excluding resolved/closed)
+        List<ServiceRequest> assigned = requestRepository.findSlaWarningsForAgent(user, now, cutoff).stream()
+                .filter(r -> r.getStatus() != RequestStatus.RESOLVED && r.getStatus() != RequestStatus.CLOSED)
+                .collect(Collectors.toList());
+        
+        // Get unassigned open tickets with warnings
         List<ServiceRequest> unassignedOpen = requestRepository.findSlaWarningsForDepartmentUnassigned(user.getDepartment(), RequestStatus.OPEN, now, cutoff);
         
         var combined = new java.util.ArrayList<>(assigned);

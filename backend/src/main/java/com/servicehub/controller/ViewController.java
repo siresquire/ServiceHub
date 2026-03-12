@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import com.servicehub.model.enums.RequestStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,11 +82,26 @@ public class ViewController {
     /** Admin — all tickets */
     @GetMapping("/admin/tickets")
     @PreAuthorize("hasRole('ADMIN')")
-    public String adminTickets(@AuthenticationPrincipal User user, Model model) {
+    public String adminTickets(@AuthenticationPrincipal User user,
+                                @RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "10") int size,
+                                Model model) {
         var allTickets = requestService.getAllRequests();
+        
+        // Sort by most recent first
+        allTickets.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, allTickets.size());
+        var paginatedTickets = start < allTickets.size() ? allTickets.subList(start, end) : List.of();
+        
         model.addAttribute(USER_ATTR, user);
-        model.addAttribute(TICKETS_ATTR, allTickets);
+        model.addAttribute(TICKETS_ATTR, paginatedTickets);
         model.addAttribute(DEPARTMENTS_ATTR, adminService.getAllDepartments());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", (int) Math.ceil((double) allTickets.size() / size));
+        model.addAttribute("totalItems", allTickets.size());
 
         // Pre-calculate counts to avoid SpEL parsing errors in template
         model.addAttribute("openCount", allTickets.stream()
@@ -163,18 +179,36 @@ public class ViewController {
     /** Agent — ticket list (assigned + unassigned queue) */
     @GetMapping("/agent/tickets")
     @PreAuthorize("hasRole('AGENT')")
-    public String agentTickets(@AuthenticationPrincipal User user, Model model) {
+    public String agentTickets(@AuthenticationPrincipal User user,
+                                @RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "10") int size,
+                                Model model) {
         var assigned = requestService.getAssignedRequests(user).stream()
                 .map(ServiceRequestResponse::toResponse).toList();
         var unassigned = requestService.getUnassignedRequests(user.getDepartment(), user.getRole()).stream()
                 .map(ServiceRequestResponse::toResponse).toList();
-        // Merge assigned + unassigned for full list
+        
+        // Merge assigned + unassigned for full list, sorted by most recent first
         var allTickets = new java.util.ArrayList<>(assigned);
         allTickets.addAll(unassigned);
+        allTickets.sort((a, b) -> {
+            if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return b.getCreatedAt().compareTo(a.getCreatedAt());
+        });
+
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, allTickets.size());
+        var paginatedTickets = start < allTickets.size() ? allTickets.subList(start, end) : List.of();
 
         model.addAttribute(USER_ATTR, user);
-        model.addAttribute(TICKETS_ATTR, allTickets);
+        model.addAttribute(TICKETS_ATTR, paginatedTickets);
         model.addAttribute("unassignedTickets", unassigned);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", (int) Math.ceil((double) allTickets.size() / size));
+        model.addAttribute("totalItems", allTickets.size());
 
         // Pre-calculate counts for stat cards
         model.addAttribute("assignedCount", (long) assigned.size());
@@ -208,9 +242,30 @@ public class ViewController {
     /** User — my tickets + submit new */
     @GetMapping("/user/tickets")
     @PreAuthorize("hasRole('USER')")
-    public String userTickets(@AuthenticationPrincipal User user, Model model) {
+    public String userTickets(@AuthenticationPrincipal User user,
+                               @RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "10") int size,
+                               Model model) {
         model.addAttribute(USER_ATTR, user);
-        model.addAttribute(TICKETS_ATTR, requestService.getRequestsByRequester(user.getId()));
+        
+        // Get all tickets for the user, sorted by most recent first
+        var allTickets = requestService.getRequestsByRequester(user.getId());
+        allTickets.sort((a, b) -> {
+            if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return b.getCreatedAt().compareTo(a.getCreatedAt());
+        });
+        
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, allTickets.size());
+        var paginatedTickets = start < allTickets.size() ? allTickets.subList(start, end) : List.of();
+        
+        model.addAttribute(TICKETS_ATTR, paginatedTickets);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", (int) Math.ceil((double) allTickets.size() / size));
+        model.addAttribute("totalItems", allTickets.size());
         model.addAttribute(DEPARTMENTS_ATTR, adminService.getAllDepartments());
         model.addAttribute("serviceRequest", new ServiceRequestDto());
         model.addAttribute("categories", RequestCategory.values());

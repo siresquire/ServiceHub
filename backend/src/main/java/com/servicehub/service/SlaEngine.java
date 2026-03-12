@@ -56,8 +56,10 @@ public class SlaEngine {
           Priority nextPriority = this.getNextPriority(req.getPriority());
           log.info("SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
 
-          // Send email notification to admin if SLA breached and priority is CRITICAL
-          emailService.sendSlaNotification(req.getStatus(), ServiceRequestResponse.toResponse(req));
+          // Send email notification to admin if SLA breached and priority is CRITICAL / If not yet breached, send notification about SLA breach
+          if(!req.getSlaBreached()){
+            emailService.sendSlaNotification(req.getStatus(), ServiceRequestResponse.toResponse(req));
+          }
 
           // Update priority and SLA deadlines based on new priority
           req.setPriority(nextPriority);
@@ -101,8 +103,10 @@ public class SlaEngine {
          Priority nextPriority = this.getNextPriority(req.getPriority());
          log.info("Resolution SLA breached for request id {}. Escalating priority from {} to {}", req.getId(), req.getPriority(), nextPriority);
 
-            // Send email notification to admin if SLA breached and priority is CRITICAL
-         emailService.sendSlaNotification(req.getStatus(), ServiceRequestResponse.toResponse(req));
+          // Send email notification to admin if SLA breached and priority is CRITICAL / If not yet breached, send notification about SLA breach
+          if(!req.getSlaBreached()){
+            emailService.sendSlaNotification(req.getStatus(), ServiceRequestResponse.toResponse(req));
+          }
 
          // Update priority and SLA deadlines based on new priority
           req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), nextPriority));

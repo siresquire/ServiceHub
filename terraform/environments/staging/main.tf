@@ -125,10 +125,14 @@ module "ecs" {
   # Database
   rds_endpoint = "servicehub-shared.c7wm0m08amkh.eu-west-1.rds.amazonaws.com"
   rds_port     = 5432
-  db_name      = "servicehub?sslmode=require"
+  db_name      = "servicehub"
   db_username  = "servicehub_shared"
   db_password  = var.rds_password
   jwt_secret   = var.jwt_secret
+
+  # Spring profile — must match an existing application-<profile>.yml
+  # 'prod' loads application-prod.yml which reads SPRING_DATASOURCE_URL from env
+  spring_profile = "prod"
 
   # Sizing
   cpu           = 512

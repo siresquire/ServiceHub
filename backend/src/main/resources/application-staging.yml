@@ -1,0 +1,59 @@
+# =============================================================================
+# ServiceHub — Staging Profile (application-staging.yml)
+# =============================================================================
+# Activated when: SPRING_PROFILES_ACTIVE=staging
+# Used for: AWS ECS Fargate staging deployment
+#
+# All sensitive values MUST be provided via environment variables.
+# The app will fail to start if required env vars are missing.
+#
+# Required Environment Variables (injected by ECS task definition):
+#   - SPRING_DATASOURCE_URL
+#   - SPRING_DATASOURCE_USERNAME
+#   - SPRING_DATASOURCE_PASSWORD
+#   - JWT_SECRET
+# =============================================================================
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD} # pragma: allowlist secret
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: never
+
+  thymeleaf:
+    cache: true
+
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.servicehub: INFO
+    org.springframework.security: WARN

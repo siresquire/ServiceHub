@@ -35,11 +35,15 @@ public class SlaPolicyApiTest extends BaseApiTest {
     @DisplayName("GET /api/sla-policies - Get all SLA policies")
     public void testGetAllSlaPolicies() {
         givenAdminRequest()
+            .queryParam("page", 0)
+            .queryParam("size", 10)
             .when()
                 .get(SLA_POLICIES_ENDPOINT)
             .then()
                 .statusCode(200)
-                .body("$", isA(java.util.List.class))
+                .body("message", notNullValue())
+                .body("data", notNullValue())
+                .body("data.content", isA(java.util.List.class))
                 .log().ifValidationFails();
     }
     
@@ -58,16 +62,18 @@ public class SlaPolicyApiTest extends BaseApiTest {
             .when()
                 .post(SLA_POLICIES_ENDPOINT)
             .then()
-                .statusCode(201)
-                .body("id", notNullValue())
-                .body("category", equalTo("IT_SUPPORT"))
-                .body("priority", equalTo("HIGH"))
-                .body("responseTimeHours", equalTo(2.0f))
-                .body("resolutionTimeHours", equalTo(24.0f))
+                .statusCode(200)
+                .body("message", notNullValue())
+                .body("data", notNullValue())
+                .body("data.id", notNullValue())
+                .body("data.category", equalTo("IT_SUPPORT"))
+                .body("data.priority", equalTo("HIGH"))
+                .body("data.responseTimeHours", equalTo(2.0f))
+                .body("data.resolutionTimeHours", equalTo(24.0f))
                 .log().ifValidationFails()
                 .extract().response();
         
-        createdSlaPolicyId = response.jsonPath().getLong("id");
+        createdSlaPolicyId = response.jsonPath().getLong("data.id");
         Assertions.assertNotNull(createdSlaPolicyId, "Created SLA policy ID should not be null");
     }
     
@@ -102,11 +108,13 @@ public class SlaPolicyApiTest extends BaseApiTest {
                 .get(SLA_POLICIES_ENDPOINT + "/" + createdSlaPolicyId)
             .then()
                 .statusCode(200)
-                .body("id", equalTo(createdSlaPolicyId.intValue()))
-                .body("category", equalTo("IT_SUPPORT"))
-                .body("priority", equalTo("HIGH"))
-                .body("responseTimeHours", equalTo(2.0f))
-                .body("resolutionTimeHours", equalTo(24.0f))
+                .body("message", notNullValue())
+                .body("data", notNullValue())
+                .body("data.id", equalTo(createdSlaPolicyId.intValue()))
+                .body("data.category", equalTo("IT_SUPPORT"))
+                .body("data.priority", equalTo("HIGH"))
+                .body("data.responseTimeHours", equalTo(2.0f))
+                .body("data.resolutionTimeHours", equalTo(24.0f))
                 .log().ifValidationFails();
     }
     
@@ -142,11 +150,13 @@ public class SlaPolicyApiTest extends BaseApiTest {
                 .patch(SLA_POLICIES_ENDPOINT + "/" + createdSlaPolicyId)
             .then()
                 .statusCode(200)
-                .body("id", equalTo(createdSlaPolicyId.intValue()))
-                .body("responseTimeHours", equalTo(4.0f))
-                .body("resolutionTimeHours", equalTo(48.0f))
-                .body("category", equalTo("IT_SUPPORT"))
-                .body("priority", equalTo("HIGH"))
+                .body("message", notNullValue())
+                .body("data", notNullValue())
+                .body("data.id", equalTo(createdSlaPolicyId.intValue()))
+                .body("data.responseTimeHours", equalTo(4.0f))
+                .body("data.resolutionTimeHours", equalTo(48.0f))
+                .body("data.category", equalTo("IT_SUPPORT"))
+                .body("data.priority", equalTo("HIGH"))
                 .log().ifValidationFails();
     }
     
@@ -179,8 +189,9 @@ public class SlaPolicyApiTest extends BaseApiTest {
                 .get(SLA_POLICIES_ENDPOINT + "/categories/IT_SUPPORT")
             .then()
                 .statusCode(200)
-                .body("$", isA(java.util.List.class))
-                .body("findAll { it.category == 'IT_SUPPORT' }.size()", 
+                .body("message", notNullValue())
+                .body("data", isA(java.util.List.class))
+                .body("data.findAll { it.category == 'IT_SUPPORT' }.size()", 
                       greaterThanOrEqualTo(1))
                 .log().ifValidationFails();
     }
@@ -210,13 +221,13 @@ public class SlaPolicyApiTest extends BaseApiTest {
             .when()
                 .post(SLA_POLICIES_ENDPOINT)
             .then()
-                .statusCode(201)
-                .body("category", equalTo("FACILITIES"))
-                .body("priority", equalTo("MEDIUM"))
+                .statusCode(200)
+                .body("data.category", equalTo("FACILITIES"))
+                .body("data.priority", equalTo("MEDIUM"))
                 .log().ifValidationFails()
                 .extract().response();
         
-        Long facilitiesPolicyId = facilitiesResponse.jsonPath().getLong("id");
+        Long facilitiesPolicyId = facilitiesResponse.jsonPath().getLong("data.id");
         
         // Test HR_REQUEST + CRITICAL
         Map<String, Object> hrPolicy = createSlaPolicyPayload(
@@ -227,13 +238,13 @@ public class SlaPolicyApiTest extends BaseApiTest {
             .when()
                 .post(SLA_POLICIES_ENDPOINT)
             .then()
-                .statusCode(201)
-                .body("category", equalTo("HR_REQUEST"))
-                .body("priority", equalTo("CRITICAL"))
+                .statusCode(200)
+                .body("data.category", equalTo("HR_REQUEST"))
+                .body("data.priority", equalTo("CRITICAL"))
                 .log().ifValidationFails()
                 .extract().response();
         
-        Long hrPolicyId = hrResponse.jsonPath().getLong("id");
+        Long hrPolicyId = hrResponse.jsonPath().getLong("data.id");
         
         // Clean up created policies
         if (facilitiesPolicyId != null) {

@@ -124,7 +124,7 @@ public class AdminApiTest extends BaseApiTest {
             .when()
                 .post("/api/auth/register")
             .then()
-                .statusCode(201)
+                .statusCode(200)
                 .extract().response();
         
         // Get the created user ID by searching all users

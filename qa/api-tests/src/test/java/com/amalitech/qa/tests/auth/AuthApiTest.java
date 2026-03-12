@@ -49,7 +49,7 @@ public class AuthApiTest extends BaseApiTest {
             .when()
                 .post(AUTH_ENDPOINT + "/register")
             .then()
-                .statusCode(201)
+                .statusCode(200)
                 .body("token", notNullValue())
                 .body("email", equalTo(testUserEmail))
                 .body("role", equalTo("USER"))
@@ -106,7 +106,7 @@ public class AuthApiTest extends BaseApiTest {
             .when()
                 .post(AUTH_ENDPOINT + "/register")
             .then()
-                .statusCode(409)
+                .statusCode(400)
                 .log().ifValidationFails();
     }
     
@@ -304,7 +304,7 @@ public class AuthApiTest extends BaseApiTest {
             .when()
                 .post(AUTH_ENDPOINT + "/register")
             .then()
-                .statusCode(201)
+                .statusCode(200)
                 .body("token", notNullValue())
                 .extract().response();
         

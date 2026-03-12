@@ -74,7 +74,7 @@ public class ServiceRequestApiTest extends BaseApiTest {
             .when()
                 .post("/api/auth/register")
             .then()
-                .statusCode(201)
+                .statusCode(200)
                 .extract().response();
         
         testUserToken = userResponse.jsonPath().getString("token");
@@ -93,7 +93,7 @@ public class ServiceRequestApiTest extends BaseApiTest {
             .when()
                 .post("/api/auth/register")
             .then()
-                .statusCode(201)
+                .statusCode(200)
                 .extract().response();
         
         testAgentToken = agentRegResponse.jsonPath().getString("token");

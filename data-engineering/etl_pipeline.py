@@ -1,74 +1,89 @@
-"""ETL Pipeline for ServiceHub - SLA Analytics & Resolution Metrics"""
-import pandas as pd
-from sqlalchemy import create_engine, text
-from config import DATABASE_URL
+import os
+import signal
+import sys
 
-engine = create_engine(DATABASE_URL)
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 
-def extract_requests():
-    query = text("""
-        SELECT sr.id, sr.title, sr.category, sr.priority, sr.status,
-               sr.created_at, sr.updated_at, sr.resolved_at,
-               u.name AS requester_name, d.name AS department_name
-        FROM service_requests sr
-        JOIN users u ON sr.requester_id = u.id
-        LEFT JOIN departments d ON sr.department_id = d.id
-    """)
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn)
+from Scripts.Extract import extract_requests, extract_sla_policies
+from Scripts.Transform import transform_sla_compliance
+from Scripts.Load import run_load_pipeline
+from Scripts.Utils import logger
+from Scripts.test_db import task_test_db_connection
+from Scripts.validate_sla_policies import task_validate_sla_policies
 
-def extract_sla_policies():
-    query = text("SELECT * FROM sla_policies")
-    with engine.connect() as conn:
-        return pd.read_sql(query, conn)
+OUTPUT_DIR = "output"
 
-def transform_sla_metrics(requests_df, sla_df):
-    """Calculate SLA compliance metrics."""
-    if requests_df.empty:
-        return pd.DataFrame()
-    requests_df["created_at"] = pd.to_datetime(requests_df["created_at"])
-    requests_df["resolved_at"] = pd.to_datetime(requests_df["resolved_at"])
-    resolved = requests_df[requests_df["resolved_at"].notna()].copy()
-    if resolved.empty:
-        return pd.DataFrame()
-    resolved["resolution_hours"] = (resolved["resolved_at"] - resolved["created_at"]).dt.total_seconds() / 3600
+# ---------------------------------------------------------------------------
+# Schedule — override via environment variables if needed
+# ---------------------------------------------------------------------------
+SCHEDULE_HOUR   = int(os.getenv("SCHEDULE_HOUR",   "6"))
+SCHEDULE_MINUTE = int(os.getenv("SCHEDULE_MINUTE", "0"))
 
-    summary = resolved.groupby(["category", "priority"]).agg(
-        total_resolved=("id", "count"),
-        avg_resolution_hours=("resolution_hours", "mean"),
-        max_resolution_hours=("resolution_hours", "max"),
-    ).reset_index()
-    return summary
-
-def transform_daily_volume(requests_df):
-    """Daily request volume by category."""
-    if requests_df.empty:
-        return pd.DataFrame()
-    requests_df["date"] = pd.to_datetime(requests_df["created_at"]).dt.date
-    return requests_df.groupby(["date", "category"]).size().reset_index(name="request_count")
-
-def load_analytics(df, table_name):
-    df.to_sql(table_name, engine, if_exists="replace", index=False)
-    print(f"Loaded {len(df)} rows into {table_name}")
 
 def run_pipeline():
-    print("Starting ServiceHub ETL pipeline...")
-    requests_df = extract_requests()
-    sla_df = extract_sla_policies()
-    print(f"Extracted {len(requests_df)} requests, {len(sla_df)} SLA policies")
+    """Extract, transform, and load all ServiceHub analytics tables."""
 
-    sla_metrics = transform_sla_metrics(requests_df, sla_df)
-    if not sla_metrics.empty:
-        load_analytics(sla_metrics, "analytics_sla_metrics")
+    logger.info("Starting ServiceHub ETL pipeline")
 
-    daily_volume = transform_daily_volume(requests_df)
-    if not daily_volume.empty:
-        load_analytics(daily_volume, "analytics_daily_volume")
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # TODO: Add SLA breach detection
-    # TODO: Add agent performance metrics
-    # TODO: Add department workload analysis
-    print("ETL pipeline complete!")
+        # --- Pre-flight checks ---
+        task_test_db_connection()
+        task_validate_sla_policies()
+
+        # --- Extract ---
+        requests_df = extract_requests()
+        sla_df      = extract_sla_policies()
+
+        # --- Load: star schema (dimensions + fact table) ---
+        run_load_pipeline(requests_df, sla_df)
+
+        # --- Export ---
+        sla_compliance = transform_sla_compliance(requests_df, sla_df)
+        csv_path = os.path.join(OUTPUT_DIR, "sla_compliance.csv")
+        sla_compliance.to_csv(csv_path, index=False)
+        logger.info(f"SLA compliance CSV exported to {csv_path}")
+
+        logger.info("ETL pipeline completed successfully")
+
+    except Exception:
+        logger.exception("Pipeline failed")
+
+
+def start_scheduler():
+    """Start the blocking scheduler and register a graceful shutdown handler."""
+
+    scheduler = BlockingScheduler(timezone="UTC")
+
+    scheduler.add_job(
+        run_pipeline,
+        trigger=CronTrigger(hour=SCHEDULE_HOUR, minute=SCHEDULE_MINUTE),
+        id="servicehub_etl",
+        name="ServiceHub ETL Pipeline",
+        max_instances=1,
+        misfire_grace_time=300,
+    )
+
+    def shutdown(signum, frame):
+        logger.info("Shutdown signal received — stopping scheduler")
+        scheduler.shutdown(wait=False)
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT,  shutdown)
+
+    logger.info(
+        f"Scheduler started — pipeline runs daily at "
+        f"{SCHEDULE_HOUR:02d}:{SCHEDULE_MINUTE:02d} UTC"
+    )
+
+    logger.info("Running pipeline immediately on startup...")
+    run_pipeline()
+
+    scheduler.start()
+
 
 if __name__ == "__main__":
-    run_pipeline()
+    start_scheduler()

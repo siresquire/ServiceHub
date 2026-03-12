@@ -1,40 +1,69 @@
 package com.amalitech.qa.config;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
- * Configuration management for API tests
+ * Configuration class for test environment variables and settings
  */
 public class TestConfig {
 
-    private static final Properties properties = new Properties();
+    // Environment variable keys
+    private static final String ADMIN_TOKEN_KEY = "ADMIN_TOKEN";
+    private static final String AGENT_TOKEN_KEY = "AGENT_TOKEN";
+    private static final String BASE_URL_KEY = "BASE_URL";
 
-    static {
-        try (InputStream input = TestConfig.class.getClassLoader()
-                .getResourceAsStream("test.properties")) {
-            if (input != null) {
-                properties.load(input);
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to load test.properties: " + e.getMessage());
+    // Default values
+    private static final String DEFAULT_BASE_URL = "http://localhost:8080";
+
+    /**
+     * Get admin authentication token from environment
+     */
+    public static String getAdminToken() {
+        String token = System.getenv(ADMIN_TOKEN_KEY);
+        if (token == null || token.trim().isEmpty()) {
+            token = System.getProperty("admin.token");
         }
+        return token != null ? token.trim() : "";
     }
 
-    public static String getProperty(String key, String defaultValue) {
-        return System.getProperty(key, properties.getProperty(key, defaultValue));
+    /**
+     * Get agent authentication token from environment
+     */
+    public static String getAgentToken() {
+        String token = System.getenv(AGENT_TOKEN_KEY);
+        if (token == null || token.trim().isEmpty()) {
+            token = System.getProperty("agent.token");
+        }
+        return token != null ? token.trim() : "";
     }
 
-    public static String getBaseUri() {
-        return getProperty("base.uri", "http://localhost:8080");
+    /**
+     * Get base URL for API tests
+     */
+    public static String getBaseUrl() {
+        String baseUrl = System.getenv(BASE_URL_KEY);
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            baseUrl = System.getProperty("base.url", DEFAULT_BASE_URL);
+        }
+        return baseUrl.trim();
     }
 
-    public static String getAdminEmail() {
-        return getProperty("admin.email", "admin@amalitech.com");
+    /**
+     * Check if admin token is available
+     */
+    public static boolean hasAdminToken() {
+        return !getAdminToken().isEmpty();
     }
 
-    public static String getAdminPassword() {
-        return getProperty("admin.password", "password123");
+    /**
+     * Check if agent token is available
+     */
+    public static boolean hasAgentToken() {
+        return !getAgentToken().isEmpty();
+    }
+
+    /**
+     * Get environment name for test reporting
+     */
+    public static String getEnvironment() {
+        return System.getProperty("test.environment", "local");
     }
 }

@@ -3,16 +3,18 @@ package com.amalitech.qa.tests.dashboard;
 import com.amalitech.qa.base.BaseTest;
 import com.amalitech.qa.config.ApiConfig;
 import com.amalitech.qa.utils.TokenManager;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("ServiceHub API")
+@Feature("Dashboard")
 @DisplayName("Dashboard API Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DashboardApiTest extends BaseTest {
@@ -20,6 +22,9 @@ public class DashboardApiTest extends BaseTest {
     // DASHBOARD SUMMARY TESTS
 
     @Test
+    @Story("Dashboard Analytics")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test dashboard summary retrieval for admin users with comprehensive metrics validation")
     @DisplayName("Should successfully fetch dashboard summary (admin)")
     public void testGetDashboardSummaryAsAdmin() {
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
@@ -57,15 +62,20 @@ public class DashboardApiTest extends BaseTest {
         assertTrue(totalUsers >= 0, "Total users should be non-negative");
         assertTrue(agentCount >= 0, "Agent count should be non-negative");
         assertTrue(totalDepartments >= 0, "Total departments should be non-negative");
-        
+
         if (avgResolutionHours != null) {
             assertTrue(avgResolutionHours >= 0, "Average resolution hours should be non-negative");
         }
-        
+
         if (slaComplianceRate != null) {
-            assertTrue(slaComplianceRate >= 0 && slaComplianceRate <= 100, 
+            assertTrue(slaComplianceRate >= 0 && slaComplianceRate <= 100,
                 "SLA compliance rate should be between 0 and 100");
         }
+
+        Allure.addAttachment("Dashboard Summary Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+        Allure.addAttachment("Total Requests", String.valueOf(totalRequests));
+        Allure.addAttachment("SLA Compliance Rate", String.valueOf(slaComplianceRate));
 
         System.out.println("Dashboard Summary (Admin) Response: " + response.asString());
     }
@@ -133,7 +143,7 @@ public class DashboardApiTest extends BaseTest {
         // Validate SLA compliance rate is within valid range
         Double slaComplianceRate = response.jsonPath().getDouble("slaComplianceRate");
         if (slaComplianceRate != null) {
-            assertTrue(slaComplianceRate >= 0 && slaComplianceRate <= 100, 
+            assertTrue(slaComplianceRate >= 0 && slaComplianceRate <= 100,
                 "SLA compliance rate should be between 0 and 100");
         }
 

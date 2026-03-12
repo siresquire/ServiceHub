@@ -1,5 +1,6 @@
 package com.amalitech.qa.base;
 
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,10 +18,11 @@ public abstract class BaseTest {
     public static void globalSetup() {
         RestAssured.baseURI = BASE_URI;
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        
+
         // Enable detailed logging for debugging
         RestAssured.filters(new io.restassured.filter.log.RequestLoggingFilter(),
-                           new io.restassured.filter.log.ResponseLoggingFilter());
+                           new io.restassured.filter.log.ResponseLoggingFilter(),
+                           new AllureRestAssured());
     }
 
     @BeforeEach

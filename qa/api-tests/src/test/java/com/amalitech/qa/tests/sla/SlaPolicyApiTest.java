@@ -5,6 +5,7 @@ import com.amalitech.qa.config.ApiConfig;
 import com.amalitech.qa.data.SlaPolicyTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,10 +15,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("ServiceHub API")
+@Feature("SLA Policies")
 @DisplayName("SLA Policy API Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SlaPolicyApiTest extends BaseTest {
@@ -27,6 +29,9 @@ public class SlaPolicyApiTest extends BaseTest {
     // CREATE SLA POLICY TESTS
 
     @Test
+    @Story("SLA Policy Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test successful creation of a new SLA policy with valid data")
     @DisplayName("Should successfully create a new SLA policy")
     public void testCreateSlaPolicy() {
         Map<String, Object> policyData = SlaPolicyTestData.createValidSlaPolicyRequest();
@@ -48,6 +53,11 @@ public class SlaPolicyApiTest extends BaseTest {
 
         createdPolicyId = response.jsonPath().getLong("data.id");
         assertNotNull(createdPolicyId, "Created policy ID should not be null");
+
+        Allure.addAttachment("SLA Policy Data", "application/json", policyData.toString());
+        Allure.addAttachment("SLA Policy Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+        Allure.addAttachment("Created Policy ID", String.valueOf(createdPolicyId));
 
         System.out.println("Create SLA Policy Response: " + response.asString());
         System.out.println("Created Policy ID: " + createdPolicyId);
@@ -229,7 +239,7 @@ public class SlaPolicyApiTest extends BaseTest {
     public void testGetSlaPoliciesByInvalidCategory() {
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .when()
-                .get(ApiConfig.SLA_POLICIES + "/categories/INVALID_CATEGORY")
+                .get(ApiConfig.SLA_POLICIES + "/categories/INVALID_CATEGORY") // pragma: allowlist secret
                 .then()
                 .statusCode(400)
                 .extract()

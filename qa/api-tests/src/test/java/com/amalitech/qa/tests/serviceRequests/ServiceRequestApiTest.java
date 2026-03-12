@@ -5,6 +5,7 @@ import com.amalitech.qa.config.ApiConfig;
 import com.amalitech.qa.data.ServiceRequestTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,10 +15,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("ServiceHub API")
+@Feature("Service Requests")
 @DisplayName("Service Request API Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceRequestApiTest extends BaseTest {
@@ -27,6 +29,9 @@ public class ServiceRequestApiTest extends BaseTest {
     // CREATE REQUEST TESTS
 
     @Test
+    @Story("Service Request Creation")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test successful creation of a new service request with valid data")
     @DisplayName("Should successfully create a new service request")
     public void testCreateServiceRequest() {
         Map<String, Object> requestData = ServiceRequestTestData.createValidServiceRequest();
@@ -51,6 +56,11 @@ public class ServiceRequestApiTest extends BaseTest {
 
         createdRequestId = response.jsonPath().getLong("id");
         assertNotNull(createdRequestId, "Created request ID should not be null");
+
+        Allure.addAttachment("Service Request Data", "application/json", requestData.toString());
+        Allure.addAttachment("Service Request Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+        Allure.addAttachment("Created Request ID", String.valueOf(createdRequestId));
 
         System.out.println("Create Service Request Response: " + response.asString());
         System.out.println("Created Request ID: " + createdRequestId);

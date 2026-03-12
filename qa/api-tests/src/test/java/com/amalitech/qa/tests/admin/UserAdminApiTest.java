@@ -4,6 +4,7 @@ import com.amalitech.qa.base.BaseTest;
 import com.amalitech.qa.config.ApiConfig;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("ServiceHub API")
+@Feature("Users")
 @DisplayName("User Admin API Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserAdminApiTest extends BaseTest {
@@ -26,6 +28,9 @@ public class UserAdminApiTest extends BaseTest {
     // GET USERS TESTS
 
     @Test
+    @Story("User Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test retrieval of all users in the system")
     @DisplayName("Should get all users")
     public void testGetAllUsers() {
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
@@ -40,6 +45,9 @@ public class UserAdminApiTest extends BaseTest {
                 .body("[0].role", notNullValue())
                 .extract()
                 .response();
+
+        Allure.addAttachment("All Users Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
 
         System.out.println("Get All Users Response: " + response.asString());
     }
@@ -186,7 +194,7 @@ public class UserAdminApiTest extends BaseTest {
 
         String testEmail = registerRequest.get("email").toString();
         Long userId = null;
-        
+
         // Find user by email
         for (int i = 0; i < allUsersResponse.jsonPath().getList("$").size(); i++) {
             if (testEmail.equals(allUsersResponse.jsonPath().getString("[" + i + "].email"))) {
@@ -266,7 +274,7 @@ public class UserAdminApiTest extends BaseTest {
 
         String testEmail = registerRequest.get("email").toString();
         Long userId = null;
-        
+
         // Find user by email
         for (int i = 0; i < allUsersResponse.jsonPath().getList("$").size(); i++) {
             if (testEmail.equals(allUsersResponse.jsonPath().getString("[" + i + "].email"))) {
@@ -310,7 +318,7 @@ public class UserAdminApiTest extends BaseTest {
                 .response();
 
         Long adminUserId = null;
-        
+
         // Find admin user
         for (int i = 0; i < allUsersResponse.jsonPath().getList("$").size(); i++) {
             if ("ADMIN".equals(allUsersResponse.jsonPath().getString("[" + i + "].role"))) {

@@ -5,6 +5,7 @@ import com.amalitech.qa.config.ApiConfig;
 import com.amalitech.qa.data.DepartmentTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,11 @@ import org.junit.jupiter.api.MethodOrderer;
 
 import java.util.Map;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Epic("ServiceHub API")
+@Feature("Departments")
 @DisplayName("Department Admin API Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DepartmentApiTest extends BaseTest {
@@ -26,6 +28,9 @@ public class DepartmentApiTest extends BaseTest {
     // CREATE DEPARTMENT TESTS
 
     @Test
+    @Story("Department Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test successful creation of a new department with valid data")
     @DisplayName("Should successfully create a new department")
     public void testCreateDepartment() {
         Map<String, Object> departmentRequest = DepartmentTestData.createValidDepartmentRequest();
@@ -45,11 +50,19 @@ public class DepartmentApiTest extends BaseTest {
         createdDepartmentId = response.jsonPath().getLong("id");
         assertNotNull(createdDepartmentId, "Created department ID should not be null");
 
+        Allure.addAttachment("Department Request", "application/json", departmentRequest.toString());
+        Allure.addAttachment("Department Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+        Allure.addAttachment("Created Department ID", String.valueOf(createdDepartmentId));
+
         System.out.println("Create Department Response: " + response.asString());
         System.out.println("Created Department ID: " + createdDepartmentId);
     }
 
     @Test
+    @Story("Department Management")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test department creation failure with duplicate name")
     @DisplayName("Should fail to create department with duplicate name")
     public void testCreateDuplicateDepartment() {
         Map<String, Object> departmentRequest = DepartmentTestData.createDuplicateDepartmentRequest();
@@ -64,12 +77,19 @@ public class DepartmentApiTest extends BaseTest {
                 .extract()
                 .response();
 
+        Allure.addAttachment("Duplicate Department Request", "application/json", departmentRequest.toString());
+        Allure.addAttachment("Error Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+
         System.out.println("Duplicate Department Response: " + response.asString());
     }
 
     // GET DEPARTMENT TESTS
 
     @Test
+    @Story("Department Retrieval")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test retrieval of all departments")
     @DisplayName("Should get all departments")
     public void testGetAllDepartments() {
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
@@ -84,10 +104,16 @@ public class DepartmentApiTest extends BaseTest {
                 .extract()
                 .response();
 
+        Allure.addAttachment("All Departments Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+
         System.out.println("Get All Departments Response: " + response.asString());
     }
 
     @Test
+    @Story("Department Retrieval")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test retrieval of a specific department by ID")
     @DisplayName("Should get department by ID")
     public void testGetDepartmentById() {
         // Use the IT department ID from test data
@@ -104,10 +130,17 @@ public class DepartmentApiTest extends BaseTest {
                 .extract()
                 .response();
 
+        Allure.addAttachment("Department ID", String.valueOf(departmentId));
+        Allure.addAttachment("Department Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
+
         System.out.println("Get Department By ID Response: " + response.asString());
     }
 
     @Test
+    @Story("Department Retrieval")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test retrieval of non-existent department returns 404")
     @DisplayName("Should return 404 for non-existent department")
     public void testGetNonExistentDepartment() {
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
@@ -117,6 +150,10 @@ public class DepartmentApiTest extends BaseTest {
                 .statusCode(404)
                 .extract()
                 .response();
+
+        Allure.addAttachment("Invalid Department ID", String.valueOf(TestData.INVALID_ID));
+        Allure.addAttachment("Error Response", "application/json", response.asString());
+        Allure.addAttachment("Status Code", String.valueOf(response.getStatusCode()));
 
         System.out.println("Non-existent Department Response: " + response.asString());
     }

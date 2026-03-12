@@ -50,3 +50,9 @@ output "vpc_endpoints_sg_id" {
   description = "Security group ID for VPC interface endpoints"
   value       = aws_security_group.vpc_endpoints.id
 }
+
+# ─── NAT Gateway ─────────────────────────────────────────────────────────────
+output "nat_gateway_id" {
+  description = "ID of the NAT Gateway (null if disabled)"
+  value       = var.enable_nat_gateway ? aws_nat_gateway.this[0].id : null
+}

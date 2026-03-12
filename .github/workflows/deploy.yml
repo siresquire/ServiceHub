@@ -25,7 +25,8 @@ name: Deploy Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/servicehub-updates]
+  workflow_dispatch:
 
 # Only one deployment at a time.
 concurrency:
@@ -59,6 +60,9 @@ jobs:
   publish-ecr:
     name: Publish to ECR
     needs: build-image
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC authentication with AWS
     uses: ./.github/workflows/_reusable-publish-ecr.yml
     with:
       image-name: ${{ needs.build-image.outputs.image_name }}
@@ -107,13 +111,20 @@ jobs:
             --query taskDefinition \
             > task-definition.json
 
+      - name: Construct ECR image URI
+        id: ecr-image
+        run: |
+          ECR_IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/servicehub-backend:${GITHUB_SHA}"
+          echo "ECR Image: ${ECR_IMAGE}"
+          echo "uri=${ECR_IMAGE}" >> "${GITHUB_OUTPUT}"
+
       - name: Render new task definition
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ needs.publish-ecr.outputs.ecr-image }}
+          image: ${{ steps.ecr-image.outputs.uri }}
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2

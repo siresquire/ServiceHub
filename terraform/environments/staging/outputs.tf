@@ -24,16 +24,16 @@ output "ecr_repository_url" {
   value       = module.ecr.repository_url
 }
 
-# ─── RDS ─────────────────────────────────────────────────────────────────────
-output "rds_endpoint" {
-  description = "RDS endpoint address"
-  value       = module.rds.endpoint
-}
-
-output "rds_port" {
-  description = "RDS endpoint port"
-  value       = module.rds.port
-}
+# ─── RDS (Deactivated) ───────────────────────────────────────────────────────
+# output "rds_endpoint" {
+#   description = "RDS endpoint address"
+#   value       = "servicehub-shared.c7wm0m08amkh.eu-west-1.rds.amazonaws.com"
+# }
+#
+# output "rds_port" {
+#   description = "RDS endpoint port"
+#   value       = 5432
+# }
 
 # ─── ALB ─────────────────────────────────────────────────────────────────────
 output "alb_dns_name" {

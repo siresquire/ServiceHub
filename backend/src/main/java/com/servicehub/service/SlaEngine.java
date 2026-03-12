@@ -8,7 +8,7 @@ import com.servicehub.repository.ServiceRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,6 +22,7 @@ import java.util.List;
  * If a request has breached its SLA, it escalates the priority and marks the request as SLA breached.
  */
 
+@Profile("!test")
 @Service
 @RequiredArgsConstructor
 public class SlaEngine {

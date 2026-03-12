@@ -1,5 +1,6 @@
 package com.amalitech.qa.base;
 
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,6 +18,9 @@ public abstract class BaseApiTest {
     public static void globalSetup() {
         RestAssured.baseURI = BASE_URI;
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        
+        // Configure Allure RestAssured filter to capture all API requests and responses
+        RestAssured.filters(new AllureRestAssured());
     }
 
     @BeforeEach

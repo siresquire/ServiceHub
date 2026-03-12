@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Update Notification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            background: linear-gradient(135deg, #0fbf8a, #0da87a);
+            color: #ffffff;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 32px 24px;
+        }
+        .status-change {
+            background: #f8fafc;
+            border-left: 4px solid #0fbf8a;
+            padding: 16px 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+        .status-change h2 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .status-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-open { background: #eff6ff; color: #3b82f6; }
+        .status-assigned { background: #e8faf4; color: #0fbf8a; }
+        .status-in_progress { background: #fff8ec; color: #f59e0b; }
+        .status-resolved { background: #f0fdf4; color: #22c55e; }
+        .status-closed { background: #f1f5f9; color: #64748b; }
+        .arrow {
+            color: #94a3b8;
+            font-size: 18px;
+        }
+        .info-grid {
+            display: grid;
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .info-item {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #64748b;
+            min-width: 120px;
+            font-size: 13px;
+        }
+        .info-value {
+            color: #1e293b;
+            font-size: 14px;
+            flex: 1;
+        }
+        .priority-high, .priority-critical {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .priority-medium {
+            color: #f59e0b;
+            font-weight: 700;
+        }
+        .priority-low {
+            color: #3b82f6;
+            font-weight: 700;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #0fbf8a, #0da87a);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(15, 191, 138, 0.2);
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Status Update</h1>
+            <p>Service Request Status Changed</p>
+        </div>
+
+        <div class="content">
+            <div class="status-change">
+                <h2>Status Changed</h2>
+                <div class="status-flow">
+                    <span class="status-badge" 
+                          th:classappend="${previousStatus != null ? 'status-' + previousStatus.name().toLowerCase() : 'status-open'}"
+                          th:text="${previousStatus != null ? previousStatus.name().replace('_', ' ') : 'UNKNOWN'}">OPEN</span>
+                    <span class="arrow">→</span>
+                    <span class="status-badge" 
+                          th:classappend="${newStatus != null ? 'status-' + newStatus.name().toLowerCase() : 'status-open'}"
+                          th:text="${newStatus != null ? newStatus.name().replace('_', ' ') : 'UNKNOWN'}">IN PROGRESS</span>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Request ID:</span>
+                    <span class="info-value" th:text="'#' + ${serviceRequest.id}">#123</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Title:</span>
+                    <span class="info-value" th:text="${serviceRequest.title}">Request title</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Requester:</span>
+                    <span class="info-value" th:text="${serviceRequest.requesterName}">John Doe</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Category:</span>
+                    <span class="info-value" th:text="${serviceRequest.category}">IT_SUPPORT</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Priority:</span>
+                    <span class="info-value" 
+                          th:classappend="${serviceRequest.priority == 'HIGH' or serviceRequest.priority == 'CRITICAL'} ? 'priority-high' : (${serviceRequest.priority == 'MEDIUM'} ? 'priority-medium' : 'priority-low')"
+                          th:text="${serviceRequest.priority}">MEDIUM</span>
+                </div>
+                <div class="info-item" th:if="${serviceRequest.assignedToName != null}">
+                    <span class="info-label">Assigned To:</span>
+                    <span class="info-value" th:text="${serviceRequest.assignedToName}">Agent Name</span>
+                </div>
+                <div class="info-item" th:if="${serviceRequest.departmentName != null}">
+                    <span class="info-label">Department:</span>
+                    <span class="info-value" th:text="${serviceRequest.departmentName}">IT Support</span>
+                </div>
+            </div>
+
+            <center>
+                <a th:href="${baseUrl + '/requests/' + serviceRequest.id}" class="btn">
+                    View Request Details
+                </a>
+            </center>
+        </div>
+
+        <div class="footer">
+            <p><strong>ServiceHub</strong> — Service Request Management System</p>
+            <p>Notification sent at <span th:text="${notifiedAt}">Mar 12, 2026 14:30</span></p>
+            <p>This is an automated notification sent to <span th:text="${adminEmail}">admin@example.com</span></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -48,6 +48,14 @@
                         <input type="text" th:field="*{title}" placeholder="Brief summary of your request" required/>
                         <div th:if="${#fields.hasErrors('title')}" class="error-text" th:errors="*{title}">Error</div>
                     </div>
+                    <div class="fg" style="grid-column: span 2;">
+                        <label>Department *</label>
+                        <select th:field="*{departmentId}" required>
+                            <option value="">Select department...</option>
+                            <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">IT</option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('departmentId')}" class="error-text" th:errors="*{departmentId}">Error</div>
+                    </div>
                     <div class="fg">
                         <label>Category *</label>
                         <select th:field="*{category}" required>
@@ -137,6 +145,19 @@
             <div class="empty" th:if="${tickets == null or tickets.empty}">
                 <div class="empty-icon"><i class="bi bi-inbox"></i></div>
                 <p>No requests yet. Submit your first request above!</p>
+            </div>
+            
+            <!-- PAGINATION -->
+            <div class="pagination" th:if="${totalPages > 1}">
+                <button class="page-btn" th:disabled="${currentPage == 0}" 
+                        th:onclick="'window.location.href=\'/user/tickets?page=' + ${currentPage - 1} + '\''">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="page-info">Page <span th:text="${currentPage + 1}">1</span> of <span th:text="${totalPages}">1</span></span>
+                <button class="page-btn" th:disabled="${currentPage >= totalPages - 1}" 
+                        th:onclick="'window.location.href=\'/user/tickets?page=' + ${currentPage + 1} + '\''">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
         </div>
     </div>

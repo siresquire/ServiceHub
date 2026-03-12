@@ -14,50 +14,91 @@
     <header th:replace="~{fragments/layout :: topbar('Agent Dashboard', 'Your ticket queue and performance')}"></header>
 
     <div class="content">
+        <!-- WELCOME BANNER -->
+        <div class="welcome">
+            <div class="welcome-txt">
+                <h2>Welcome back, <span th:text="${user.fullName}">Agent</span></h2>
+                <p>You have <strong th:text="${assignedTickets.size()}">0</strong> assigned tickets and <strong th:text="${unassignedTickets.size()}">0</strong> unassigned in your queue.</p>
+            </div>
+            <div class="welcome-actions">
+                <a class="btn-outline" href="/analytics"><i class="bi bi-bar-chart-line"></i> Analytics</a>
+                <a class="btn-teal" href="/agent/tickets"><i class="bi bi-ticket-detailed"></i> View All Tickets</a>
+            </div>
+        </div>
+
         <!-- STATS -->
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-icon ic-blue"><i class="bi bi-clipboard-check"></i></div>
-                <div><div class="stat-val" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</div><div class="stat-lbl">Assigned</div></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${assignedTickets.size()}">0</div>
+                    <div class="stat-lbl">Assigned to Me</div>
+                </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon ic-teal"><i class="bi bi-inbox"></i></div>
-                <div><div class="stat-val" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</div><div class="stat-lbl">Unassigned</div></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${unassignedTickets.size()}">0</div>
+                    <div class="stat-lbl">Unassigned Queue</div>
+                </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon ic-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                <div><div class="stat-val" th:text="${slaBreaches != null ? slaBreaches.size() : 0}">0</div><div class="stat-lbl">SLA Breaches</div></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${slaBreaches.size()}">0</div>
+                    <div class="stat-lbl">SLA Breaches</div>
+                </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon ic-amber"><i class="bi bi-exclamation-circle"></i></div>
-                <div><div class="stat-val" th:text="${slaWarnings != null ? slaWarnings.size() : 0}">0</div><div class="stat-lbl">SLA Warnings</div></div>
+                <div class="stat-icon ic-amber"><i class="bi bi-clock"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${slaWarnings.size()}">0</div>
+                    <div class="stat-lbl">SLA Warnings</div>
+                </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
-                <div><div class="stat-val" th:text="${resolvedTodayCount ?: 0}">0</div><div class="stat-lbl">Resolved</div></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${resolvedTodayCount ?: 0}">0</div>
+                    <div class="stat-lbl">Resolved Today</div>
+                </div>
             </div>
         </div>
 
         <!-- SLA ALERTS -->
-        <div class="alerts" th:if="${slaBreaches != null and !slaBreaches.empty}">
-            <div class="alert alert-red" th:each="t : ${slaBreaches}">
+        <div class="alerts" th:if="${!slaBreaches.empty or !slaWarnings.empty}">
+            <!-- Show max 3 breaches, then link to view all -->
+            <div th:each="t, iterStat : ${slaBreaches}" th:if="${iterStat.index < 3}" class="alert alert-red">
                 <div class="alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
                 <div style="flex: 1; min-width: 0;">
                     <strong>SLA Breached:</strong> <span th:text="${t.title}">Ticket title</span>
-                    <div style="font-size: 11px; opacity: .8;"
+                    <div style="font-size: 11px; opacity: .85; margin-top: 2px;"
                          th:text="'Priority: ' + ${t.priority} + ' • Due: ' + (${t.resolutionSlaDeadline != null} ? ${#temporals.format(t.resolutionSlaDeadline,'MMM dd, HH:mm')} : 'N/A')">Priority: HIGH</div>
+                </div>
+                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">Resolve <i class="bi bi-arrow-right"></i></a>
+            </div>
+            
+            <!-- Show "View All" if more than 3 breaches -->
+            <div th:if="${slaBreaches.size() > 3}" class="alert alert-red" style="justify-content: center; cursor: pointer;" onclick="window.location.href='/agent/tickets'">
+                <strong th:text="'+ ' + ${slaBreaches.size() - 3} + ' more SLA breached tickets'">+ 5 more SLA breached tickets</strong>
+                <i class="bi bi-arrow-right" style="margin-left: 8px;"></i>
+            </div>
+
+            <!-- Show max 3 warnings, then link to view all -->
+            <div th:each="t, iterStat : ${slaWarnings}" th:if="${iterStat.index < 3}" class="alert alert-amber">
+                <div class="alert-icon"><i class="bi bi-clock"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <strong>Approaching SLA:</strong> <span th:text="${t.title}">Ticket title</span>
+                    <div style="font-size: 11px; opacity: .85; margin-top: 2px;"
+                         th:text="'Due: ' + (${t.resolutionSlaDeadline != null} ? ${#temporals.format(t.resolutionSlaDeadline,'MMM dd, HH:mm')} : 'N/A')">Due soon</div>
                 </div>
                 <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
             </div>
-        </div>
-
-        <div class="alerts" th:if="${slaWarnings != null and !slaWarnings.empty}">
-            <div class="alert alert-amber" th:each="t : ${slaWarnings}">
-                <div class="alert-icon"><i class="bi bi-exclamation-circle"></i></div>
-                <div style="flex: 1; min-width: 0;">
-                    <strong>Approaching SLA:</strong> <span th:text="${t.title}">Ticket title</span>
-                </div>
-                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
+            
+            <!-- Show "View All" if more than 3 warnings -->
+            <div th:if="${slaWarnings.size() > 3}" class="alert alert-amber" style="justify-content: center; cursor: pointer;" onclick="window.location.href='/agent/tickets'">
+                <strong th:text="'+ ' + ${slaWarnings.size() - 3} + ' more SLA warnings'">+ 5 more SLA warnings</strong>
+                <i class="bi bi-arrow-right" style="margin-left: 8px;"></i>
             </div>
         </div>
 
@@ -66,10 +107,10 @@
             <!-- ASSIGNED TO ME -->
             <div class="section-card">
                 <div class="section-hdr">
-                    <div class="section-title"><i class="bi bi-person-check"></i> Assigned to Me <span class="cnt" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</span></div>
-                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
+                    <div class="section-title"><i class="bi bi-person-check"></i> Assigned to Me</div>
+                    <span class="cnt" th:text="${assignedTickets.size()}">0</span>
                 </div>
-                <div th:each="t : ${assignedTickets}">
+                <div th:each="t, iterStat : ${assignedTickets}" th:if="${!assignedTickets.empty and iterStat.index < 5}">
                     <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
                         <div class="tr-icon ic-blue"><i class="bi bi-ticket-detailed"></i></div>
                         <div class="tr-body">
@@ -78,13 +119,18 @@
                         </div>
                         <div class="tr-right">
                             <span class="pill"
-                                  th:classappend="${t.status=='OPEN'}?'p-open':(${t.status=='IN_PROGRESS'}?'p-prog':'p-done')"
+                                  th:classappend="${t.status=='OPEN'}?'p-open':(${t.status=='IN_PROGRESS'}?'p-prog':(${t.status=='RESOLVED'}?'p-done':'p-done'))"
                                   th:text="${t.status.replace('_',' ')}">OPEN</span>
-                            <span th:if="${t.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                            <span th:if="${t.slaBreached}" class="sla-breach" style="margin-top:4px;"><i class="bi bi-exclamation-triangle-fill"></i></span>
                         </div>
                     </a>
                 </div>
-                <div class="empty" th:if="${assignedTickets == null or assignedTickets.empty}">
+                <div th:if="${assignedTickets.size() > 5}" style="padding: 12px 20px; text-align: center; border-top: 1px solid var(--border);">
+                    <a href="/agent/tickets" class="btn-ghost" style="display: inline-flex; align-items: center; gap: 6px;">
+                        View all <span th:text="${assignedTickets.size()}">10</span> tickets <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="empty" th:if="${assignedTickets.empty}">
                     <div class="empty-icon"><i class="bi bi-check-circle"></i></div>
                     <p>All clear! No assigned tickets.</p>
                 </div>
@@ -93,10 +139,10 @@
             <!-- UNASSIGNED -->
             <div class="section-card">
                 <div class="section-hdr">
-                    <div class="section-title"><i class="bi bi-inbox"></i> Unassigned <span class="cnt cnt-amber" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</span></div>
-                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
+                    <div class="section-title"><i class="bi bi-inbox"></i> Unassigned Queue</div>
+                    <span class="cnt cnt-amber" th:text="${unassignedTickets.size()}">0</span>
                 </div>
-                <div th:each="t : ${unassignedTickets}">
+                <div th:each="t, iterStat : ${unassignedTickets}" th:if="${!unassignedTickets.empty and iterStat.index < 5}">
                     <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
                         <div class="tr-dot"
                              th:classappend="${t.priority=='HIGH' or t.priority=='CRITICAL'}?'dot-r':(${t.priority=='MEDIUM'}?'dot-a':'dot-b')"></div>
@@ -104,10 +150,18 @@
                             <div class="tr-title" th:text="${t.title}">Ticket title</div>
                             <div class="tr-meta" th:text="${t.category + ' • ' + (t.priority != null ? t.priority : 'N/A')}">IT_SUPPORT • HIGH</div>
                         </div>
-                        <span class="t-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt,'MMM dd') : ''}">Mar 11</span>
+                        <div class="tr-right" style="align-items: flex-end;">
+                            <span class="tr-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt,'MMM dd') : ''}">Mar 11</span>
+                            <span class="pill p-open" style="font-size: 9px; padding: 2px 6px;">NEW</span>
+                        </div>
                     </a>
                 </div>
-                <div class="empty" th:if="${unassignedTickets == null or unassignedTickets.empty}">
+                <div th:if="${unassignedTickets.size() > 5}" style="padding: 12px 20px; text-align: center; border-top: 1px solid var(--border);">
+                    <a href="/agent/tickets" class="btn-ghost" style="display: inline-flex; align-items: center; gap: 6px;">
+                        View all <span th:text="${unassignedTickets.size()}">10</span> tickets <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="empty" th:if="${unassignedTickets.empty}">
                     <div class="empty-icon"><i class="bi bi-inbox"></i></div>
                     <p>No unassigned tickets in your department.</p>
                 </div>

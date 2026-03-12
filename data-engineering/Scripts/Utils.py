@@ -1,10 +1,21 @@
 import logging
+import os
 import time
 from functools import wraps
 
+
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOG_PATH = os.path.join(LOG_DIR, "etl_pipeline.log")
+
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s"
+    format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH),
+        logging.StreamHandler()
+    ]
 )
 
 logger = logging.getLogger("servicehub_etl")

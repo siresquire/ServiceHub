@@ -32,18 +32,11 @@
             </div>
             <div class="stat-card">
                 <div class="stat-icon ic-amber"><i class="bi bi-hourglass-split"></i></div>
-                <div><div class="stat-val" th:text="${openRequests != null ? openRequests.size() : 0}">0</div><div class="stat-lbl">Pending</div></div>
+                <div><div class="stat-val" th:text="${openRequests != null ? openRequests.size() : 0}">0</div><div class="stat-lbl">Active</div></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
                 <div><div class="stat-val" th:text="${resolvedRequests != null ? resolvedRequests.size() : 0}">0</div><div class="stat-lbl">Resolved</div></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon ic-teal"><i class="bi bi-bar-chart-line"></i></div>
-                <div>
-                    <div class="stat-val">—</div>
-                    <div class="stat-lbl">Resolution Rate</div>
-                </div>
             </div>
         </div>
 
@@ -52,10 +45,10 @@
             <!-- OPEN REQUESTS -->
             <div class="section-card">
                 <div class="section-hdr">
-                    <div class="section-title"><i class="bi bi-circle-fill" style="font-size:8px;color:var(--amber);"></i> Open Requests <span class="cnt cnt-amber" th:text="${openRequests != null ? openRequests.size() : 0}">0</span></div>
-                    <a class="view-all" href="/user/tickets">View all <i class="bi bi-arrow-right"></i></a>
+                    <div class="section-title"><i class="bi bi-circle-fill" style="font-size:8px;color:var(--amber);"></i> Active Requests</div>
+                    <span class="cnt cnt-amber" th:text="${openRequests != null ? openRequests.size() : 0}">0</span>
                 </div>
-                <div th:each="t : ${openRequests}">
+                <div th:each="t, iterStat : ${openRequests}" th:if="${!openRequests.empty and iterStat.index < 5}">
                     <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
                          <div class="tr-dot"
                               th:classappend="${t.priority.name()=='HIGH' or t.priority.name()=='CRITICAL'}?'dot-r':(${t.priority.name()=='MEDIUM'}?'dot-a':'dot-b')"></div>
@@ -71,25 +64,42 @@
                         </div>
                     </a>
                 </div>
+                <div th:if="${openRequests != null and openRequests.size() > 5}" style="padding: 12px 20px; text-align: center; border-top: 1px solid var(--border);">
+                    <a href="/user/tickets" class="btn-ghost" style="display: inline-flex; align-items: center; gap: 6px;">
+                        View all <span th:text="${openRequests.size()}">10</span> requests <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
                 <div class="empty" th:if="${openRequests == null or openRequests.empty}">
                     <div class="empty-icon"><i class="bi bi-emoji-smile"></i></div>
-                    <p>No open requests — great job!</p>
+                    <p>No active requests — great job!</p>
+                    <a href="/user/tickets#new" class="btn-teal" style="margin-top: 12px; display: inline-flex;">
+                        <i class="bi bi-plus-lg"></i> Submit New Request
+                    </a>
                 </div>
             </div>
 
             <!-- RESOLVED REQUESTS -->
             <div class="section-card">
                 <div class="section-hdr">
-                    <div class="section-title"><i class="bi bi-check-circle-fill" style="font-size:12px;color:var(--green);"></i> Resolved <span class="cnt" th:text="${resolvedRequests != null ? resolvedRequests.size() : 0}">0</span></div>
+                    <div class="section-title"><i class="bi bi-check-circle-fill" style="font-size:12px;color:var(--green);"></i> Recently Resolved</div>
+                    <span class="cnt" th:text="${resolvedRequests != null ? resolvedRequests.size() : 0}">0</span>
                 </div>
-                <div th:each="t : ${resolvedRequests}">
+                <div th:each="t, iterStat : ${resolvedRequests}" th:if="${!resolvedRequests.empty and iterStat.index < 5}">
                     <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
                         <div class="tr-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
                         <div class="tr-body">
                             <div class="tr-title" th:text="${t.title}">Request title</div>
                             <div class="tr-meta" th:text="${t.category}">IT_SUPPORT</div>
                         </div>
-                        <span class="tr-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt, 'MMM dd') : ''}">Mar 10</span>
+                        <div class="tr-right" style="align-items: flex-end;">
+                            <span class="tr-date" th:text="${t.resolvedAt != null ? #temporals.format(t.resolvedAt, 'MMM dd') : (t.createdAt != null ? #temporals.format(t.createdAt, 'MMM dd') : '')}">Mar 10</span>
+                            <span class="pill p-done" style="font-size: 9px; padding: 2px 6px;">DONE</span>
+                        </div>
+                    </a>
+                </div>
+                <div th:if="${resolvedRequests != null and resolvedRequests.size() > 5}" style="padding: 12px 20px; text-align: center; border-top: 1px solid var(--border);">
+                    <a href="/user/tickets" class="btn-ghost" style="display: inline-flex; align-items: center; gap: 6px;">
+                        View all <span th:text="${resolvedRequests.size()}">10</span> resolved <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
                 <div class="empty" th:if="${resolvedRequests == null or resolvedRequests.empty}">

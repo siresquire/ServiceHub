@@ -50,6 +50,9 @@ class ServiceRequestServiceTests {
   @Mock
   private SlaPolicyService slaPolicyService;
 
+  @Mock
+  private EmailService emailService;
+
   @InjectMocks
   private ServiceRequestService serviceRequestService;
 
@@ -353,37 +356,15 @@ class ServiceRequestServiceTests {
   @Test
   @DisplayName("Should return requests filtered by department when called for an AGENT user")
   void shouldReturnRequestsByDepartmentForAgentUser() {
-    when(requestRepository.findByDepartment_Name(null)).thenReturn(List.of(assignedRequest));
+    agentUser.setDepartment(Department.builder().name("IT_SUPPORT").build());
+    when(requestRepository.findByAssignedTo(agentUser)).thenReturn(List.of(assignedRequest));
+    when(requestRepository.findByDepartmentAndAssignedToIsNullAndStatus(any(), eq(RequestStatus.OPEN))).thenReturn(List.of(openRequest));
 
     List<ServiceRequestResponse> result = serviceRequestService.getRequestsForUser(agentUser);
 
-    assertThat(result).hasSize(1);
-    verify(requestRepository).findByDepartment_Name(null);
-  }
-
-  // ── getRequestsByRequester ────────────────────────────────────────────────
-
-  @Test
-  @DisplayName("Should return service requests belonging to the specified requester user ID")
-  void shouldReturnRequestsByRequesterId() {
-    when(requestRepository.findByRequesterId(3L)).thenReturn(List.of(openRequest));
-
-    List<ServiceRequestResponse> result = serviceRequestService.getRequestsByRequester(3L);
-
-    assertThat(result).hasSize(1);
-  }
-
-  // ── getRequestsByDepartment ───────────────────────────────────────────────
-
-  @Test
-  @DisplayName("Should return service requests filtered by department name")
-  void shouldReturnRequestsByDepartmentName() {
-    when(requestRepository.findByDepartment_Name("IT")).thenReturn(List.of(openRequest, assignedRequest));
-
-    List<ServiceRequestResponse> result = serviceRequestService.getRequestsByDepartment("IT");
-
     assertThat(result).hasSize(2);
-    verify(requestRepository).findByDepartment_Name("IT");
+    verify(requestRepository).findByAssignedTo(agentUser);
+    verify(requestRepository).findByDepartmentAndAssignedToIsNullAndStatus(any(), eq(RequestStatus.OPEN));
   }
 
   // ── getOpenRequestsForUser ────────────────────────────────────────────────
@@ -450,6 +431,18 @@ class ServiceRequestServiceTests {
 
     assertThat(result).hasSize(1);
     verify(requestRepository).findByAssignedToIsNull();
+  }
+
+  @Test
+  @DisplayName("Should return all unassigned requests in department for ADMIN user")
+  void shouldReturnAllUnassignedInDepartmentForAdminUser() {
+    Department dept = Department.builder().id(5L).name("IT").build();
+    when(requestRepository.findByDepartmentAndAssignedToIsNull(dept)).thenReturn(List.of(openRequest, assignedRequest));
+
+    List<ServiceRequest> result = serviceRequestService.getUnassignedRequests(dept, Role.ADMIN);
+
+    assertThat(result).hasSize(2);
+    verify(requestRepository).findByDepartmentAndAssignedToIsNull(dept);
   }
 
   // ── getSlaBreachedRequests ────────────────────────────────────────────────

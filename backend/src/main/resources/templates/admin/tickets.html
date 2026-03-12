@@ -141,6 +141,19 @@
                 <div class="empty-icon"><i class="bi bi-inbox"></i></div>
                 No tickets found
             </div>
+            
+            <!-- PAGINATION -->
+            <div class="pagination" th:if="${totalPages > 1}">
+                <button class="page-btn" th:disabled="${currentPage == 0}" 
+                        th:onclick="'window.location.href=\'/admin/tickets?page=' + ${currentPage - 1} + '\''">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="page-info">Page <span th:text="${currentPage + 1}">1</span> of <span th:text="${totalPages}">1</span></span>
+                <button class="page-btn" th:disabled="${currentPage >= totalPages - 1}" 
+                        th:onclick="'window.location.href=\'/admin/tickets?page=' + ${currentPage + 1} + '\''">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
         </div>
     </div>
 </main>

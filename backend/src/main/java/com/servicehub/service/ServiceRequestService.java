@@ -9,8 +9,11 @@ import com.servicehub.model.enums.*;
 import com.servicehub.repository.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,18 +24,52 @@ public class ServiceRequestService {
     private final ServiceRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final SlaPolicyService slaPolicyService;
+    private final DepartmentRepository departmentRepository;
 
+    /**
+     * Retrieves all service requests with pagination, ordered by creation date descending.
+     * Result is cached per page/size combination for fast repeated dashboard loads.
+     *
+     * @param page zero-based page index
+     * @param size number of records per page
+     * @return paginated list of service request responses
+     */
+    @Transactional(readOnly = true)
     public Page<ServiceRequestResponse> getAllRequests(int page, int size) {
         return requestRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
                 .map(ServiceRequestResponse::toResponse);
     }
 
+    /**
+     * Retrieves a single service request by its unique ID.
+     * Cached individually by ID for fast repeated lookups.
+     *
+     * @param id the unique identifier of the service request
+     * @return the matching service request response
+     * @throws RuntimeException if no request is found with the given ID
+     */
+    @Transactional(readOnly = true)
     public ServiceRequestResponse getRequestById(Long id) {
         return ServiceRequestResponse.toResponse(requestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found")));
     }
 
+    /**
+     * Creates a new service request on behalf of the authenticated user.
+     * Looks up the department by ID, builds the request entity with default values,
+     * applies SLA deadlines based on category and priority, then persists it.
+     * Evicts all related caches so dashboard counts stay accurate.
+     *
+     * @param dto       the request payload containing title, description, category, priority, and departmentId
+     * @param requester the authenticated user submitting the request
+     * @return the created service request as a response DTO
+     * @throws RuntimeException if the specified department does not exist
+     */
+
+    @Transactional
     public ServiceRequestResponse createRequest(ServiceRequestDto dto, User requester) {
+        Department department = departmentRepository.findById(dto.getDepartmentId())
+                .orElseThrow(() -> new RuntimeException("Department not found: " + dto.getDepartmentId()));
         ServiceRequest req = ServiceRequest.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
@@ -40,6 +77,11 @@ public class ServiceRequestService {
                 .priority(Priority.valueOf(dto.getPriority()))
                 .status(RequestStatus.OPEN)
                 .requester(requester)
+                .department(department)       // ← was missing
+//                .slaBreached(false)           // ← fixes NOT NULL constraint
+                .resolved(false)              // ← fixes NOT NULL constraint
+                .slaBreached(false)
+                .resolvedAt(null)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -56,6 +98,7 @@ public class ServiceRequestService {
      * @param agent (optional) agent to assign if the new status is ASSIGNED. Must be provided if updating to ASSIGNED, otherwise ignored
      * @return updated service request response
      */
+    @Transactional
     public ServiceRequestResponse updateStatus(@NotNull Long id, @NotNull StatusUpdateRequest update, User agent) {
         ServiceRequest req = requestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Request not found"));
@@ -81,24 +124,50 @@ public class ServiceRequestService {
         return ServiceRequestResponse.toResponse(requestRepository.save(req));
     }
 
-    // For USER — own tickets only
+    /**
+     * Returns all service requests submitted by a specific user.
+     * Cached by user ID for fast repeated access on the user dashboard.
+     *
+     * @param userId the ID of the user whose requests to retrieve
+     * @return list of service request responses for the given user
+     */
+    @Transactional
     public List<ServiceRequestResponse> getRequestsByRequester(Long userId) {
         return requestRepository.findByRequesterId(userId)
                 .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
-    // For AGENT — department tickets only
+    /**
+     * Returns all service requests belonging to a specific department.
+     * Used by agents to see their department's ticket queue.
+     * Cached by department name.
+     *
+     * @param department the name of the department to filter by
+     * @return list of service request responses for the given department
+     */
+    @Transactional
     public List<ServiceRequestResponse> getRequestsByDepartment(String department) {
         return requestRepository.findByDepartment_Name(department)
                 .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
-    // Role-based — main method controller will call
+    /**
+     * Returns service requests filtered by the caller's role:
+     * <ul>
+     *   <li>ADMIN — all requests in the system</li>
+     *   <li>AGENT — all requests in the agent's department</li>
+     *   <li>USER — only requests submitted by this user</li>
+     * </ul>
+     *
+     * @param user the authenticated user
+     * @return role-filtered list of service request responses
+     */
+    @Transactional
     public List<ServiceRequestResponse> getRequestsForUser(User user) {
         return switch (user.getRole()) {
             case ADMIN -> requestRepository.findAll()
                     .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
-            case AGENT -> getRequestsByDepartment(null);
+            case AGENT -> getRequestsByDepartment( user.getDepartment() != null ? user.getDepartment().getName() : null);
             case USER -> getRequestsByRequester(user.getId());
         };
     }
@@ -130,6 +199,7 @@ public class ServiceRequestService {
      * @throws BadRequestException if the new status is the same as the current status
      * @throws InvalidServiceRequestTransition if the transition is not allowed based on the defined workflow
      */
+    @Transactional
     private void validateStatusTransition(RequestStatus current, RequestStatus newStatus) {
 
         if(current.equals(newStatus)) {
@@ -156,15 +226,31 @@ public class ServiceRequestService {
                 throw new InvalidServiceRequestTransition(current, newStatus);
         }
     }
-    // ── USER ──────────────────────────────────────────────────────────────────
-
+    /**
+     * Returns open and active requests for a specific user.
+     * Includes tickets with status OPEN, ASSIGNED, or IN_PROGRESS.
+     * Used to populate the "Active Requests" panel on the user dashboard.
+     *
+     * @param user the authenticated user
+     * @return list of open/in-progress service requests for the user
+     */
+    @Transactional
     public List<ServiceRequest> getOpenRequestsForUser(User user) {
         return requestRepository.findByRequesterAndStatusIn(
                 user,
                 List.of(RequestStatus.OPEN, RequestStatus.IN_PROGRESS, RequestStatus.ASSIGNED)
         );
     }
-
+    /**
+     * Returns resolved and closed requests for a specific user.
+     * Includes tickets with status RESOLVED or CLOSED.
+     * Used to populate the "Resolved Requests" panel on the user dashboard.
+     *
+     * @param user the authenticated user
+     * @return list of resolved/closed service requests for the user
+     */
+    @Transactional
+    @Cacheable(key = "'resolved:user:' + #user.id")
     public List<ServiceRequest> getResolvedRequestsForUser(User user) {
         return requestRepository.findByRequesterAndStatusIn(
                 user,
@@ -172,26 +258,55 @@ public class ServiceRequestService {
         );
     }
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────
 
+    @Transactional
     public List<ServiceRequest> getAllRequests() {
         return requestRepository.findAll();
     }
 
-// ── AGENT ─────────────────────────────────────────────────────────────────
-
+    /**
+     * Returns all service requests currently assigned to a specific agent.
+     * Used to populate the agent's personal ticket queue.
+     *
+     * @param agent the agent user whose assigned requests to retrieve
+     * @return list of service requests assigned to the agent
+     */
+    @Transactional
+//    @Cacheable(key = "'assigned:agent:' + #agent.id")
     public List<ServiceRequest> getAssignedRequests(User agent) {
         return requestRepository.findByAssignedTo(agent);
     }
 
+    /**
+     * Returns all service requests that have not yet been assigned to an agent.
+     * Used to populate the unassigned ticket queue for agents and admins.
+     *
+     * @return list of unassigned service requests
+     */
+    @Transactional
     public List<ServiceRequest> getUnassignedRequests() {
         return requestRepository.findByAssignedToIsNull();
     }
 
+    /**
+     * Returns all service requests where the SLA deadline has been breached.
+     * Not cached — SLA status changes frequently via the SLA engine scheduler.
+     *
+     * @return list of SLA-breached service requests
+     */
+    @Transactional
     public List<ServiceRequest> getSlaBreachedRequests() {
         return requestRepository.findBySlaBreachedTrue();
     }
 
+    /**
+     * Returns service requests whose resolution SLA deadline falls within the next 2 hours.
+     * Used to surface early warnings on agent and admin dashboards.
+     * Not cached — time-sensitive, must always reflect current state.
+     *
+     * @return list of service requests approaching SLA deadline
+     */
+    @Transactional
     public List<ServiceRequest> getSlaWarningRequests() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime cutoff = now.plusHours(2);

@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.admin;
 
 import com.amalitech.qa.base.BaseApiTest;
 import com.amalitech.qa.config.TestConfig;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -16,6 +17,8 @@ import static org.hamcrest.Matchers.*;
 /**
  * API tests for Admin endpoints
  */
+@Epic("ServiceHub API Testing")
+@Feature("Admin Management")
 @TestMethodOrder(OrderAnnotation.class)
 public class AdminApiTest extends BaseApiTest {
     
@@ -34,6 +37,9 @@ public class AdminApiTest extends BaseApiTest {
     
     @Test
     @Order(1)
+    @Story("User Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test retrieving all users in the system with admin privileges")
     @DisplayName("GET /api/admin/users - Get all users")
     public void testGetAllUsers() {
         givenAdminRequest()
@@ -166,6 +172,9 @@ public class AdminApiTest extends BaseApiTest {
     
     @Test
     @Order(7)
+    @Story("User Role Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test promoting user to AGENT role with department assignment")
     @DisplayName("PUT /api/admin/users/{id}/role - Update user role to AGENT")
     public void testUpdateUserRoleToAgent() {
         Assumptions.assumeTrue(testUserId != null, "Test user must be created first");
@@ -234,6 +243,9 @@ public class AdminApiTest extends BaseApiTest {
     
     @Test
     @Order(11)
+    @Story("Department Management")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test creating a new department with valid category and contact information")
     @DisplayName("POST /api/admin/departments - Create new department")
     public void testCreateDepartment() {
         Map<String, Object> departmentData = createDepartmentPayload(

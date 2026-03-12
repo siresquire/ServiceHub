@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.requests;
 
 import com.amalitech.qa.base.BaseApiTest;
 import com.amalitech.qa.config.TestConfig;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -16,6 +17,8 @@ import static org.hamcrest.Matchers.*;
 /**
  * API tests for Service Request endpoints
  */
+@Epic("ServiceHub API Testing")
+@Feature("Service Requests")
 @TestMethodOrder(OrderAnnotation.class)
 public class ServiceRequestApiTest extends BaseApiTest {
     
@@ -43,7 +46,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
         departmentData.put("contactEmail", "testservice@example.com");
         
         Response deptResponse = given()
-            .spec(new BaseApiTest().givenAdminRequest())
+            .contentType("application/json")
+            .accept("application/json")
+            .header("Authorization", "Bearer " + TestConfig.getAdminToken())
             .body(departmentData)
             .when()
                 .post("/api/admin/departments")
@@ -95,7 +100,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
         
         // Get agent ID and promote to AGENT role
         Response usersResponse = given()
-            .spec(new BaseApiTest().givenAdminRequest())
+            .contentType("application/json")
+            .accept("application/json")
+            .header("Authorization", "Bearer " + TestConfig.getAdminToken())
             .when()
                 .get("/api/admin/users")
             .then()
@@ -107,7 +114,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
         
         // Promote user to AGENT role
         given()
-            .spec(new BaseApiTest().givenAdminRequest())
+            .contentType("application/json")
+            .accept("application/json")
+            .header("Authorization", "Bearer " + TestConfig.getAdminToken())
             .queryParam("role", "AGENT")
             .queryParam("departmentId", testDepartmentId)
             .when()
@@ -134,6 +143,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
     
     @Test
     @Order(1)
+    @Story("Create Service Request")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test creating a new service request with valid data")
     @DisplayName("POST /api/requests - Create new service request")
     public void testCreateServiceRequest() {
         Assumptions.assumeTrue(testUserToken != null, "Test user token must be available");
@@ -164,6 +176,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
     
     @Test
     @Order(2)
+    @Story("Create Service Request")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test creating a service request with invalid data should return validation errors")
     @DisplayName("POST /api/requests - Create request with invalid data")
     public void testCreateServiceRequestWithInvalidData() {
         Map<String, Object> invalidData = new HashMap<>();
@@ -241,6 +256,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
     
     @Test
     @Order(7)
+    @Story("Assign Service Request")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test agent self-assignment functionality for service requests")
     @DisplayName("PUT /api/requests/{id}/assign - Agent assigns request to themselves")
     public void testAgentAssignRequestToSelf() {
         Assumptions.assumeTrue(createdRequestId != null, "Service request must be created first");
@@ -289,6 +307,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
     
     @Test
     @Order(9)
+    @Story("Update Service Request Status")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test updating service request status from ASSIGNED to IN_PROGRESS")
     @DisplayName("PUT /api/requests/{id}/status - Update request status to IN_PROGRESS")
     public void testUpdateRequestStatusToInProgress() {
         Assumptions.assumeTrue(createdRequestId != null, "Service request must be created first");
@@ -514,7 +535,9 @@ public class ServiceRequestApiTest extends BaseApiTest {
         if (testDepartmentId != null) {
             try {
                 given()
-                    .spec(new BaseApiTest().givenAdminRequest())
+                    .contentType("application/json")
+                    .accept("application/json")
+                    .header("Authorization", "Bearer " + TestConfig.getAdminToken())
                     .when()
                         .delete("/api/admin/departments/" + testDepartmentId)
                     .then()

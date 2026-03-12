@@ -1,6 +1,7 @@
 package com.amalitech.qa.tests.auth;
 
 import com.amalitech.qa.base.BaseApiTest;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -15,6 +16,8 @@ import static org.hamcrest.Matchers.*;
 /**
  * API tests for Authentication endpoints
  */
+@Epic("ServiceHub API Testing")
+@Feature("Authentication API")
 @TestMethodOrder(OrderAnnotation.class)
 public class AuthApiTest extends BaseApiTest {
     
@@ -33,6 +36,9 @@ public class AuthApiTest extends BaseApiTest {
     
     @Test
     @Order(1)
+    @Story("User Registration")
+    @Severity(SeverityLevel.BLOCKER)
+    @Description("Test user registration with valid credentials and verify JWT token generation")
     @DisplayName("POST /api/auth/register - Register new user successfully")
     public void testRegisterNewUser() {
         Map<String, Object> registerData = createRegisterPayload(
@@ -123,6 +129,9 @@ public class AuthApiTest extends BaseApiTest {
     
     @Test
     @Order(6)
+    @Story("User Login")
+    @Severity(SeverityLevel.BLOCKER)
+    @Description("Test user login with valid credentials and verify JWT token generation")
     @DisplayName("POST /api/auth/login - Login with valid credentials")
     public void testLoginWithValidCredentials() {
         Map<String, Object> loginData = createLoginPayload(testUserEmail, testUserPassword);
@@ -224,6 +233,9 @@ public class AuthApiTest extends BaseApiTest {
     
     @Test
     @Order(12)
+    @Story("User Logout")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test user logout functionality with valid JWT token")
     @DisplayName("POST /api/auth/logout - Logout with valid token")
     public void testLogoutWithValidToken() {
         Assumptions.assumeTrue(registeredUserToken != null, 

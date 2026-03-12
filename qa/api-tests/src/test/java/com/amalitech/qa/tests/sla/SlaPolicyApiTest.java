@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.sla;
 
 import com.amalitech.qa.base.BaseApiTest;
 import com.amalitech.qa.config.TestConfig;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -15,6 +16,8 @@ import static org.hamcrest.Matchers.*;
 /**
  * API tests for SLA Policy endpoints
  */
+@Epic("ServiceHub API Testing")
+@Feature("SLA Policy Management")
 @TestMethodOrder(OrderAnnotation.class)
 public class SlaPolicyApiTest extends BaseApiTest {
     
@@ -42,6 +45,9 @@ public class SlaPolicyApiTest extends BaseApiTest {
     
     @Test
     @Order(2)
+    @Story("Create SLA Policy")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Test creating a new SLA policy with valid category, priority, and time constraints")
     @DisplayName("POST /api/sla-policies - Create new SLA policy")
     public void testCreateSlaPolicy() {
         Map<String, Object> slaPolicyData = createSlaPolicyPayload(
@@ -118,6 +124,9 @@ public class SlaPolicyApiTest extends BaseApiTest {
     
     @Test
     @Order(6)
+    @Story("Update SLA Policy")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Test updating SLA policy response and resolution times")
     @DisplayName("PATCH /api/sla-policies/{id} - Update SLA policy")
     public void testUpdateSlaPolicy() {
         Assumptions.assumeTrue(createdSlaPolicyId != null, 

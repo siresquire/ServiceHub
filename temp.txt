@@ -1,0 +1,17 @@
+docker run -d \
+            --network servicehub-network \
+            --name backend-integration6 \
+            -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=test \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/servicehub \
+            -e SPRING_DATASOURCE_USERNAME=servicehub \
+            -e SPRING_DATASOURCE_PASSWORD=pass1234 \
+            -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver \
+            -e SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect \
+            -e JWT_SECRET=localDevSecretKeyForJWT_CHANGE_IN_PRODUCTION_1234567890 \
+            servicehub-backend:latest
+
+docker ps
+curl -fsS http://localhost:8080/actuator/health
+docker ps -a
+docker logs hash

@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.serviceRequests;
 
 import com.amalitech.qa.base.BaseTest;
 import com.amalitech.qa.config.ApiConfig;
+import com.amalitech.qa.data.ServiceRequestTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
 import io.restassured.response.Response;
@@ -28,12 +29,7 @@ public class ServiceRequestApiTest extends BaseTest {
     @Test
     @DisplayName("Should successfully create a new service request")
     public void testCreateServiceRequest() {
-        Map<String, Object> requestData = new HashMap<>();
-        requestData.put("title", TestData.REQUEST_TITLES[0]);
-        requestData.put("description", TestData.REQUEST_DESCRIPTIONS[0]);
-        requestData.put("category", TestData.CATEGORY_HARDWARE);
-        requestData.put("priority", TestData.PRIORITY_HIGH);
-        requestData.put("departmentId", TestData.IT_DEPARTMENT_ID);
+        Map<String, Object> requestData = ServiceRequestTestData.createValidServiceRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getCustomerToken())
                 .body(requestData)
@@ -42,11 +38,11 @@ public class ServiceRequestApiTest extends BaseTest {
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue())
-                .body("title", equalTo(TestData.REQUEST_TITLES[0]))
-                .body("description", equalTo(TestData.REQUEST_DESCRIPTIONS[0]))
-                .body("category", equalTo(TestData.CATEGORY_HARDWARE))
-                .body("priority", equalTo(TestData.PRIORITY_HIGH))
-                .body("status", equalTo(TestData.STATUS_OPEN))
+                .body("title", equalTo(ServiceRequestTestData.REQUEST_TITLES[0]))
+                .body("description", equalTo(ServiceRequestTestData.REQUEST_DESCRIPTIONS[0]))
+                .body("category", equalTo(ServiceRequestTestData.Category.HARDWARE.name()))
+                .body("priority", equalTo(ServiceRequestTestData.Priority.HIGH.name()))
+                .body("status", equalTo(ServiceRequestTestData.Status.OPEN.name()))
                 .body("requesterName", notNullValue())
                 .body("departmentName", notNullValue())
                 .body("createdAt", notNullValue())
@@ -63,9 +59,7 @@ public class ServiceRequestApiTest extends BaseTest {
     @Test
     @DisplayName("Should fail to create request with missing required fields")
     public void testCreateRequestMissingFields() {
-        Map<String, Object> requestData = new HashMap<>();
-        requestData.put("description", "Missing title and other required fields");
-        // Missing title, category, priority
+        Map<String, Object> requestData = ServiceRequestTestData.createIncompleteServiceRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getCustomerToken())
                 .body(requestData)
@@ -83,12 +77,7 @@ public class ServiceRequestApiTest extends BaseTest {
     @Test
     @DisplayName("Should fail to create request with invalid department")
     public void testCreateRequestInvalidDepartment() {
-        Map<String, Object> requestData = new HashMap<>();
-        requestData.put("title", "Test Request Invalid Dept");
-        requestData.put("description", "Testing invalid department");
-        requestData.put("category", TestData.CATEGORY_SOFTWARE);
-        requestData.put("priority", TestData.PRIORITY_MEDIUM);
-        requestData.put("departmentId", TestData.INVALID_ID);
+        Map<String, Object> requestData = ServiceRequestTestData.createInvalidDepartmentServiceRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getCustomerToken())
                 .body(requestData)
@@ -159,12 +148,7 @@ public class ServiceRequestApiTest extends BaseTest {
     @DisplayName("Should get request by ID")
     public void testGetRequestById() {
         // First create a request to get
-        Map<String, Object> requestData = new HashMap<>();
-        requestData.put("title", "Test Get By ID");
-        requestData.put("description", "Testing get by ID functionality");
-        requestData.put("category", TestData.CATEGORY_NETWORK);
-        requestData.put("priority", TestData.PRIORITY_LOW);
-        requestData.put("departmentId", TestData.IT_DEPARTMENT_ID);
+        Map<String, Object> requestData = ServiceRequestTestData.createTestGetByIdServiceRequest();
 
         Response createResponse = givenAuthenticatedRequest(TokenManager.getCustomerToken())
                 .body(requestData)

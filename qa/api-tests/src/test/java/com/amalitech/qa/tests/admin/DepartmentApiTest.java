@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.admin;
 
 import com.amalitech.qa.base.BaseTest;
 import com.amalitech.qa.config.ApiConfig;
+import com.amalitech.qa.data.DepartmentTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
 import io.restassured.response.Response;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -28,10 +28,7 @@ public class DepartmentApiTest extends BaseTest {
     @Test
     @DisplayName("Should successfully create a new department")
     public void testCreateDepartment() {
-        Map<String, Object> departmentRequest = new HashMap<>();
-        departmentRequest.put("name", TestData.NEW_DEPARTMENT_NAME);
-        departmentRequest.put("category", TestData.REQUEST_CATEGORY_IT_SUPPORT);
-        departmentRequest.put("contactEmail", TestData.NEW_DEPARTMENT_EMAIL);
+        Map<String, Object> departmentRequest = DepartmentTestData.createValidDepartmentRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(departmentRequest)
@@ -40,8 +37,8 @@ public class DepartmentApiTest extends BaseTest {
                 .then()
                 .statusCode(201)
                 .body("id", notNullValue())
-                .body("name", equalTo(TestData.NEW_DEPARTMENT_NAME))
-                .body("category", equalTo(TestData.REQUEST_CATEGORY_IT_SUPPORT))
+                .body("name", equalTo(DepartmentTestData.NEW_DEPARTMENT_NAME))
+                .body("category", equalTo(DepartmentTestData.RequestCategory.IT_SUPPORT.name()))
                 .extract()
                 .response();
 
@@ -55,10 +52,7 @@ public class DepartmentApiTest extends BaseTest {
     @Test
     @DisplayName("Should fail to create department with duplicate name")
     public void testCreateDuplicateDepartment() {
-        Map<String, Object> departmentRequest = new HashMap<>();
-        departmentRequest.put("name", TestData.DUPLICATE_DEPARTMENT_NAME);
-        departmentRequest.put("category", TestData.REQUEST_CATEGORY_IT_SUPPORT);
-        departmentRequest.put("contactEmail", "duplicate@servicehub.com");
+        Map<String, Object> departmentRequest = DepartmentTestData.createDuplicateDepartmentRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(departmentRequest)
@@ -133,10 +127,7 @@ public class DepartmentApiTest extends BaseTest {
     @DisplayName("Should successfully update department")
     public void testUpdateDepartment() {
         // First create a department to update
-        Map<String, Object> createRequest = new HashMap<>();
-        createRequest.put("name", "Test Update Department");
-        createRequest.put("category", TestData.REQUEST_CATEGORY_FACILITIES);
-        createRequest.put("contactEmail", "update@test.com");
+        Map<String, Object> createRequest = DepartmentTestData.createTestUpdateDepartmentRequest();
 
         Response createResponse = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(createRequest)
@@ -150,10 +141,7 @@ public class DepartmentApiTest extends BaseTest {
         Long departmentId = createResponse.jsonPath().getLong("id");
 
         // Now update it
-        Map<String, Object> updateRequest = new HashMap<>();
-        updateRequest.put("name", TestData.UPDATED_DEPARTMENT_NAME);
-        updateRequest.put("category", TestData.REQUEST_CATEGORY_HR_REQUEST);
-        updateRequest.put("contactEmail", "updated@test.com");
+        Map<String, Object> updateRequest = DepartmentTestData.createUpdatedDepartmentRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(updateRequest)
@@ -162,8 +150,8 @@ public class DepartmentApiTest extends BaseTest {
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(departmentId.intValue()))
-                .body("name", equalTo(TestData.UPDATED_DEPARTMENT_NAME))
-                .body("category", equalTo(TestData.REQUEST_CATEGORY_HR_REQUEST))
+                .body("name", equalTo(DepartmentTestData.UPDATED_DEPARTMENT_NAME))
+                .body("category", equalTo(DepartmentTestData.RequestCategory.HR_REQUEST.name()))
                 .extract()
                 .response();
 
@@ -197,10 +185,7 @@ public class DepartmentApiTest extends BaseTest {
     @DisplayName("Should successfully delete department")
     public void testDeleteDepartment() {
         // First create a department to delete
-        Map<String, Object> createRequest = new HashMap<>();
-        createRequest.put("name", "Test Delete Department");
-        createRequest.put("category", TestData.REQUEST_CATEGORY_FACILITIES);
-        createRequest.put("contactEmail", "delete@test.com");
+        Map<String, Object> createRequest = DepartmentTestData.createTestDeleteDepartmentRequest();
 
         Response createResponse = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(createRequest)

@@ -2,6 +2,7 @@ package com.amalitech.qa.tests.sla;
 
 import com.amalitech.qa.base.BaseTest;
 import com.amalitech.qa.config.ApiConfig;
+import com.amalitech.qa.data.SlaPolicyTestData;
 import com.amalitech.qa.data.TestData;
 import com.amalitech.qa.utils.TokenManager;
 import io.restassured.response.Response;
@@ -28,11 +29,7 @@ public class SlaPolicyApiTest extends BaseTest {
     @Test
     @DisplayName("Should successfully create a new SLA policy")
     public void testCreateSlaPolicy() {
-        Map<String, Object> policyData = new HashMap<>();
-        policyData.put("category", TestData.REQUEST_CATEGORY_IT_SUPPORT);
-        policyData.put("priority", TestData.PRIORITY_HIGH);
-        policyData.put("responseTimeHours", TestData.SLA_RESPONSE_TIME_HOURS);
-        policyData.put("resolutionTimeHours", TestData.SLA_RESOLUTION_TIME_HOURS);
+        Map<String, Object> policyData = SlaPolicyTestData.createValidSlaPolicyRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(policyData)
@@ -42,10 +39,10 @@ public class SlaPolicyApiTest extends BaseTest {
                 .statusCode(200)
                 .body("message", containsStringIgnoringCase("created"))
                 .body("data.id", notNullValue())
-                .body("data.category", equalTo(TestData.REQUEST_CATEGORY_IT_SUPPORT))
-                .body("data.priority", equalTo(TestData.PRIORITY_HIGH))
-                .body("data.responseTimeHours", equalTo(TestData.SLA_RESPONSE_TIME_HOURS))
-                .body("data.resolutionTimeHours", equalTo(TestData.SLA_RESOLUTION_TIME_HOURS))
+                .body("data.category", equalTo(SlaPolicyTestData.RequestCategory.IT_SUPPORT.name()))
+                .body("data.priority", equalTo(SlaPolicyTestData.Priority.HIGH.name()))
+                .body("data.responseTimeHours", equalTo((float) SlaPolicyTestData.SLA_RESPONSE_TIME_HOURS))
+                .body("data.resolutionTimeHours", equalTo((float) SlaPolicyTestData.SLA_RESOLUTION_TIME_HOURS))
                 .extract()
                 .response();
 
@@ -60,11 +57,7 @@ public class SlaPolicyApiTest extends BaseTest {
     @DisplayName("Should fail to create duplicate SLA policy")
     public void testCreateDuplicateSlaPolicy() {
         // First create a policy
-        Map<String, Object> policyData = new HashMap<>();
-        policyData.put("category", TestData.REQUEST_CATEGORY_FACILITIES);
-        policyData.put("priority", TestData.PRIORITY_MEDIUM);
-        policyData.put("responseTimeHours", 8.0);
-        policyData.put("resolutionTimeHours", 48.0);
+        Map<String, Object> policyData = SlaPolicyTestData.createDuplicateSlaPolicyRequest();
 
         givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(policyData)
@@ -90,11 +83,7 @@ public class SlaPolicyApiTest extends BaseTest {
     @Test
     @DisplayName("Should fail to create SLA policy with invalid data")
     public void testCreateSlaPolicyInvalidData() {
-        Map<String, Object> policyData = new HashMap<>();
-        policyData.put("category", TestData.REQUEST_CATEGORY_HR_REQUEST);
-        policyData.put("priority", TestData.PRIORITY_LOW);
-        policyData.put("responseTimeHours", -1.0); // Invalid negative value
-        policyData.put("resolutionTimeHours", -5.0); // Invalid negative value
+        Map<String, Object> policyData = SlaPolicyTestData.createInvalidSlaPolicyRequest();
 
         Response response = givenAuthenticatedRequest(TokenManager.getAdminToken())
                 .body(policyData)

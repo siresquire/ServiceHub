@@ -1,0 +1,57 @@
+name: "Retry command"
+description: "Run a shell command with retries and exponential backoff."
+inputs:
+  command:
+    description: "Shell command to run."
+    required: true
+  shell:
+    description: "Shell to use."
+    required: false
+    default: bash
+  max_attempts:
+    description: "Maximum number of attempts."
+    required: false
+    default: "3"
+  initial_delay_seconds:
+    description: "Initial delay before retry (seconds)."
+    required: false
+    default: "2"
+  backoff_factor:
+    description: "Backoff multiplier for delay."
+    required: false
+    default: "2"
+runs:
+  using: "composite"
+  steps:
+    - name: Run with retry
+      shell: ${{ inputs.shell }}
+      run: |
+        set -euo pipefail
+        cmd="${{ inputs.command }}"
+        max="${{ inputs.max_attempts }}"
+        delay="${{ inputs.initial_delay_seconds }}"
+        factor="${{ inputs.backoff_factor }}"
+
+        attempt=1
+        while true; do
+          echo "::group::Attempt ${attempt}/${max}"
+          set +e
+          eval "${cmd}"
+          ec=$?
+          set -e
+          echo "::endgroup::"
+
+          if [ "${ec}" -eq 0 ]; then
+            exit 0
+          fi
+
+          if [ "${attempt}" -ge "${max}" ]; then
+            echo "::error::Command failed after ${attempt} attempt(s) (exit ${ec})."
+            exit "${ec}"
+          fi
+
+          echo "Retrying in ${delay}s..."
+          sleep "${delay}"
+          delay=$(( delay * factor ))
+          attempt=$(( attempt + 1 ))
+        done

@@ -1,0 +1,43 @@
+name: Reusable - Lint & Test Backend
+
+on:
+  workflow_call:
+    inputs:
+      java-matrix:
+        description: 'JSON array of Java versions'
+        required: false
+        type: string
+        default: '["17","21"]'
+
+jobs:
+  backend:
+    name: Lint & Test (backend)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ${{ fromJson(inputs.java-matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Maven cache
+        uses: ./.github/actions/setup-java-maven-cache
+        with:
+          java_version: ${{ matrix.java }}
+
+      - name: Backend tests
+        uses: ./.github/actions/log-group
+        with:
+          title: "Backend Maven test (JDK ${{ matrix.java }})"
+
+      - name: Run Maven tests
+        working-directory: ./backend
+        run: mvn clean test -B
+
+      - name: End backend test group
+        if: always()
+        uses: ./.github/actions/log-group
+        with:
+          title: "Backend Maven test (JDK ${{ matrix.java }})"
+          end: "true"

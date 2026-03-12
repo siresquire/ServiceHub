@@ -1,0 +1,32 @@
+name: Reusable - Lint DevOps
+
+on:
+  workflow_call: {}
+
+jobs:
+  lint-devops:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install yamllint (with retry)
+        uses: ./.github/actions/retry
+        with:
+          command: sudo apt-get update && sudo apt-get install -y yamllint
+
+      - name: Lint devops YAML
+        uses: ./.github/actions/log-group
+        with:
+          title: "yamllint devops/"
+
+      - name: Run yamllint
+        working-directory: ./devops
+        run: yamllint .
+
+      - name: End yamllint group
+        if: always()
+        uses: ./.github/actions/log-group
+        with:
+          title: "yamllint devops/"
+          end: "true"

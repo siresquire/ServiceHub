@@ -18,7 +18,7 @@ public class ApiConfig {
     public static final String SERVICE_REQUESTS = "/api/requests";
     public static final String DEPARTMENTS = "/departments";
     public static final String SLA_POLICIES = "/api/sla-policies";
-    public static final String DASHBOARD = "/dashboard";
+    public static final String DASHBOARD = "/api/dashboard";
     public static final String ADMIN = "/admin";
     
     // Admin endpoints

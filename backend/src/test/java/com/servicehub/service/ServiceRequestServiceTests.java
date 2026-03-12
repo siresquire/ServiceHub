@@ -182,33 +182,7 @@ class ServiceRequestServiceTests {
   // ── createRequest ─────────────────────────────────────────────────────────
 
   @Test
-  @DisplayName("Should create a new service request without a department when departmentId is null")
-  void shouldCreateServiceRequestWithoutDepartment() {
-    ServiceRequestDto dto = new ServiceRequestDto();
-    dto.setTitle("New Request");
-    dto.setDescription("Description");
-    dto.setCategory("IT_SUPPORT");
-    dto.setPriority("MEDIUM");
-    dto.setDepartmentId(null);
-
-    when(slaPolicyService.getResponseSlaDeadline(any(), any())).thenReturn(LocalDateTime.now().plusHours(4));
-    when(slaPolicyService.getResolutionSlaDeadline(any(), any())).thenReturn(LocalDateTime.now().plusHours(24));
-    when(requestRepository.save(any(ServiceRequest.class))).thenAnswer(inv -> {
-      ServiceRequest req = inv.getArgument(0);
-      req.setId(100L);
-      return req;
-    });
-
-    ServiceRequestResponse response = serviceRequestService.createRequest(dto, regularUser);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getTitle()).isEqualTo("New Request");
-    verify(departmentRepository, never()).findById(any());
-    verify(requestRepository).save(any(ServiceRequest.class));
-  }
-
-  @Test
-  @DisplayName("Should create a new service request and link department when departmentId is provided")
+  @DisplayName("Should create a new service request and link department when departmentId is provided and found")
   void shouldCreateServiceRequestWithDepartment() {
     ServiceRequestDto dto = new ServiceRequestDto();
     dto.setTitle("Request With Dept");
@@ -235,8 +209,8 @@ class ServiceRequestServiceTests {
   }
 
   @Test
-  @DisplayName("Should create service request and set department to null when departmentId is provided but not found")
-  void shouldCreateServiceRequestWithNullDepartmentWhenDeptNotFound() {
+  @DisplayName("Should throw NotFoundException when creating a service request with a departmentId that does not exist")
+  void shouldThrowNotFoundWhenDepartmentNotFound() {
     ServiceRequestDto dto = new ServiceRequestDto();
     dto.setTitle("Request With Unknown Dept");
     dto.setDescription("Description");
@@ -245,18 +219,12 @@ class ServiceRequestServiceTests {
     dto.setDepartmentId(999L);
 
     when(departmentRepository.findById(999L)).thenReturn(Optional.empty());
-    when(slaPolicyService.getResponseSlaDeadline(any(), any())).thenReturn(LocalDateTime.now().plusHours(8));
-    when(slaPolicyService.getResolutionSlaDeadline(any(), any())).thenReturn(LocalDateTime.now().plusHours(48));
-    when(requestRepository.save(any(ServiceRequest.class))).thenAnswer(inv -> {
-      ServiceRequest req = inv.getArgument(0);
-      req.setId(102L);
-      return req;
-    });
 
-    ServiceRequestResponse response = serviceRequestService.createRequest(dto, regularUser);
+    assertThrows(RuntimeException.class,
+            () -> serviceRequestService.createRequest(dto, regularUser));
 
-    assertThat(response).isNotNull();
     verify(departmentRepository).findById(999L);
+    verify(requestRepository, never()).save(any());
   }
 
   // ── updateStatus (with agent) ─────────────────────────────────────────────

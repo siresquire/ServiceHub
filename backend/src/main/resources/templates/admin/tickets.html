@@ -215,16 +215,16 @@
 
     function openAssignModal(ticketId) {
         assignTicketId = ticketId;
-        const row = document.querySelector(`#ticketBody tr[data-id="${ticketId}"]`) || 
+        const row = document.querySelector(`#ticketBody tr[data-id="${ticketId}"]`) ||
                     document.querySelector(`#ticketBody tr:has(.t-id a[href$="/${ticketId}"])`);
         const ticketDept = row ? row.dataset.dept : '';
-        
+
         const modal = document.getElementById('assignModal');
         modal.classList.add('show');
-        
+
         const sel = document.getElementById('agentSelect');
         sel.innerHTML = '<option value="">Loading...</option>';
-        
+
         fetch('/api/admin/users', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(users => {
@@ -235,7 +235,7 @@
                     }
                     return true;
                 });
-                
+
                 sel.innerHTML = '<option value="">— Select an agent —</option>';
                 if (agents.length === 0) {
                     sel.innerHTML = '<option value="">No agents found in this department</option>';

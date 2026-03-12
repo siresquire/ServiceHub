@@ -109,14 +109,14 @@ public class ViewController {
         model.addAttribute(USER_ATTR, user);
         model.addAttribute("users", allUsers);
         model.addAttribute(DEPARTMENTS_ATTR, adminService.getAllDepartments());
-        
+
         // Pre-calculate counts to avoid SpEL stream/lambda parsing issues
         model.addAttribute("totalUsers", allUsers.size());
         model.addAttribute("agentCount", allUsers.stream()
                 .filter(u -> "AGENT".equals(u.getRole())).count());
         model.addAttribute("regularUserCount", allUsers.stream()
                 .filter(u -> "USER".equals(u.getRole())).count());
-        
+
         model.addAttribute("activePage", "users");
         return "admin/users";
     }
@@ -171,11 +171,11 @@ public class ViewController {
         // Merge assigned + unassigned for full list
         var allTickets = new java.util.ArrayList<>(assigned);
         allTickets.addAll(unassigned);
-        
+
         model.addAttribute(USER_ATTR, user);
         model.addAttribute(TICKETS_ATTR, allTickets);
         model.addAttribute("unassignedTickets", unassigned);
-        
+
         // Pre-calculate counts for stat cards
         model.addAttribute("assignedCount", (long) assigned.size());
         model.addAttribute("unassignedCount", (long) unassigned.size());
@@ -185,7 +185,7 @@ public class ViewController {
                 .filter(t -> t.isSlaBreached()).count());
         model.addAttribute("resolvedCount", allTickets.stream()
                 .filter(t -> "RESOLVED".equals(t.getStatus())).count());
-        
+
         model.addAttribute("activePage", "tickets");
         return "agent/tickets";
     }

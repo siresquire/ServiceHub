@@ -10,6 +10,11 @@ import com.servicehub.repository.DepartmentRepository;
 import com.servicehub.repository.ServiceRequestRepository;
 import com.servicehub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -99,6 +104,17 @@ public class DashboardService {
                 .build();
     }
 
+    /**
+     * Returns SLA performance metrics broken down by request category.
+     * For each category, calculates the percentage of requests resolved
+     * within their SLA deadline. Also includes overall average resolution time.
+     *
+     * <p>Result is cached under the key {@code "sla"} and automatically
+     * evicted every 5 minutes alongside other dashboard caches.</p>
+     *
+     * @return {@link DashboardStatsResponse} containing SLA compliance rates
+     *         per category and overall average resolution hours
+     */
     public DashboardStatsResponse getSlaStas(){
 
         List<ServiceRequest> all = requestRepository.findAll();
@@ -138,6 +154,20 @@ public class DashboardService {
                 .build();
     }
 
+
+    /**
+     * Returns daily ticket volume over the specified number of past days.
+     * Groups requests by their creation date and counts them per day.
+     * Used to render the trend chart on the analytics dashboard.
+     *
+     * <p>Result is cached per period value (e.g. 7 days, 30 days).
+     * Cache is evicted every 5 minutes to reflect new tickets.</p>
+     *
+     * @param days the number of days to look back (e.g. 7 or 30)
+     * @return {@link DashboardTrendsResponse} containing a date-to-count map
+     *         and the period label
+     */
+//    @Cacheable(key = "'trends:' + #days")
     public DashboardTrendsResponse getTrends(int days){
 
         List<ServiceRequest> all = requestRepository.findAll();

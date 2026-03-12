@@ -6,14 +6,44 @@
     <title>ServiceHub — Request #<span th:text="${ticket.id}">1</span></title>
     <th:block th:replace="~{fragments/layout :: styles}"></th:block>
     <style>
-        .detail-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 18px; }
-        .detail-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-        .detail-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--muted); }
-        .detail-meta span { display: inline-flex; align-items: center; gap: 4px; }
-        .detail-meta i { font-size: 13px; }
-        .detail-body { font-size: 14px; line-height: 1.7; color: #475569; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
-        .detail-status { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+        .detail-header { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 20px; }
+        .detail-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; color: var(--txt); line-height: 1.3; }
+        .detail-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 20px 0; border-top: 1px solid var(--border); }
+        .detail-item { display: flex; flex-direction: column; gap: 4px; }
+        .detail-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+        .detail-value { font-size: 14px; font-weight: 500; color: var(--txt); display: flex; align-items: center; gap: 6px; }
+        .detail-value i { font-size: 16px; color: var(--teal); }
+        
+        .detail-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--txt); }
+        .card-title i { color: var(--teal); font-size: 18px; }
+        .detail-body { font-size: 14px; line-height: 1.8; color: #475569; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); white-space: pre-wrap; }
+        
+        .sla-info { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .sla-status { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 8px; margin-bottom: 12px; }
+        .sla-status.breached { background: var(--red-bg); border: 1px solid rgba(239,68,68,0.2); }
+        .sla-status.warning { background: var(--amber-bg); border: 1px solid rgba(245,158,11,0.2); }
+        .sla-status.ok { background: var(--green-bg); border: 1px solid rgba(34,197,94,0.2); }
+        .sla-icon { font-size: 24px; }
+        .sla-icon.breached { color: var(--red); }
+        .sla-icon.warning { color: var(--amber); }
+        .sla-icon.ok { color: var(--green); }
+        .sla-text { flex: 1; }
+        .sla-text strong { display: block; font-size: 14px; margin-bottom: 2px; }
+        .sla-text span { font-size: 12px; color: var(--muted); }
+        
+        .action-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .action-btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; font-family: var(--font); }
+        .action-btn i { font-size: 14px; }
+        .action-btn.primary { background: linear-gradient(135deg, var(--teal), #0da87a); color: #fff; box-shadow: 0 2px 8px rgba(15,191,138,0.2); }
+        .action-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,191,138,0.3); }
+        .action-btn.secondary { background: var(--amber-bg); color: var(--amber); }
+        .action-btn.secondary:hover { background: var(--amber); color: #fff; }
+        .action-btn.success { background: var(--green-bg); color: var(--green); }
+        .action-btn.success:hover { background: var(--green); color: #fff; }
+        .action-btn.outline { background: #fff; color: var(--txt); border: 1px solid var(--border); text-decoration: none; }
+        .action-btn.outline:hover { background: var(--bg); border-color: var(--teal); color: var(--teal); }
     </style>
 </head>
 <body>
@@ -21,36 +51,110 @@
 <th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
 
 <main class="main">
-    <header th:replace="~{fragments/layout :: topbar('Request Detail', ticket.title)}"></header>
+    <header th:replace="~{fragments/layout :: topbar('Request Details', 'View and manage service request')}"></header>
 
     <div class="content">
-        <div class="detail-card">
+        <!-- HEADER CARD -->
+        <div class="detail-header">
             <div class="detail-title" th:text="${ticket.title}">Ticket title</div>
-            <div class="detail-meta">
-                <span><i class="bi bi-hash"></i> <span th:text="${ticket.id}">1</span></span>
-                <span><i class="bi bi-tag"></i> <span th:text="${ticket.category}">Category</span></span>
-                <span><i class="bi bi-building"></i> <span th:text="${ticket.departmentName != null ? ticket.departmentName : 'Unassigned'}">Department</span></span>
-                <span><i class="bi bi-person"></i> <span th:text="${ticket.requesterName}">Requester</span></span>
-                <span><i class="bi bi-person-check"></i> <span th:text="${ticket.assignedToName != null ? ticket.assignedToName : 'Unassigned'}">Assignee</span></span>
-                <span><i class="bi bi-calendar3"></i> <span th:text="${ticket.createdAt != null ? #temporals.format(ticket.createdAt,'MMM dd, yyyy HH:mm') : ''}">Created</span></span>
-            </div>
-            <div class="detail-body" th:text="${ticket.description}">Description</div>
-
-            <div class="detail-status">
-                <span class="pill" th:classappend="${ticket.status == 'OPEN'} ? 'p-open' : (${ticket.status == 'IN_PROGRESS'} ? 'p-prog' : 'p-done')" th:text="${ticket.status != null ? ticket.status.replace('_',' ') : 'OPEN'}">OPEN</span>
-                <span class="pill" th:classappend="${ticket.priority == 'HIGH' or ticket.priority == 'CRITICAL'} ? 'p-hi' : (${ticket.priority == 'MEDIUM'} ? 'p-med' : 'p-lo')" th:text="${ticket.priority}">MEDIUM</span>
-                <span th:if="${ticket.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i> SLA Breached</span>
+            
+            <div class="detail-badges">
+                <span class="pill" 
+                      th:classappend="${ticket.status == 'OPEN'} ? 'p-open' : (${ticket.status == 'IN_PROGRESS'} ? 'p-prog' : (${ticket.status == 'RESOLVED'} ? 'p-done' : 'p-done'))" 
+                      th:text="${ticket.status != null ? ticket.status.replace('_',' ') : 'OPEN'}">OPEN</span>
+                <span class="pill" 
+                      th:classappend="${ticket.priority == 'HIGH' or ticket.priority == 'CRITICAL'} ? 'p-hi' : (${ticket.priority == 'MEDIUM'} ? 'p-med' : 'p-lo')" 
+                      th:text="${ticket.priority}">MEDIUM</span>
             </div>
 
-            <!-- Actions for AGENT/ADMIN -->
-            <div class="action-bar" th:if="${user.role.name() == 'AGENT' or user.role.name() == 'ADMIN'}">
-                <button class="act-btn btn-assign" th:if="${ticket.assignedToName == null or ticket.assignedToName == ''}"
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Request ID</span>
+                    <span class="detail-value"><i class="bi bi-hash"></i> <span th:text="${ticket.id}">1</span></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Category</span>
+                    <span class="detail-value"><i class="bi bi-tag"></i> <span th:text="${ticket.category}">IT_SUPPORT</span></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Department</span>
+                    <span class="detail-value"><i class="bi bi-building"></i> <span th:text="${ticket.departmentName != null ? ticket.departmentName : 'Unassigned'}">IT Support</span></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Requester</span>
+                    <span class="detail-value"><i class="bi bi-person"></i> <span th:text="${ticket.requesterName}">John Doe</span></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Assigned To</span>
+                    <span class="detail-value"><i class="bi bi-person-check"></i> <span th:text="${ticket.assignedToName != null ? ticket.assignedToName : 'Unassigned'}">Agent Name</span></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Created</span>
+                    <span class="detail-value"><i class="bi bi-calendar3"></i> <span th:text="${ticket.createdAt != null ? #temporals.format(ticket.createdAt,'MMM dd, yyyy HH:mm') : ''}">Mar 12, 2026</span></span>
+                </div>
+                <div class="detail-item" th:if="${ticket.resolvedAt != null}">
+                    <span class="detail-label">Resolved</span>
+                    <span class="detail-value"><i class="bi bi-check-circle"></i> <span th:text="${#temporals.format(ticket.resolvedAt,'MMM dd, yyyy HH:mm')}">Mar 12, 2026</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESCRIPTION -->
+        <div class="detail-card">
+            <div class="card-title"><i class="bi bi-file-text"></i> Description</div>
+            <div class="detail-body" th:text="${ticket.description}">Request description goes here...</div>
+        </div>
+
+        <!-- SLA STATUS -->
+        <div class="sla-info" th:if="${ticket.resolutionSlaDeadline != null}">
+            <div class="card-title"><i class="bi bi-clock-history"></i> SLA Status</div>
+            
+            <div th:if="${ticket.slaBreached}" class="sla-status breached">
+                <i class="bi bi-exclamation-triangle-fill sla-icon breached"></i>
+                <div class="sla-text">
+                    <strong>SLA Breached</strong>
+                    <span>This request has exceeded its resolution deadline</span>
+                </div>
+            </div>
+            
+            <div th:if="${!ticket.slaBreached and ticket.status != 'RESOLVED' and ticket.status != 'CLOSED'}" class="sla-status ok">
+                <i class="bi bi-check-circle-fill sla-icon ok"></i>
+                <div class="sla-text">
+                    <strong>On Track</strong>
+                    <span th:text="'Resolution due: ' + ${#temporals.format(ticket.resolutionSlaDeadline,'MMM dd, yyyy HH:mm')}">Due date</span>
+                </div>
+            </div>
+            
+            <div th:if="${!ticket.slaBreached and (ticket.status == 'RESOLVED' or ticket.status == 'CLOSED')}" class="sla-status ok">
+                <i class="bi bi-check-circle-fill sla-icon ok"></i>
+                <div class="sla-text">
+                    <strong>SLA Met</strong>
+                    <span>Request was resolved within SLA deadline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="detail-card" th:if="${user.role.name() == 'AGENT' or user.role.name() == 'ADMIN'}">
+            <div class="card-title"><i class="bi bi-lightning"></i> Actions</div>
+            <div class="action-bar">
+                <button class="action-btn primary" th:if="${ticket.assignedToName == null or ticket.assignedToName == ''}"
                         onclick="assignToMe()"><i class="bi bi-person-plus"></i> Assign to Me</button>
-                <button class="act-btn btn-start" th:if="${ticket.status == 'ASSIGNED'}"
-                        onclick="updateStatus('IN_PROGRESS')"><i class="bi bi-play-fill"></i> Start</button>
-                <button class="act-btn btn-resolve" th:if="${ticket.status == 'IN_PROGRESS'}"
-                        onclick="updateStatus('RESOLVED')"><i class="bi bi-check-lg"></i> Resolve</button>
+                <button class="action-btn secondary" th:if="${ticket.status == 'ASSIGNED'}"
+                        onclick="updateStatus('IN_PROGRESS')"><i class="bi bi-play-fill"></i> Start Working</button>
+                <button class="action-btn success" th:if="${ticket.status == 'IN_PROGRESS'}"
+                        onclick="updateStatus('RESOLVED')"><i class="bi bi-check-lg"></i> Mark as Resolved</button>
+                <a class="action-btn outline" th:href="@{${user.role.name() == 'ADMIN' ? '/admin/tickets' : '/agent/tickets'}}">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
             </div>
+        </div>
+        
+        <!-- USER VIEW - BACK BUTTON -->
+        <div class="detail-card" th:if="${user.role.name() == 'USER'}">
+            <a class="action-btn outline" href="/user/tickets">
+                <i class="bi bi-arrow-left"></i> Back to My Requests
+            </a>
         </div>
     </div>
 </main>
@@ -67,7 +171,11 @@
     }
 
     function updateStatus(status) {
-        const label = status === 'IN_PROGRESS' ? 'start working on' : 'resolve';
+        const labels = {
+            'IN_PROGRESS': 'start working on',
+            'RESOLVED': 'mark as resolved'
+        };
+        const label = labels[status] || status.toLowerCase();
         if (!confirm(`Are you sure you want to ${label} this ticket?`)) return;
         fetch(`/api/requests/${ticketId}/status`, {
             method: 'PUT', credentials: 'same-origin',

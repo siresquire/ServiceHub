@@ -57,17 +57,29 @@ public class DashboardService {
                 .average()
                 .orElse(0.0);
 
-        // slaCompliance — requests resolved before deadline
-        double withDeadLine = all.stream()
-                .filter(r->r.getResolutionSlaDeadline() !=null && r.getResolvedAt() !=null)
+        // SLA Compliance — Improved calculation
+        // Count all tickets with SLA deadlines (resolved or still open)
+        long totalWithSla = all.stream()
+                .filter(r -> r.getResolutionSlaDeadline() != null)
                 .count();
 
-        double compliant = all.stream()
-                .filter(r->r.getResolutionSlaDeadline() !=null && r.getResolvedAt() !=null
-                        && r.getResolvedAt().isBefore(r.getResolutionSlaDeadline()))
+        // Count compliant tickets:
+        // 1. Resolved tickets that were resolved before deadline
+        // 2. Open/In-Progress tickets that haven't breached yet (slaBreached = false)
+        long compliantTickets = all.stream()
+                .filter(r -> r.getResolutionSlaDeadline() != null)
+                .filter(r -> {
+                    // If resolved, check if resolved before deadline
+                    if (r.getResolvedAt() != null) {
+                        return r.getResolvedAt().isBefore(r.getResolutionSlaDeadline()) 
+                            || r.getResolvedAt().isEqual(r.getResolutionSlaDeadline());
+                    }
+                    // If not resolved, check if not breached yet
+                    return r.getSlaBreached() == null || !r.getSlaBreached();
+                })
                 .count();
 
-        double slaComplianceRate = withDeadLine > 0 ? (compliant/withDeadLine) * 100 : 0.0;
+        double slaComplianceRate = totalWithSla > 0 ? (compliantTickets * 100.0 / totalWithSla) : 100.0;
 
         // group by category
         Map<String, Long> byCategory = all.stream()
@@ -123,21 +135,28 @@ public class DashboardService {
 
         for(RequestCategory category : RequestCategory.values()){
 
-            double withDeadLine = all.stream()
-                    .filter(r->r.getCategory() ==category)
-                    .filter(r->r.getResolutionSlaDeadline() !=null &&
-                            r.getResolvedAt() !=null)
+            // Count all tickets in this category with SLA deadlines
+            long totalWithSla = all.stream()
+                    .filter(r -> r.getCategory() == category)
+                    .filter(r -> r.getResolutionSlaDeadline() != null)
                     .count();
 
-            double complaint = all.stream()
-                    .filter(r->r.getCategory() ==category)
-                    .filter(
-                            r->r.getResolutionSlaDeadline() !=null &&
-                                    r.getResolvedAt()!=null &&
-                                    r.getResolvedAt().isBefore(r.getResolutionSlaDeadline()))
+            // Count compliant tickets in this category
+            long compliant = all.stream()
+                    .filter(r -> r.getCategory() == category)
+                    .filter(r -> r.getResolutionSlaDeadline() != null)
+                    .filter(r -> {
+                        // If resolved, check if resolved before deadline
+                        if (r.getResolvedAt() != null) {
+                            return r.getResolvedAt().isBefore(r.getResolutionSlaDeadline())
+                                || r.getResolvedAt().isEqual(r.getResolutionSlaDeadline());
+                        }
+                        // If not resolved, check if not breached yet
+                        return r.getSlaBreached() == null || !r.getSlaBreached();
+                    })
                     .count();
 
-            double slaRate =withDeadLine > 0 ?(complaint/withDeadLine)*100 : 0.0;
+            double slaRate = totalWithSla > 0 ? (compliant * 100.0 / totalWithSla) : 100.0;
 
             slaByCategory.put(category.name(), (long) slaRate);
         }

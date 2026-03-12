@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class ServiceRequestService {
     private final ServiceRequestRepository requestRepository;
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
     private final SlaPolicyService slaPolicyService;
 
     public Page<ServiceRequestResponse> getAllRequests(int page, int size) {
@@ -30,6 +31,11 @@ public class ServiceRequestService {
     public ServiceRequestResponse getRequestById(Long id) {
         return ServiceRequestResponse.toResponse(requestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found")));
+    }
+
+    public ServiceRequest getRequestEntityById(Long id) {
+        return requestRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
     }
 
     public ServiceRequestResponse createRequest(ServiceRequestDto dto, User requester) {
@@ -43,6 +49,11 @@ public class ServiceRequestService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        if (dto.getDepartmentId() != null) {
+            req.setDepartment(departmentRepository.findById(dto.getDepartmentId())
+                    .orElse(null));
+        }
 
         req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), req.getPriority()));
         req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), req.getPriority()));

@@ -5,7 +5,10 @@ import com.servicehub.dto.DashboardTrendsResponse;
 import com.servicehub.model.ServiceRequest;
 import com.servicehub.model.enums.RequestCategory;
 import com.servicehub.model.enums.RequestStatus;
+import com.servicehub.model.enums.Role;
+import com.servicehub.repository.DepartmentRepository;
 import com.servicehub.repository.ServiceRequestRepository;
+import com.servicehub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
     private final ServiceRequestRepository requestRepository;
+    private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
 
     public DashboardStatsResponse getDashboardStats(){
         List<ServiceRequest> all = requestRepository.findAll();
@@ -83,6 +88,9 @@ public class DashboardService {
                 .totalRequests(total)
                 .openRequests(openRequest)
                 .resolvedRequests(resolvedRequest)
+                .totalUsers(userRepository.count())
+                .agentCount(userRepository.countByRole(Role.AGENT))
+                .totalDepartments(departmentRepository.count())
                 .avgResolutionHours(avgResolutionHours)
                 .requestsByCategory(byCategory)
                 .requestsByPriority(byPriority)

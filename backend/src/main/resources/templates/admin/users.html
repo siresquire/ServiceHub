@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Manage Users</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <style>
+        .actions { display: flex; gap: 4px; flex-wrap: wrap; }
+        .action-btn { border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-family: var(--font); transition: all .12s; }
+        .action-btn i { font-size: 11px; }
+        .btn-promote { background: var(--teal-bg); color: var(--teal); }
+        .btn-promote:hover { background: var(--teal); color: #fff; }
+        .btn-demote { background: var(--amber-bg); color: var(--amber); }
+        .btn-demote:hover { background: var(--amber); color: #fff; }
+        .btn-delete { background: var(--red-bg); color: var(--red); }
+        .btn-delete:hover { background: var(--red); color: #fff; }
+        .fbtn { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all .12s; font-family: var(--font); }
+        .fbtn.active, .fbtn:hover { background: var(--teal-bg); color: var(--teal); border-color: var(--teal); }
+        .u-name { font-weight: 500; font-size: 12.5px; }
+        .u-email { font-size: 10.5px; color: var(--muted); }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Manage Users', 'Assign roles and manage team members')}"></header>
+
+    <div class="content">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon ic-blue"><i class="bi bi-people-fill"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${totalUsers ?: 0}">0</div>
+                    <div class="stat-lbl">Total Users</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-teal"><i class="bi bi-person-badge"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${agentCount ?: 0}">0</div>
+                    <div class="stat-lbl">Agents</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-amber"><i class="bi bi-person"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${regularUserCount ?: 0}">0</div>
+                    <div class="stat-lbl">Regular Users</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="ph" style="padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="pt"><i class="bi bi-people-fill"></i> All Users</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="fbtn active" onclick="filterTable('ALL',this)">All</button>
+                        <button class="fbtn" onclick="filterTable('ADMIN',this)">Admin</button>
+                        <button class="fbtn" onclick="filterTable('AGENT',this)">Agent</button>
+                        <button class="fbtn" onclick="filterTable('USER',this)">User</button>
+                    </div>
+                </div>
+                <div class="search-wrap">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search users..." oninput="searchTable(this.value)"/>
+                </div>
+            </div>
+
+            <div class="tbl-wrap">
+                <table id="usersTable">
+                    <thead><tr><th>User</th><th>Role</th><th>Department</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <tr th:each="u : ${users}" th:data-role="${u.role}">
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="t-av2" th:text="${u.fullName != null and u.fullName.length() >= 2 ? u.fullName.substring(0,2).toUpperCase() : (u.fullName != null and !u.fullName.empty ? u.fullName.substring(0,1).toUpperCase() : '?')}">JL</div>
+                                <div style="min-width: 0;">
+                                    <div class="u-name" th:text="${u.fullName ?: 'Unknown'}">Jordan Lee</div>
+                                    <div class="u-email" th:text="${u.email}">jordan@amalitech.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="pill"
+                                  th:classappend="${u.role == 'ADMIN'} ? 'p-admin' : (${u.role == 'AGENT'} ? 'p-agent' : 'p-user')"
+                                  th:text="${u.role}">USER</span>
+                        </td>
+                        <td th:text="${u.department != null ? u.department : '—'}">IT Support</td>
+                        <td>
+                            <div class="actions" th:if="${u.role != 'ADMIN'}">
+                                <button class="action-btn btn-promote"
+                                        th:if="${u.role == 'USER'}"
+                                        th:data-id="${u.id}"
+                                        th:data-name="${u.fullName}"
+                                        onclick="handleOpenRoleModal(this)">
+                                    <i class="bi bi-arrow-up-circle"></i> Agent
+                                </button>
+                                <button class="action-btn btn-promote"
+                                        th:if="${u.role == 'USER'}"
+                                        th:data-id="${u.id}"
+                                        data-role="ADMIN"
+                                        onclick="handlePromote(this)">
+                                    <i class="bi bi-shield-check"></i> Admin
+                                </button>
+                                <button class="action-btn btn-demote"
+                                        th:if="${u.role == 'AGENT'}"
+                                        th:data-id="${u.id}"
+                                        data-role="USER"
+                                        onclick="handlePromote(this)">
+                                    <i class="bi bi-arrow-down-circle"></i> User
+                                </button>
+                                <button class="action-btn btn-delete"
+                                        th:data-id="${u.id}"
+                                        th:data-name="${u.fullName}"
+                                        onclick="handleDeleteUser(this)"><i class="bi bi-trash3"></i></button>
+                            </div>
+                            <span th:if="${u.role == 'ADMIN'}" style="color:var(--muted);font-size:12px;">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="empty" th:if="${users == null or users.empty}">
+                    <div class="empty-icon"><i class="bi bi-people"></i></div>
+                    No users found
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="modal-overlay" id="roleModal">
+    <div class="modal-box">
+        <div class="modal-title"><i class="bi bi-person-gear"></i> Assign Agent Role</div>
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 16px;" id="modalSubtitle">Select a department for this agent</div>
+        <div class="modal-group">
+            <label>Department</label>
+            <select id="deptSelect">
+                <option value="">Select department...</option>
+            </select>
+        </div>
+        <div class="modal-btns">
+            <button class="modal-btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="modal-btn-confirm" onclick="confirmRoleChange()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script>
+    let pendingUserId=null,pendingRole=null;
+    function filterTable(role,btn){
+        document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('#usersTable tbody tr').forEach(row=>{
+            row.style.display=(role==='ALL'||row.getAttribute('data-role')===role)?'':'none';
+        });
+    }
+    function searchTable(val){
+        const q=val.toLowerCase();
+        document.querySelectorAll('#usersTable tbody tr').forEach(row=>{
+            row.style.display=row.textContent.toLowerCase().includes(q)?'':'none';
+        });
+    }
+    function promoteUser(userId,role,departmentId){
+        if(!confirm(`Change role to ${role}?`))return;
+        let url=`/api/admin/users/${userId}/role?role=${role}`;
+        if(departmentId)url+=`&departmentId=${departmentId}`;
+        fetch(url,{method:'PUT'}).then(r=>{if(r.ok)location.reload();else alert('Failed');});
+    }
+    function handlePromote(btn){
+        const d=btn.dataset;
+        promoteUser(d.id, d.role, null);
+    }
+    function openRoleModal(userId,userName,role){
+        pendingUserId=userId;pendingRole=role;
+        document.getElementById('modalSubtitle').textContent=`Assign department for ${userName}`;
+        fetch('/api/departments').then(r=>r.json()).then(depts=>{
+            const sel=document.getElementById('deptSelect');
+            sel.innerHTML='<option value="">Select department...</option>';
+            depts.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.appendChild(o);});
+        });
+        document.getElementById('roleModal').classList.add('show');
+    }
+    function handleOpenRoleModal(btn){
+        const d=btn.dataset;
+        openRoleModal(d.id, d.name, 'AGENT');
+    }
+    function closeModal(){document.getElementById('roleModal').classList.remove('show');}
+    function confirmRoleChange(){
+        const deptId=document.getElementById('deptSelect').value;
+        if(!deptId){alert('Please select a department');return;}
+        promoteUser(pendingUserId,pendingRole,deptId);closeModal();
+    }
+    function deleteUser(userId,userName){
+        if(!confirm(`Delete "${userName}"? Cannot be undone.`))return;
+        fetch(`/api/admin/users/${userId}`,{method:'DELETE'}).then(r=>{if(r.ok)location.reload();else alert('Failed');});
+    }
+    function handleDeleteUser(btn){
+        const d=btn.dataset;
+        deleteUser(d.id, d.name);
+    }
+</script>
+</body>
+</html>

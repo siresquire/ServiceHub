@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Agent Dashboard</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Agent Dashboard', 'Your ticket queue and performance')}"></header>
+
+    <div class="content">
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon ic-blue"><i class="bi bi-clipboard-check"></i></div>
+                <div><div class="stat-val" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</div><div class="stat-lbl">Assigned</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-teal"><i class="bi bi-inbox"></i></div>
+                <div><div class="stat-val" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</div><div class="stat-lbl">Unassigned</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div><div class="stat-val" th:text="${slaBreaches != null ? slaBreaches.size() : 0}">0</div><div class="stat-lbl">SLA Breaches</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-amber"><i class="bi bi-exclamation-circle"></i></div>
+                <div><div class="stat-val" th:text="${slaWarnings != null ? slaWarnings.size() : 0}">0</div><div class="stat-lbl">SLA Warnings</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div><div class="stat-val" th:text="${resolvedTodayCount ?: 0}">0</div><div class="stat-lbl">Resolved</div></div>
+            </div>
+        </div>
+
+        <!-- SLA ALERTS -->
+        <div class="alerts" th:if="${slaBreaches != null and !slaBreaches.empty}">
+            <div class="alert alert-red" th:each="t : ${slaBreaches}">
+                <div class="alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <strong>SLA Breached:</strong> <span th:text="${t.title}">Ticket title</span>
+                    <div style="font-size: 11px; opacity: .8;"
+                         th:text="'Priority: ' + ${t.priority} + ' • Due: ' + (${t.resolutionSlaDeadline != null} ? ${#temporals.format(t.resolutionSlaDeadline,'MMM dd, HH:mm')} : 'N/A')">Priority: HIGH</div>
+                </div>
+                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+
+        <div class="alerts" th:if="${slaWarnings != null and !slaWarnings.empty}">
+            <div class="alert alert-amber" th:each="t : ${slaWarnings}">
+                <div class="alert-icon"><i class="bi bi-exclamation-circle"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <strong>Approaching SLA:</strong> <span th:text="${t.title}">Ticket title</span>
+                </div>
+                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+
+        <!-- TICKET PANELS -->
+        <div class="two-col">
+            <!-- ASSIGNED TO ME -->
+            <div class="section-card">
+                <div class="section-hdr">
+                    <div class="section-title"><i class="bi bi-person-check"></i> Assigned to Me <span class="cnt" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</span></div>
+                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div th:each="t : ${assignedTickets}">
+                    <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
+                        <div class="tr-icon ic-blue"><i class="bi bi-ticket-detailed"></i></div>
+                        <div class="tr-body">
+                            <div class="tr-title" th:text="${t.title}">Ticket title</div>
+                            <div class="tr-meta" th:text="${t.category + (t.departmentName != null ? ' • ' + t.departmentName : '')}">IT Support</div>
+                        </div>
+                        <div class="tr-right">
+                            <span class="pill"
+                                  th:classappend="${t.status=='OPEN'}?'p-open':(${t.status=='IN_PROGRESS'}?'p-prog':'p-done')"
+                                  th:text="${t.status.replace('_',' ')}">OPEN</span>
+                            <span th:if="${t.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                        </div>
+                    </a>
+                </div>
+                <div class="empty" th:if="${assignedTickets == null or assignedTickets.empty}">
+                    <div class="empty-icon"><i class="bi bi-check-circle"></i></div>
+                    <p>All clear! No assigned tickets.</p>
+                </div>
+            </div>
+
+            <!-- UNASSIGNED -->
+            <div class="section-card">
+                <div class="section-hdr">
+                    <div class="section-title"><i class="bi bi-inbox"></i> Unassigned <span class="cnt cnt-amber" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</span></div>
+                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div th:each="t : ${unassignedTickets}">
+                    <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
+                        <div class="tr-dot"
+                             th:classappend="${t.priority=='HIGH' or t.priority=='CRITICAL'}?'dot-r':(${t.priority=='MEDIUM'}?'dot-a':'dot-b')"></div>
+                        <div class="tr-body">
+                            <div class="tr-title" th:text="${t.title}">Ticket title</div>
+                            <div class="tr-meta" th:text="${t.category + ' • ' + (t.priority != null ? t.priority : 'N/A')}">IT_SUPPORT • HIGH</div>
+                        </div>
+                        <span class="t-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt,'MMM dd') : ''}">Mar 11</span>
+                    </a>
+                </div>
+                <div class="empty" th:if="${unassignedTickets == null or unassignedTickets.empty}">
+                    <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                    <p>No unassigned tickets in your department.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

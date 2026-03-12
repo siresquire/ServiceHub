@@ -38,7 +38,18 @@ jobs:
             -e POSTGRES_PASSWORD=${{ secrets.SERVICEHUB_DB_PASSWORD }} \
             -p 5432:5432 \
             postgres:16-alpine
-          sleep 5
+          echo "Waiting for Postgres to accept connections..."
+          for i in $(seq 1 24); do
+            if docker exec postgres pg_isready -U servicehub -d servicehub > /dev/null 2>&1; then
+              echo "Postgres is ready."
+              exit 0
+            fi
+            echo "Postgres not ready yet (${i}/24). Sleeping 5s..."
+            sleep 5
+          done
+          echo "Postgres did not become ready in time."
+          docker logs postgres --tail 200 || true
+          exit 1
 
       - name: Run backend container
         run: |
@@ -50,6 +61,8 @@ jobs:
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/servicehub \
             -e SPRING_DATASOURCE_USERNAME=servicehub \
             -e SPRING_DATASOURCE_PASSWORD=${{ secrets.SERVICEHUB_DB_PASSWORD }} \
+            -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver \
+            -e SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect \
             -e JWT_SECRET=${{ secrets.SERVICEHUB_JWT_SECRET }} \
             "${{ inputs.image-name }}:${{ inputs.image-tag }}"
 
@@ -60,9 +73,30 @@ jobs:
 
       - name: Wait and call health endpoint
         run: |
-          echo "Waiting 20 seconds for Spring Boot to start..."
-          sleep 20
-          curl -f http://localhost:8080/actuator/health
+          set -euo pipefail
+          echo "Waiting up to 120s for backend health..."
+          for i in $(seq 1 24); do
+            if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend is healthy."
+              exit 0
+            fi
+            echo "Not ready yet (${i}/24). Sleeping 5s..."
+            sleep 5
+          done
+          echo "Backend did not become healthy in time."
+          exit 1
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "==== docker ps ===="
+          docker ps -a || true
+          echo ""
+          echo "==== postgres logs ===="
+          docker logs postgres --tail 200 || true
+          echo ""
+          echo "==== backend logs ===="
+          docker logs backend-integration --tail 400 || true
 
       - name: End integration smoke group
         if: always()

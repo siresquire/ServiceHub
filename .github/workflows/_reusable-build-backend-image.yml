@@ -9,19 +9,19 @@ on:
         type: string
         default: "servicehub-backend"
     outputs:
-      image-name:
+      image_name:
         description: "Built image name."
-        value: ${{ jobs.build-image.outputs.image-name }}
-      image-tag:
+        value: ${{ jobs.build-image.outputs.image_name }}
+      image_tag:
         description: "Built image tag (commit SHA)."
-        value: ${{ jobs.build-image.outputs.image-tag }}
+        value: ${{ jobs.build-image.outputs.image_tag }}
 
 jobs:
   build-image:
     runs-on: ubuntu-latest
     outputs:
-      image-name: ${{ steps.meta.outputs.image-name }}
-      image-tag: ${{ steps.meta.outputs.image-tag }}
+      image_name: ${{ steps.set-outputs.outputs.image_name }}
+      image_tag: ${{ steps.set-outputs.outputs.image_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,8 +29,7 @@ jobs:
       - name: Compute image metadata
         id: meta
         run: |
-          echo "image-name=${{ inputs.image-name }}" >> "${GITHUB_OUTPUT}"
-          echo "image-tag=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "Building image: ${{ inputs.image-name }}:${GITHUB_SHA}"
 
       - name: Build backend Docker image
         uses: ./.github/actions/log-group
@@ -56,3 +55,13 @@ jobs:
           name: backend-image
           path: backend-image.tar
           retention-days: 1
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          IMAGE_NAME="${{ inputs.image-name }}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          echo "image_name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "image_tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "Debug: Set image_name=${IMAGE_NAME}"
+          echo "Debug: Set image_tag=${IMAGE_TAG}"

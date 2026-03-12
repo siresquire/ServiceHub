@@ -27,9 +27,21 @@ variable "password" {
 }
 
 variable "allowed_cidrs" {
-  description = "CIDR blocks allowed to connect to Postgres (initially 0.0.0.0/0, tighten later)"
+  description = "CIDR blocks allowed to connect to Postgres (empty in production)"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = []
+}
+
+variable "allowed_security_groups" {
+  description = "Security group IDs allowed to connect to Postgres (e.g., ECS SG)"
+  type        = list(string)
+  default     = []
+}
+
+variable "publicly_accessible" {
+  description = "Whether the RDS instance should have a public IP (false in production)"
+  type        = bool
+  default     = false
 }
 
 variable "instance_identifier" {

@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,45 +40,51 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        //  Get the Authorization header
-        String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        //  If no token, just continue — security config will handle it
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 1. Try Authorization header first
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+
+        // 2. Fall back to HttpOnly cookie
+        if (token == null && request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if ("token".equals(c.getName())) {
+                    token = c.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            //  Extract the token (remove "Bearer " prefix)
-            String token = authHeader.substring(7);
-            if (token != null && SecurityContextHolder.getContext().getAuthentication() ==null){
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                //  Validate the token
                 if (!jwtService.isTokenValid(token)) {
                     filterChain.doFilter(request, response);
                     return;
                 }
 
-                // After isTokenValid() check, add:
                 if (tokenBlacklistService.isBlacklisted(token)) {
                     filterChain.doFilter(request, response);
                     return;
                 }
 
-                //  Extract email from token
                 String email = jwtService.extractEmail(token);
 
-                //  Load the user from database
-                User user = userRepository.findByEmail(email)
-                        .orElse(null);
+                User user = userRepository.findByEmail(email).orElse(null);
 
                 if (user == null) {
                     filterChain.doFilter(request, response);
                     return;
                 }
 
-                //  Set authentication in Spring Security context
                 var auth = new UsernamePasswordAuthenticationToken(
                         user,
                         null,

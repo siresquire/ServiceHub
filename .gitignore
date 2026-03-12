@@ -46,6 +46,7 @@ Thumbs.db
 .terraform/
 terraform/**/terraform.tfstate
 terraform/**/terraform.tfstate.backup
+*.tfplan
 
 # --- Python ---
 __pycache__/
@@ -67,3 +68,7 @@ docker-compose.override.yml
 # Prevent generated prompt artifacts from cluttering the repo
 *.resolved
 *.md.resolved
+
+# --- Scripts ---
+# Local utility scripts with sensitive data patterns
+scripts/

@@ -25,12 +25,17 @@ public class ServiceRequestService {
 
     public Page<ServiceRequestResponse> getAllRequests(int page, int size) {
         return requestRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
-                .map(this::toResponse);
+                .map(ServiceRequestResponse::toResponse);
     }
 
     public ServiceRequestResponse getRequestById(Long id) {
-        return toResponse(requestRepository.findById(id)
+        return ServiceRequestResponse.toResponse(requestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Request not found")));
+    }
+
+    public ServiceRequest getRequestEntityById(Long id) {
+        return requestRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Request not found"));
     }
 
     public ServiceRequestResponse createRequest(ServiceRequestDto dto, User requester) {
@@ -45,9 +50,14 @@ public class ServiceRequestService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        if (dto.getDepartmentId() != null) {
+            req.setDepartment(departmentRepository.findById(dto.getDepartmentId())
+                    .orElse(null));
+        }
+
         req.setResponseSlaDeadline(slaPolicyService.getResponseSlaDeadline(req.getCategory(), req.getPriority()));
         req.setResolutionSlaDeadline(slaPolicyService.getResolutionSlaDeadline(req.getCategory(), req.getPriority()));
-        return toResponse(requestRepository.save(req));
+        return ServiceRequestResponse.toResponse(requestRepository.save(req));
     }
 
     /**
@@ -79,27 +89,27 @@ public class ServiceRequestService {
             req.setAssignedAt(LocalDateTime.now());
         }
 
-        return toResponse(requestRepository.save(req));
+        return ServiceRequestResponse.toResponse(requestRepository.save(req));
     }
 
     // For USER — own tickets only
     public List<ServiceRequestResponse> getRequestsByRequester(Long userId) {
         return requestRepository.findByRequesterId(userId)
-                .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
     // For AGENT — department tickets only
     public List<ServiceRequestResponse> getRequestsByDepartment(String department) {
         return requestRepository.findByDepartment_Name(department)
-                .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
     }
 
     // Role-based — main method controller will call
     public List<ServiceRequestResponse> getRequestsForUser(User user) {
         return switch (user.getRole()) {
             case ADMIN -> requestRepository.findAll()
-                    .stream().map(this::toResponse).collect(Collectors.toList());
-            case AGENT -> getRequestsByDepartment(user.getDepartment());
+                    .stream().map(ServiceRequestResponse::toResponse).collect(Collectors.toList());
+            case AGENT -> getRequestsByDepartment(null);
             case USER -> getRequestsByRequester(user.getId());
         };
     }
@@ -123,12 +133,6 @@ public class ServiceRequestService {
     public ServiceRequestResponse updateStatus(Long id, StatusUpdateRequest update) {
         return updateStatus(id, update , null);
     }
-
-
-
-    // TODO: Implement getRequestsByRequester(Long userId)
-    // TODO: Implement getDashboardStats()
-    // TODO: Implement SLA breach detection
 
     /**
      * Validates if the status transition is allowed based on the current status and the desired new status.
@@ -163,26 +167,48 @@ public class ServiceRequestService {
                 throw new InvalidServiceRequestTransition(current, newStatus);
         }
     }
+    // ── USER ──────────────────────────────────────────────────────────────────
 
-
-    private ServiceRequestResponse toResponse(ServiceRequest req) {
-        return ServiceRequestResponse.builder()
-                .id(req.getId())
-                .title(req.getTitle())
-                .description(req.getDescription())
-                .category(req.getCategory().name())
-                .priority(req.getPriority().name())
-                .status(req.getStatus().name())
-                .requesterName(req.getRequester().getFullName())
-                .assignedToName(req.getAssignedTo() != null ? req.getAssignedTo().getFullName() : null)
-                .departmentName(req.getDepartment() != null ? req.getDepartment().getName() : null)
-                .slaBreached(req.getSlaBreached() != null ? req.getSlaBreached() : false)
-                .resolved(req.getResolved() != null ? req.getResolved() : false)
-                .resolutionSlaDeadline(req.getResolutionSlaDeadline())
-                .responseSlaDeadline(req.getResponseSlaDeadline())
-                .createdAt(req.getCreatedAt())
-                .updatedAt(req.getUpdatedAt())
-                .resolvedAt(req.getResolvedAt())
-                .build();
+    public List<ServiceRequest> getOpenRequestsForUser(User user) {
+        return requestRepository.findByRequesterAndStatusIn(
+                user,
+                List.of(RequestStatus.OPEN, RequestStatus.IN_PROGRESS, RequestStatus.ASSIGNED)
+        );
     }
+
+    public List<ServiceRequest> getResolvedRequestsForUser(User user) {
+        return requestRepository.findByRequesterAndStatusIn(
+                user,
+                List.of(RequestStatus.RESOLVED, RequestStatus.CLOSED)
+        );
+    }
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────
+
+    public List<ServiceRequest> getAllRequests() {
+        return requestRepository.findAll();
+    }
+
+// ── AGENT ─────────────────────────────────────────────────────────────────
+
+    public List<ServiceRequest> getAssignedRequests(User agent) {
+        return requestRepository.findByAssignedTo(agent);
+    }
+
+    public List<ServiceRequest> getUnassignedRequests() {
+        return requestRepository.findByAssignedToIsNull();
+    }
+
+    public List<ServiceRequest> getSlaBreachedRequests() {
+        return requestRepository.findBySlaBreachedTrue();
+    }
+
+    public List<ServiceRequest> getSlaWarningRequests() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = now.plusHours(2);
+        return requestRepository.findSlaWarnings(now, cutoff);
+    }
+
+
+
 }

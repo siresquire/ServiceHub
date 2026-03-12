@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Manage Departments</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <style>
+        .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Manage Departments', 'Create and configure service departments')}"></header>
+
+    <div class="content">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+                <h2 style="font-size: 16px; font-weight: 700; margin: 0;">Departments</h2>
+                <p style="font-size: 12px; color: var(--muted); margin: 2px 0 0;" th:text="${departments != null ? departments.size() + ' total' : '0 total'}">0 total</p>
+            </div>
+            <button class="btn-teal" onclick="openCreateModal()"><i class="bi bi-plus-lg"></i> New Department</button>
+        </div>
+
+        <div class="dept-grid">
+            <div class="panel" th:each="dept : ${departments}" style="padding: 20px;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 8px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;"
+                         th:classappend="${dept.category.name() == 'IT_SUPPORT'} ? 'ic-blue' : (${dept.category.name() == 'HR_REQUEST'} ? 'ic-teal' : (${dept.category.name() == 'FACILITIES'} ? 'ic-amber' : ''))">
+                        <i th:classappend="${dept.category.name() == 'IT_SUPPORT'} ? 'bi bi-laptop' : (${dept.category.name() == 'HR_REQUEST'} ? 'bi bi-people-fill' : (${dept.category.name() == 'FACILITIES'} ? 'bi bi-building' : 'bi bi-folder'))"></i>
+                    </div>
+                </div>
+
+                <div class="pt" style="font-size: 14px; margin-bottom: 4px;" th:text="${dept.name}">IT Support</div>
+                <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;" th:text="${dept.category}">IT_SUPPORT</div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <button class="btn-ghost" style="padding: 6px 4px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; justify-content: center;"
+                            th:data-id="${dept.id}"
+                            th:data-name="${dept.name}"
+                            th:data-category="${dept.category}"
+                            onclick="handleEdit(this)">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="btn-ghost" style="padding: 6px 4px; font-size: 11px; color: var(--red); display: inline-flex; align-items: center; gap: 4px; justify-content: center;"
+                            th:data-id="${dept.id}"
+                            th:data-name="${dept.name}"
+                            onclick="handleDelete(this)">
+                        <i class="bi bi-trash3"></i> Delete
+                    </button>
+                </div>
+            </div>
+
+            <div class="empty" th:if="${departments == null or departments.empty}" style="grid-column: 1/-1;">
+                <div class="empty-icon"><i class="bi bi-building"></i></div>
+                <div class="pt" style="margin: 10px 0 4px;">No departments yet</div>
+                <div style="font-size: 12px; margin-bottom: 16px;">Create your first department to get started</div>
+                <button class="btn-teal" style="margin: 0 auto;" onclick="openCreateModal()"><i class="bi bi-plus-lg"></i> New Department</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="deptModal">
+    <div class="modal-box">
+        <div class="modal-title" id="modalTitle"><i class="bi bi-building-add"></i> New Department</div>
+        <input type="hidden" id="editDeptId"/>
+        <div class="modal-group">
+            <label>Department Name *</label>
+            <input type="text" id="deptName" placeholder="e.g. IT Support"/>
+        </div>
+        <div class="modal-group">
+            <label>Category *</label>
+            <select id="deptCategory">
+                <option value="">Select category...</option>
+                <option value="IT_SUPPORT">IT Support</option>
+                <option value="HR_REQUEST">HR Request</option>
+                <option value="FACILITIES">Facilities</option>
+            </select>
+        </div>
+        <div class="modal-btns">
+            <button class="modal-btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="modal-btn-confirm" onclick="saveDepartment()">Save</button>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script>
+    let editingId=null;
+    function openCreateModal(){
+        editingId=null;
+        document.querySelector('#modalTitle').innerHTML='<i class="bi bi-building-add"></i> New Department';
+        document.getElementById('editDeptId').value='';
+        document.getElementById('deptName').value='';
+        document.getElementById('deptCategory').value='';
+        document.getElementById('deptModal').classList.add('show');
+    }
+    function openEditModal(id,name,category){
+        editingId=id;
+        document.querySelector('#modalTitle').innerHTML='<i class="bi bi-pencil-square"></i> Edit Department';
+        document.getElementById('deptName').value=name;
+        document.getElementById('deptCategory').value=category;
+        document.getElementById('deptModal').classList.add('show');
+    }
+    function handleEdit(btn){
+        const d=btn.dataset;
+        openEditModal(d.id, d.name, d.category);
+    }
+    function closeModal(){document.getElementById('deptModal').classList.remove('show');editingId=null;}
+    function saveDepartment(){
+        const name=document.getElementById('deptName').value.trim();
+        const category=document.getElementById('deptCategory').value;
+        if(!name){alert('Department name is required');return;}
+        if(!category){alert('Category is required');return;}
+        const body={name,category};
+        const url=editingId?`/api/admin/departments/${editingId}`:'/api/admin/departments';
+        const method=editingId?'PUT':'POST';
+        fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+            .then(r=>{if(r.ok){closeModal();location.reload();}else r.text().then(t=>alert('Error: '+t));})
+            .catch(()=>alert('Network error'));
+    }
+    function deleteDept(id,name){
+        if(!confirm(`Delete "${name}"? Cannot be undone.`))return;
+        fetch(`/api/admin/departments/${id}`,{method:'DELETE'})
+            .then(r=>{if(r.ok)location.reload();else alert('Failed');});
+    }
+    function handleDelete(btn){
+        const d=btn.dataset;
+        deleteDept(d.id, d.name);
+    }
+</script>
+</body>
+</html>

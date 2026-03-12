@@ -16,7 +16,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, feature/servicehub-updates]
   pull_request:
     branches: [develop]
 
@@ -68,22 +68,12 @@ jobs:
     if: needs.changes.outputs.devops == 'true'
     uses: ./.github/workflows/_reusable-lint-devops.yml
 
-  codeql-java:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-    uses: ./.github/workflows/_reusable-codeql-java.yml
-
   build-images:
     name: Build backend image
     needs:
       - lint-test-backend
       - lint-data-engineering
       - lint-devops
-      - codeql-java
     uses: ./.github/workflows/_reusable-build-backend-image.yml
     with:
       image-name: servicehub-backend
@@ -96,14 +86,28 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/_reusable-security-scans.yml
     with:
-      image-name: ${{ needs.build-images.outputs.image-name }}
-      image-tag: ${{ needs.build-images.outputs.image-tag }}
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
 
   integration-test:
     name: Integration smoke test
     needs: build-images
     uses: ./.github/workflows/_reusable-integration-smoke.yml
     with:
-      image-name: ${{ needs.build-images.outputs.image-name }}
-      image-tag: ${{ needs.build-images.outputs.image-tag }}
-    secrets: inherit  # pragma: allowlist secret
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret
+
+  publish-ecr:
+    name: Publish to ECR
+    needs:
+      - build-images
+      - integration-test
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/_reusable-publish-ecr.yml
+    with:
+      image-name: ${{ needs.build-images.outputs.image_name }}
+      image-tag: ${{ needs.build-images.outputs.image_tag }}
+    secrets: inherit # pragma: allowlist secret

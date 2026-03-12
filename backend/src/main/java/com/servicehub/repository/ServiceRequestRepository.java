@@ -38,11 +38,21 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
     // Unassigned — no agent yet
     List<ServiceRequest> findByAssignedToIsNull();
+    List<ServiceRequest> findByDepartmentAndAssignedToIsNull(com.servicehub.model.Department department);
+    List<ServiceRequest> findByDepartmentAndAssignedToIsNullAndStatus(com.servicehub.model.Department department, RequestStatus status);
 
     // SLA breached
     List<ServiceRequest> findBySlaBreachedTrue();
+    List<ServiceRequest> findByAssignedToAndSlaBreachedTrue(com.servicehub.model.User agent);
+    List<ServiceRequest> findByDepartmentAndAssignedToIsNullAndStatusAndSlaBreachedTrue(com.servicehub.model.Department department, RequestStatus status);
 
     // SLA warning — deadline within next 2 hours
     @Query("SELECT s FROM ServiceRequest s WHERE s.slaBreached = false AND s.resolutionSlaDeadline IS NOT NULL AND s.resolutionSlaDeadline BETWEEN :now AND :cutoff")
     List<ServiceRequest> findSlaWarnings(@Param("now") LocalDateTime now, @Param("cutoff") LocalDateTime cutoff);
+
+    @Query("SELECT s FROM ServiceRequest s WHERE s.assignedTo = :agent AND s.slaBreached = false AND s.resolutionSlaDeadline IS NOT NULL AND s.resolutionSlaDeadline BETWEEN :now AND :cutoff")
+    List<ServiceRequest> findSlaWarningsForAgent(@Param("agent") com.servicehub.model.User agent, @Param("now") LocalDateTime now, @Param("cutoff") LocalDateTime cutoff);
+
+    @Query("SELECT s FROM ServiceRequest s WHERE s.department = :department AND s.assignedTo IS NULL AND s.status = :status AND s.slaBreached = false AND s.resolutionSlaDeadline IS NOT NULL AND s.resolutionSlaDeadline BETWEEN :now AND :cutoff")
+    List<ServiceRequest> findSlaWarningsForDepartmentUnassigned(@Param("department") com.servicehub.model.Department department, @Param("status") RequestStatus status, @Param("now") LocalDateTime now, @Param("cutoff") LocalDateTime cutoff);
 }

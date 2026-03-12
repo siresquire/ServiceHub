@@ -14,31 +14,41 @@
     <header th:replace="~{fragments/layout :: topbar('My Queue', 'Manage and resolve assigned tickets')}"></header>
 
     <div class="content">
-        <!-- STAT/STATUS TABS -->
-        <div class="stats" style="margin-bottom:14px;">
-            <div class="sc active" onclick="filterStatus('all',this)">
-                <div class="si ic-b"><i class="bi bi-ticket-detailed"></i></div>
-                <div><div class="sv" th:text="${tickets != null ? tickets.size() : 0}">0</div><div class="sl">All</div></div>
+        <div class="stats" style="margin-bottom:20px;">
+            <div class="stat-card active" onclick="filterStatus('all',this)" style="cursor:pointer;">
+                <div class="stat-icon ic-blue"><i class="bi bi-ticket-detailed"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${tickets != null ? tickets.size() : 0}">0</div>
+                    <div class="stat-lbl">All Tickets</div>
+                </div>
             </div>
-            <div class="sc" onclick="filterStatus('ASSIGNED',this)">
-                <div class="si ic-t"><i class="bi bi-person-check"></i></div>
-                <div><div class="sv" th:text="${assignedCount ?: 0}">0</div><div class="sl">Assigned</div></div>
+            <div class="stat-card" onclick="filterStatus('ASSIGNED',this)" style="cursor:pointer;">
+                <div class="stat-icon ic-teal"><i class="bi bi-person-check"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${assignedCount ?: 0}">0</div>
+                    <div class="stat-lbl">Assigned</div>
+                </div>
             </div>
-            <div class="sc" onclick="filterStatus('UNASSIGNED',this)">
-                <div class="si ic-a"><i class="bi bi-inbox"></i></div>
-                <div><div class="sv" th:text="${unassignedCount ?: 0}">0</div><div class="sl">Unassigned</div></div>
+            <div class="stat-card" onclick="filterStatus('UNASSIGNED',this)" style="cursor:pointer;">
+                <div class="stat-icon ic-amber"><i class="bi bi-inbox"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${unassignedCount ?: 0}">0</div>
+                    <div class="stat-lbl">Unassigned</div>
+                </div>
             </div>
-            <div class="sc" onclick="filterStatus('IN_PROGRESS',this)">
-                <div class="si ic-a"><i class="bi bi-gear-fill"></i></div>
-                <div><div class="sv" th:text="${inProgressCount ?: 0}">0</div><div class="sl">In Progress</div></div>
+            <div class="stat-card" onclick="filterStatus('SLA_BREACH',this)" style="cursor:pointer;">
+                <div class="stat-icon ic-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${slaBreachCount ?: 0}">0</div>
+                    <div class="stat-lbl">SLA Breach</div>
+                </div>
             </div>
-            <div class="sc" onclick="filterStatus('SLA_BREACH',this)">
-                <div class="si ic-r"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                <div><div class="sv" th:text="${slaBreachCount ?: 0}">0</div><div class="sl">SLA Breach</div></div>
-            </div>
-            <div class="sc" onclick="filterStatus('RESOLVED',this)">
-                <div class="si ic-g"><i class="bi bi-check-circle-fill"></i></div>
-                <div><div class="sv" th:text="${resolvedCount ?: 0}">0</div><div class="sl">Resolved</div></div>
+            <div class="stat-card" onclick="filterStatus('RESOLVED',this)" style="cursor:pointer;">
+                <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div style="min-width:0;">
+                    <div class="stat-val" th:text="${resolvedCount ?: 0}">0</div>
+                    <div class="stat-lbl">Resolved</div>
+                </div>
             </div>
         </div>
 
@@ -116,7 +126,7 @@
                                         th:data-id="${t.id}"
                                         onclick="handleAssignMe(this)"><i class="bi bi-person-plus"></i> Assign Me</button>
                                 <button class="act-btn btn-start"
-                                        th:if="${t.status == 'OPEN' or t.status == 'ASSIGNED'}"
+                                        th:if="${t.status == 'ASSIGNED'}"
                                         th:data-id="${t.id}"
                                         data-status="IN_PROGRESS"
                                         onclick="handleUpdateStatus(this)"><i class="bi bi-play-fill"></i> Start</button>
@@ -171,7 +181,7 @@
     }
     function filterStatus(s,btn){
         activeStatus=s;
-        document.querySelectorAll('.sc').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.stat-card').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         applyFilters();
     }

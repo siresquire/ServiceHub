@@ -46,7 +46,7 @@
             <div class="action-bar" th:if="${user.role.name() == 'AGENT' or user.role.name() == 'ADMIN'}">
                 <button class="act-btn btn-assign" th:if="${ticket.assignedToName == null or ticket.assignedToName == ''}"
                         onclick="assignToMe()"><i class="bi bi-person-plus"></i> Assign to Me</button>
-                <button class="act-btn btn-start" th:if="${ticket.status == 'OPEN' or ticket.status == 'ASSIGNED'}"
+                <button class="act-btn btn-start" th:if="${ticket.status == 'ASSIGNED'}"
                         onclick="updateStatus('IN_PROGRESS')"><i class="bi bi-play-fill"></i> Start</button>
                 <button class="act-btn btn-resolve" th:if="${ticket.status == 'IN_PROGRESS'}"
                         onclick="updateStatus('RESOLVED')"><i class="bi bi-check-lg"></i> Resolve</button>

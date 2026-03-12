@@ -119,7 +119,7 @@ app:
       password: password123
   sla:
     sla-breach-notification:
-      enabled: true
+      enabled: false
       admin-email: ${SPRING_EMAIL_ADMIN_ADDRESS}
     sla-breach-check-interval: ${SLA_BREACH_CHECK_INTERVAL:900000} # 15 minutes in milliseconds
 

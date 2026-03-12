@@ -54,6 +54,21 @@ public class ServiceRequestService {
     }
 
     /**
+     * Returns the raw ServiceRequest entity by ID.
+     * Used where direct entity access is needed (e.g. permission checks in ViewController).
+     * Unlike {@link #getRequestById(Long)} which returns a DTO,
+     * this returns the full entity for field-level access.
+     *
+     * @param id the service request ID
+     * @return the ServiceRequest entity
+     * @throws NotFoundException if no request exists with the given ID
+     */
+    public ServiceRequest getRequestEntityById(Long id) {
+        return requestRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Request not found: " + id));
+    }
+
+    /**
      * Creates a new service request on behalf of the authenticated user.
      * Looks up the department by ID, builds the request entity with default values,
      * applies SLA deadlines based on category and priority, then persists it.

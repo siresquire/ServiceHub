@@ -16,6 +16,21 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:servicehub}
     password: ${SPRING_DATASOURCE_PASSWORD:servicehub_dev}  # pragma: allowlist secret
     driver-class-name: org.postgresql.Driver
+  mail:
+    host: smtp.test.com
+    port: 587
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
   # --- JPA / Hibernate ---
   jpa:

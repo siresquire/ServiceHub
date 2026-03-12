@@ -93,6 +93,8 @@ services:
   # Designed to run as a one-shot job (exits after completion).
   # ---------------------------------------------------------------------------
   data-engineering:
+    env_file:
+      - .env
     build:
       context: ./data-engineering
       dockerfile: Dockerfile
@@ -103,6 +105,7 @@ services:
       DB_NAME: ${POSTGRES_DB:-servicehub}
       DB_USER: ${POSTGRES_USER:-servicehub}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-servicehub_dev}
+    # environment block removed to allow .env to provide DB connection
     depends_on:
       postgres:
         condition: service_healthy

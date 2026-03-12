@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — Request #<span th:text="${ticket.id}">1</span></title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <style>
+        .detail-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 18px; }
+        .detail-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .detail-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--muted); }
+        .detail-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .detail-meta i { font-size: 13px; }
+        .detail-body { font-size: 14px; line-height: 1.7; color: #475569; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+        .detail-status { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Request Detail', ticket.title)}"></header>
+
+    <div class="content">
+        <div class="detail-card">
+            <div class="detail-title" th:text="${ticket.title}">Ticket title</div>
+            <div class="detail-meta">
+                <span><i class="bi bi-hash"></i> <span th:text="${ticket.id}">1</span></span>
+                <span><i class="bi bi-tag"></i> <span th:text="${ticket.category}">Category</span></span>
+                <span><i class="bi bi-building"></i> <span th:text="${ticket.departmentName != null ? ticket.departmentName : 'Unassigned'}">Department</span></span>
+                <span><i class="bi bi-person"></i> <span th:text="${ticket.requesterName}">Requester</span></span>
+                <span><i class="bi bi-person-check"></i> <span th:text="${ticket.assignedToName != null ? ticket.assignedToName : 'Unassigned'}">Assignee</span></span>
+                <span><i class="bi bi-calendar3"></i> <span th:text="${ticket.createdAt != null ? #temporals.format(ticket.createdAt,'MMM dd, yyyy HH:mm') : ''}">Created</span></span>
+            </div>
+            <div class="detail-body" th:text="${ticket.description}">Description</div>
+
+            <div class="detail-status">
+                <span class="pill" th:classappend="${ticket.status == 'OPEN'} ? 'p-open' : (${ticket.status == 'IN_PROGRESS'} ? 'p-prog' : 'p-done')" th:text="${ticket.status != null ? ticket.status.replace('_',' ') : 'OPEN'}">OPEN</span>
+                <span class="pill" th:classappend="${ticket.priority == 'HIGH' or ticket.priority == 'CRITICAL'} ? 'p-hi' : (${ticket.priority == 'MEDIUM'} ? 'p-med' : 'p-lo')" th:text="${ticket.priority}">MEDIUM</span>
+                <span th:if="${ticket.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i> SLA Breached</span>
+            </div>
+
+            <!-- Actions for AGENT/ADMIN -->
+            <div class="action-bar" th:if="${user.role.name() == 'AGENT' or user.role.name() == 'ADMIN'}">
+                <button class="act-btn btn-assign" th:if="${ticket.assignedToName == null or ticket.assignedToName == ''}"
+                        onclick="assignToMe()"><i class="bi bi-person-plus"></i> Assign to Me</button>
+                <button class="act-btn btn-start" th:if="${ticket.status == 'OPEN' or ticket.status == 'ASSIGNED'}"
+                        onclick="updateStatus('IN_PROGRESS')"><i class="bi bi-play-fill"></i> Start</button>
+                <button class="act-btn btn-resolve" th:if="${ticket.status == 'IN_PROGRESS'}"
+                        onclick="updateStatus('RESOLVED')"><i class="bi bi-check-lg"></i> Resolve</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script th:inline="javascript">
+    const ticketId = /*[[${ticket.id}]]*/ 0;
+
+    function assignToMe() {
+        if (!confirm('Assign this ticket to yourself?')) return;
+        fetch(`/api/requests/${ticketId}/assign`, { method: 'PUT', credentials: 'same-origin' })
+            .then(r => { if (r.ok) location.reload(); else alert('Failed to assign'); });
+    }
+
+    function updateStatus(status) {
+        const label = status === 'IN_PROGRESS' ? 'start working on' : 'resolve';
+        if (!confirm(`Are you sure you want to ${label} this ticket?`)) return;
+        fetch(`/api/requests/${ticketId}/status`, {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newStatus: status })
+        })
+        .then(r => { if (r.ok) location.reload(); else alert('Failed to update'); });
+    }
+</script>
+</body>
+</html>

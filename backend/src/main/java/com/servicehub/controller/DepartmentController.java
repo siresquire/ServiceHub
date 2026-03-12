@@ -15,9 +15,11 @@ public class DepartmentController {
 
     private final AdminService adminService;
 
-    // Used by register form — no auth needed
-
-
-
-
+    /**
+     * Public endpoint — used by registration form and agent role-assignment modal.
+     */
+    @GetMapping
+    public ResponseEntity<List<Department>> getAll() {
+        return ResponseEntity.ok(adminService.getAllDepartments());
+    }
 }

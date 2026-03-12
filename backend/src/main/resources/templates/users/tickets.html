@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ServiceHub — My Requests</title>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
+    <style>
+        .new-form {
+            background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; margin-bottom: 24px;
+        }
+        .new-form h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+        .new-form h3 i { color: var(--teal); }
+        .fg { margin-bottom: 14px; }
+        .fg label { font-size: 12px; font-weight: 600; color: var(--txt); display: block; margin-bottom: 6px; }
+        .fg input, .fg select, .fg textarea {
+            width: 100%; border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 14px; font-family: var(--font); font-size: 13px;
+            color: var(--txt); background: var(--white); outline: none;
+            transition: border-color 0.15s;
+        }
+        .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--teal); }
+        .fg textarea { resize: vertical; min-height: 80px; }
+        .fg .error-text { color: var(--red); font-size: 11px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
+
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('My Requests', 'Submit and track service requests')}"></header>
+
+    <div class="content">
+        <!-- SUCCESS/ERROR -->
+        <div th:if="${success ?: param.success}" class="alert-banner success"><i class="bi bi-check-circle-fill"></i> <span th:text="${success ?: param.success}">Request submitted successfully!</span></div>
+        <div th:if="${error ?: param.error}" class="alert-banner error"><i class="bi bi-exclamation-circle-fill"></i> <span th:text="${error ?: param.error}">An error occurred</span></div>
+
+        <!-- NEW REQUEST FORM -->
+        <div class="new-form" id="newRequestForm">
+            <h3><i class="bi bi-pencil-square"></i> Submit a New Request</h3>
+            <form th:action="@{/user/requests/submit}" method="post" th:object="${serviceRequest}">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div class="fg" style="grid-column: span 2;">
+                        <label>Title *</label>
+                        <input type="text" th:field="*{title}" placeholder="Brief summary of your request" required/>
+                        <div th:if="${#fields.hasErrors('title')}" class="error-text" th:errors="*{title}">Error</div>
+                    </div>
+                    <div class="fg">
+                        <label>Category *</label>
+                        <select th:field="*{category}" required>
+                            <option value="">Select category...</option>
+                            <option th:each="c : ${categories}" th:value="${c}" th:text="${c}">IT_SUPPORT</option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('category')}" class="error-text" th:errors="*{category}">Error</div>
+                    </div>
+                    <div class="fg">
+                        <label>Priority *</label>
+                        <select th:field="*{priority}" required>
+                            <option value="">Select priority...</option>
+                            <option th:each="p : ${priorities}" th:value="${p}" th:text="${p}">MEDIUM</option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('priority')}" class="error-text" th:errors="*{priority}">Error</div>
+                    </div>
+                    <div class="fg" style="grid-column: span 2;">
+                        <label>Description *</label>
+                        <textarea th:field="*{description}" rows="3" placeholder="Provide details about your request..." required></textarea>
+                        <div th:if="${#fields.hasErrors('description')}" class="error-text" th:errors="*{description}">Error</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                    <button type="submit" class="btn-teal"><i class="bi bi-send"></i> Submit Request</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- TICKET TABLE -->
+        <div class="panel">
+            <div class="ph">
+                <div class="pt"><i class="bi bi-ticket-detailed"></i> My Requests</div>
+                <span class="tc" th:text="${tickets != null ? tickets.size() + ' total' : '0 total'}">0 total</span>
+            </div>
+
+            <div class="tab-bar" style="padding: 10px 16px 0;">
+                <button class="tab active" onclick="filterTab('all',this)">All</button>
+                <button class="tab" onclick="filterTab('OPEN',this)">Open</button>
+                <button class="tab" onclick="filterTab('IN_PROGRESS',this)">In Progress</button>
+                <button class="tab" onclick="filterTab('RESOLVED',this)">Resolved</button>
+                <button class="tab" onclick="filterTab('CLOSED',this)">Closed</button>
+            </div>
+
+            <div class="tbl-wrap" style="padding: 0 0;">
+                <table id="ticketTable">
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>SLA</th>
+                        <th>Created</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ticketBody">
+                    <tr th:each="t : ${tickets}"
+                        th:data-status="${t.status}">
+                        <td class="t-id">
+                            <a th:href="@{/requests/{id}(id=${t.id})}" style="color:var(--teal);font-weight:600;text-decoration:none;" th:text="'#' + ${t.id}">#1</a>
+                        </td>
+                        <td class="t-title">
+                            <a th:href="@{/requests/{id}(id=${t.id})}" style="color:inherit;text-decoration:none;" th:text="${t.title}">Title</a>
+                        </td>
+                        <td class="t-dept" th:text="${t.category}">IT_SUPPORT</td>
+                        <td>
+                            <span class="pill"
+                                  th:classappend="${t.status=='OPEN'}?'p-open':(${t.status=='IN_PROGRESS'}?'p-prog':'p-done')"
+                                  th:text="${t.status.replace('_',' ')}">OPEN</span>
+                        </td>
+                        <td>
+                            <span class="pill"
+                                  th:classappend="${t.priority=='HIGH' or t.priority=='CRITICAL'}?'p-hi':(${t.priority=='MEDIUM'}?'p-med':'p-lo')"
+                                  th:text="${t.priority}">MED</span>
+                        </td>
+                        <td>
+                            <span th:if="${t.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i> Breached</span>
+                            <span th:if="${!t.slaBreached and t.resolutionSlaDeadline!=null}" class="sla-ok"><i class="bi bi-check-circle"></i> On track</span>
+                            <span th:if="${!t.slaBreached and t.resolutionSlaDeadline==null}" style="color:var(--muted);font-size:11px;">—</span>
+                        </td>
+                        <td class="t-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt,'MMM dd, yyyy') : ''}">Mar 11</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty" th:if="${tickets == null or tickets.empty}">
+                <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                <p>No requests yet. Submit your first request above!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+<script>
+    function filterTab(status,btn){
+        document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('#ticketBody tr').forEach(row=>{
+            row.style.display=(status==='all'||row.dataset.status===status)?'':'none';
+        });
+    }
+
+    /* Auto-scroll to form if URL has #new */
+    if(window.location.hash==='#new'){
+        document.getElementById('newRequestForm')?.scrollIntoView({behavior:'smooth'});
+    }
+</script>
+</body>
+</html>

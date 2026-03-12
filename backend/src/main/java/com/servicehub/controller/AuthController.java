@@ -3,6 +3,7 @@ package com.servicehub.controller;
 import com.servicehub.dto.AuthRequest;
 import com.servicehub.dto.AuthResponse;
 import com.servicehub.dto.RegisterRequest;
+import com.servicehub.service.AdminService;
 import com.servicehub.service.AuthService;
 import com.servicehub.service.TokenBlacklistService;
 import jakarta.servlet.http.Cookie;
@@ -22,10 +23,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AuthController {
     private final AuthService authService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final AdminService adminService;
 
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("registerRequest", new RegisterRequest());
+        model.addAttribute("departments", adminService.getAllDepartments());
         return "auth/register";
     }
 
@@ -43,11 +46,13 @@ public class AuthController {
             cookie.setMaxAge(86400);
             response.addCookie(cookie);
 
-            redirectAttributes.addFlashAttribute("success", "Account created! Please sign in.");
+            redirectAttributes.addAttribute("success", "Account created! Please sign in.");
+
             return "redirect:/auth/login";
         } catch (RuntimeException ex) {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("registerRequest", registerRequest);
+            model.addAttribute("departments", adminService.getAllDepartments());
             return "auth/register";
         }
     }

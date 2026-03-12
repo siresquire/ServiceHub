@@ -24,3 +24,9 @@ variable "aws_account_id" {
   description = "AWS account ID (for constructing SSM and IAM ARNs)"
   type        = string
 }
+
+variable "jwt_secret" {
+  description = "JWT Secret for application authentication"
+  type        = string
+  sensitive   = true
+}

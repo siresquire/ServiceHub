@@ -4,239 +4,118 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ServiceHub — Agent Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <style>
-        :root{--sb:#1a1f2e;--bg:#f0f2f5;--w:#fff;--teal:#0fbf8a;--teal-bg:#e8faf4;
-            --amber:#f59e0b;--amber-bg:#fff8ec;--blue:#3b82f6;--blue-bg:#eff6ff;
-            --red:#ef4444;--red-bg:#fff1f1;--green:#22c55e;--green-bg:#f0fdf4;
-            --txt:#1e293b;--muted:#94a3b8;--bdr:#e2e8f0;--sw:215px;--font:'DM Sans',sans-serif;}
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        html,body{overflow-x:hidden;}
-        body{font-family:var(--font);background:var(--bg);color:var(--txt);display:flex;min-height:100vh;}
-        .sidebar{width:var(--sw);background:var(--sb);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:200;transition:transform .25s ease;overflow-y:auto;}
-        .logo{display:flex;align-items:center;gap:10px;padding:20px 18px 16px;}
-        .logo-icon{width:32px;height:32px;min-width:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:800;}
-        .logo-text{font-size:15px;font-weight:700;color:#fff;}
-        .nav-sep{font-size:10px;font-weight:600;letter-spacing:1px;color:#3d4a5c;text-transform:uppercase;padding:12px 18px 4px;}
-        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:500;color:#8892a4;text-decoration:none;transition:all .12s;}
-        .nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
-        .nav-item.active{color:var(--teal);background:rgba(15,191,138,.1);}
-        .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
-        .sf{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px;}
-        .sa{width:30px;height:30px;min-width:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
-        .sn{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;}
-        .overlay.show{display:block;}
-        .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - var(--sw));}
-        .topbar{display:flex;align-items:center;padding:0 20px;height:56px;background:var(--w);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:8px;overflow:hidden;}
-        .menu-btn{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt);flex-shrink:0;}
-        .tb-wrap{flex:1;min-width:0;}
-        .tb-title{font-size:15px;font-weight:700;}
-        .tb-sub{font-size:11px;color:var(--muted);}
-        .tb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0;}
-        .btn-primary{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;white-space:nowrap;}
-        .t-av{width:32px;height:32px;min-width:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
-        .icon-btn{width:34px;height:34px;min-width:34px;border-radius:8px;background:var(--bg);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;flex-shrink:0;}
-        .ndot{position:absolute;top:-3px;right:-3px;width:8px;height:8px;background:var(--red);border-radius:50%;}
-        .content{padding:20px;flex:1;}
-
-        /* STATS ROW */
-        .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
-        .sc{background:var(--w);border:1px solid var(--bdr);border-radius:12px;padding:13px;display:flex;align-items:center;gap:9px;}
-        .si{width:34px;height:34px;min-width:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-        .ic-t{background:var(--teal-bg);}.ic-a{background:var(--amber-bg);}.ic-b{background:var(--blue-bg);}.ic-r{background:var(--red-bg);}.ic-g{background:var(--green-bg);}
-        .sv{font-size:20px;font-weight:700;line-height:1;}
-        .sl{font-size:10.5px;color:var(--muted);margin-top:2px;}
-
-        /* ALERT BANNERS */
-        .alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-        .alert{border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:500;}
-        .alert-red{background:var(--red-bg);border:1px solid #fca5a5;color:#b91c1c;}
-        .alert-amber{background:var(--amber-bg);border:1px solid #fcd34d;color:#92400e;}
-        .alert-icon{font-size:16px;flex-shrink:0;}
-        .alert-link{margin-left:auto;font-size:11px;font-weight:600;color:inherit;text-decoration:none;flex-shrink:0;}
-
-        /* PANELS */
-        .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
-        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-        .panel{background:var(--w);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;}
-        .ph{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bdr);}
-        .pt{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;}
-        .cnt{background:var(--teal-bg);color:var(--teal);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
-        .cnt-red{background:var(--red-bg);color:var(--red);}
-        .cnt-amber{background:var(--amber-bg);color:var(--amber);}
-        .va{font-size:11px;font-weight:600;color:var(--teal);text-decoration:none;}
-
-        /* TICKET ROWS */
-        .tr{display:flex;align-items:flex-start;gap:9px;padding:10px 16px;border-bottom:1px solid var(--bdr);transition:background .1s;}
-        .tr:last-child{border-bottom:none;}
-        .tr:hover{background:#fafbfc;}
-        .tr-dot{width:8px;height:8px;min-width:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
-        .dot-r{background:var(--red);} .dot-a{background:var(--amber);} .dot-b{background:var(--blue);} .dot-t{background:var(--teal);}
-        .tr-body{flex:1;min-width:0;}
-        .tr-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
-        .tr-meta{font-size:10.5px;color:var(--muted);}
-        .tr-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
-        .pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
-        .p-hi{background:var(--red-bg);color:var(--red);}
-        .p-med{background:var(--amber-bg);color:var(--amber);}
-        .p-lo{background:var(--teal-bg);color:var(--teal);}
-        .p-open{background:var(--blue-bg);color:var(--blue);}
-        .tr-date{font-size:10px;color:var(--muted);}
-        .empty{text-align:center;padding:20px 10px;color:var(--muted);font-size:11.5px;}
-
-        @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr);}.three-col{grid-template-columns:1fr 1fr;}}
-        @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr);}.three-col{grid-template-columns:1fr;}.two-col{grid-template-columns:1fr;}}
-        @media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main{margin-left:0;max-width:100vw;}.menu-btn{display:flex;}.content{padding:12px;}.topbar{padding:0 12px;}.tb-sub{display:none;}}
-        @media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr);}}
-    </style>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<aside class="sidebar" id="sidebar">
-    <div class="logo"><div class="logo-icon">S</div><span class="logo-text">ServiceHub</span></div>
-    <div class="nav-sep">Agent</div>
-    <a class="nav-item active" href="/agent/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
-    <a class="nav-item" href="/agent/tickets"><span class="nav-icon">🎫</span> My Tickets</a>
-    <a class="nav-item" href="/profile"><span class="nav-icon">👤</span> Profile</a>
-    <div class="sf">
-        <div class="sa" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AG'}">AG</div>
-        <div style="flex:1;min-width:0;">
-            <div class="sn" th:text="${user != null ? user.fullName : 'Agent'}">Agent</div>
-            <div style="font-size:11px;color:#8892a4;" th:text="${user != null and user.department != null ? user.department.name : 'Agent'}">IT Support</div>
-        </div>
-        <form th:action="@{/auth/logout}" method="post" style="display:inline;">
-            <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
-        </form>
-    </div>
-</aside>
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
 
 <main class="main">
-    <header class="topbar">
-        <button class="menu-btn" onclick="openSidebar()">☰</button>
-        <div class="tb-wrap">
-            <div class="tb-title">Agent Dashboard</div>
-            <div class="tb-sub" th:text="'Welcome, ' + (${user != null ? user.fullName : 'Agent'})">Welcome, Agent</div>
-        </div>
-        <div class="tb-actions">
-            <div class="icon-btn">🔔<div class="ndot"></div></div>
-            <div class="t-av" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'AG'}">AG</div>
-            <a class="btn-primary" href="/agent/tickets">View All Tickets</a>
-        </div>
-    </header>
+    <header th:replace="~{fragments/layout :: topbar('Agent Dashboard', 'Your ticket queue and performance')}"></header>
 
     <div class="content">
         <!-- STATS -->
         <div class="stats">
-            <div class="sc"><div class="si ic-b">📋</div><div><div class="sv" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</div><div class="sl">Assigned to Me</div></div></div>
-            <div class="sc"><div class="si ic-a">📥</div><div><div class="sv" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</div><div class="sl">Unassigned Queue</div></div></div>
-            <div class="sc"><div class="si ic-r">🚨</div><div><div class="sv" th:text="${slaBreaches != null ? slaBreaches.size() : 0}">0</div><div class="sl">SLA Breaches</div></div></div>
-            <div class="sc"><div class="si ic-a">⚠️</div><div><div class="sv" th:text="${slaWarnings != null ? slaWarnings.size() : 0}">0</div><div class="sl">SLA Warnings</div></div></div>
-            <div class="sc"><div class="si ic-g">✅</div><div><div class="sv" th:text="${assignedTickets != null ? assignedTickets.stream().filter(t -> t.status.name() == 'RESOLVED').count() : 0}">0</div><div class="sl">Resolved Today</div></div></div>
+            <div class="stat-card">
+                <div class="stat-icon ic-blue"><i class="bi bi-clipboard-check"></i></div>
+                <div><div class="stat-val" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</div><div class="stat-lbl">Assigned</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-teal"><i class="bi bi-inbox"></i></div>
+                <div><div class="stat-val" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</div><div class="stat-lbl">Unassigned</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div><div class="stat-val" th:text="${slaBreaches != null ? slaBreaches.size() : 0}">0</div><div class="stat-lbl">SLA Breaches</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-amber"><i class="bi bi-exclamation-circle"></i></div>
+                <div><div class="stat-val" th:text="${slaWarnings != null ? slaWarnings.size() : 0}">0</div><div class="stat-lbl">SLA Warnings</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon ic-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div><div class="stat-val" th:text="${resolvedTodayCount ?: 0}">0</div><div class="stat-lbl">Resolved</div></div>
+            </div>
         </div>
 
         <!-- SLA ALERTS -->
-        <div class="alerts" th:if="${(slaBreaches != null and !slaBreaches.empty) or (slaWarnings != null and !slaWarnings.empty)}">
-            <div class="alert alert-red" th:if="${slaBreaches != null and !slaBreaches.empty}">
-                <span class="alert-icon">🚨</span>
-                <span><strong th:text="${slaBreaches.size()}">0</strong> ticket(s) have breached SLA — immediate action required</span>
-                <a class="alert-link" href="/agent/tickets?filter=sla-breach">View →</a>
-            </div>
-            <div class="alert alert-amber" th:if="${slaWarnings != null and !slaWarnings.empty}">
-                <span class="alert-icon">⚠️</span>
-                <span><strong th:text="${slaWarnings.size()}">0</strong> ticket(s) approaching SLA deadline within 2 hours</span>
-                <a class="alert-link" href="/agent/tickets?filter=sla-warning">View →</a>
+        <div class="alerts" th:if="${slaBreaches != null and !slaBreaches.empty}">
+            <div class="alert alert-red" th:each="t : ${slaBreaches}">
+                <div class="alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <strong>SLA Breached:</strong> <span th:text="${t.title}">Ticket title</span>
+                    <div style="font-size: 11px; opacity: .8;"
+                         th:text="'Priority: ' + ${t.priority} + ' • Due: ' + (${t.resolutionSlaDeadline != null} ? ${#temporals.format(t.resolutionSlaDeadline,'MMM dd, HH:mm')} : 'N/A')">Priority: HIGH</div>
+                </div>
+                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
 
-        <!-- THREE PANELS: ASSIGNED / UNASSIGNED / SLA -->
-        <div class="three-col" style="margin-bottom:14px;">
+        <div class="alerts" th:if="${slaWarnings != null and !slaWarnings.empty}">
+            <div class="alert alert-amber" th:each="t : ${slaWarnings}">
+                <div class="alert-icon"><i class="bi bi-exclamation-circle"></i></div>
+                <div style="flex: 1; min-width: 0;">
+                    <strong>Approaching SLA:</strong> <span th:text="${t.title}">Ticket title</span>
+                </div>
+                <a class="alert-link" th:href="@{/requests/{id}(id=${t.id})}">View <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
 
+        <!-- TICKET PANELS -->
+        <div class="two-col">
             <!-- ASSIGNED TO ME -->
-            <div class="panel">
-                <div class="ph">
-                    <div class="pt">🙋 Assigned to Me
-                        <span class="cnt" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</span>
-                    </div>
-                    <a class="va" href="/agent/tickets">All →</a>
+            <div class="section-card">
+                <div class="section-hdr">
+                    <div class="section-title"><i class="bi bi-person-check"></i> Assigned to Me <span class="cnt" th:text="${assignedTickets != null ? assignedTickets.size() : 0}">0</span></div>
+                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <div th:if="${assignedTickets != null and !assignedTickets.empty}">
-                    <div class="tr" th:each="t,i : ${assignedTickets}" th:if="${i.index < 5}">
-                        <div class="tr-dot" th:classappend="${t.priority.name()=='HIGH' or t.priority.name()=='CRITICAL'} ? 'dot-r' : (${t.priority.name()=='MEDIUM'} ? 'dot-a' : 'dot-t')"></div>
+                <div th:each="t : ${assignedTickets}">
+                    <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
+                        <div class="tr-icon ic-blue"><i class="bi bi-ticket-detailed"></i></div>
                         <div class="tr-body">
-                            <div class="tr-title" th:text="${t.title}">Title</div>
-                            <div class="tr-meta" th:text="'#'+${t.id}+' · '+${t.category}">Meta</div>
+                            <div class="tr-title" th:text="${t.title}">Ticket title</div>
+                            <div class="tr-meta" th:text="${t.category + (t.departmentName != null ? ' • ' + t.departmentName : '')}">IT Support</div>
                         </div>
                         <div class="tr-right">
-                            <span class="pill" th:classappend="${t.priority.name()=='HIGH' or t.priority.name()=='CRITICAL'} ? 'p-hi' : (${t.priority.name()=='MEDIUM'} ? 'p-med' : 'p-lo')" th:text="${t.priority}">MED</span>
+                            <span class="pill"
+                                  th:classappend="${t.status=='OPEN'}?'p-open':(${t.status=='IN_PROGRESS'}?'p-prog':'p-done')"
+                                  th:text="${t.status.replace('_',' ')}">OPEN</span>
+                            <span th:if="${t.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i></span>
                         </div>
-                    </div>
+                    </a>
                 </div>
-                <div class="empty" th:if="${assignedTickets==null or assignedTickets.empty}">No assigned tickets ✓</div>
+                <div class="empty" th:if="${assignedTickets == null or assignedTickets.empty}">
+                    <div class="empty-icon"><i class="bi bi-check-circle"></i></div>
+                    <p>All clear! No assigned tickets.</p>
+                </div>
             </div>
 
-            <!-- UNASSIGNED QUEUE -->
-            <div class="panel">
-                <div class="ph">
-                    <div class="pt">📥 Unassigned Queue
-                        <span class="cnt cnt-amber" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</span>
-                    </div>
-                    <a class="va" href="/agent/tickets?filter=unassigned">All →</a>
+            <!-- UNASSIGNED -->
+            <div class="section-card">
+                <div class="section-hdr">
+                    <div class="section-title"><i class="bi bi-inbox"></i> Unassigned <span class="cnt cnt-amber" th:text="${unassignedTickets != null ? unassignedTickets.size() : 0}">0</span></div>
+                    <a class="view-all" href="/agent/tickets">View all <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <div th:if="${unassignedTickets != null and !unassignedTickets.empty}">
-                    <div class="tr" th:each="t,i : ${unassignedTickets}" th:if="${i.index < 5}">
-                        <div class="tr-dot dot-b"></div>
+                <div th:each="t : ${unassignedTickets}">
+                    <a class="tr" th:href="@{/requests/{id}(id=${t.id})}">
+                        <div class="tr-dot"
+                             th:classappend="${t.priority=='HIGH' or t.priority=='CRITICAL'}?'dot-r':(${t.priority=='MEDIUM'}?'dot-a':'dot-b')"></div>
                         <div class="tr-body">
-                            <div class="tr-title" th:text="${t.title}">Title</div>
-                            <div class="tr-meta" th:text="'#'+${t.id}+' · '+(${t.department!=null?t.department.name:'No Dept'})">Meta</div>
+                            <div class="tr-title" th:text="${t.title}">Ticket title</div>
+                            <div class="tr-meta" th:text="${t.category + ' • ' + (t.priority != null ? t.priority : 'N/A')}">IT_SUPPORT • HIGH</div>
                         </div>
-                        <div class="tr-right">
-                            <span class="pill p-open">NEW</span>
-                            <span class="tr-date" th:text="${#temporals.format(t.createdAt,'MMM dd')}">Mar 11</span>
-                        </div>
-                    </div>
+                        <span class="t-date" th:text="${t.createdAt != null ? #temporals.format(t.createdAt,'MMM dd') : ''}">Mar 11</span>
+                    </a>
                 </div>
-                <div class="empty" th:if="${unassignedTickets==null or unassignedTickets.empty}">Queue is clear ✓</div>
+                <div class="empty" th:if="${unassignedTickets == null or unassignedTickets.empty}">
+                    <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                    <p>No unassigned tickets in your department.</p>
+                </div>
             </div>
-
-            <!-- SLA WARNINGS -->
-            <div class="panel">
-                <div class="ph">
-                    <div class="pt">⚠️ SLA Warnings
-                        <span class="cnt cnt-red" th:text="${(slaBreaches!=null?slaBreaches.size():0)+(slaWarnings!=null?slaWarnings.size():0)}">0</span>
-                    </div>
-                </div>
-                <div th:if="${slaBreaches != null and !slaBreaches.empty}">
-                    <div class="tr" th:each="t,i : ${slaBreaches}" th:if="${i.index < 3}">
-                        <div class="tr-dot dot-r"></div>
-                        <div class="tr-body">
-                            <div class="tr-title" th:text="${t.title}">Title</div>
-                            <div class="tr-meta">🚨 SLA BREACHED</div>
-                        </div>
-                        <div class="tr-right"><span class="pill p-hi">BREACH</span></div>
-                    </div>
-                </div>
-                <div th:if="${slaWarnings != null and !slaWarnings.empty}">
-                    <div class="tr" th:each="t,i : ${slaWarnings}" th:if="${i.index < 3}">
-                        <div class="tr-dot dot-a"></div>
-                        <div class="tr-body">
-                            <div class="tr-title" th:text="${t.title}">Title</div>
-                            <div class="tr-meta">⚠️ Due soon</div>
-                        </div>
-                        <div class="tr-right"><span class="pill p-med">WARNING</span></div>
-                    </div>
-                </div>
-                <div class="empty" th:if="${(slaBreaches==null or slaBreaches.empty) and (slaWarnings==null or slaWarnings.empty)}">No SLA issues ✓</div>
-            </div>
-
         </div>
     </div>
 </main>
 
-<script>
-    function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');}
-    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
-</script>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>
 </html>

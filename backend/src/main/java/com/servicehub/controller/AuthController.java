@@ -46,7 +46,8 @@ public class AuthController {
             cookie.setMaxAge(86400);
             response.addCookie(cookie);
 
-            redirectAttributes.addFlashAttribute("success", "Account created! Please sign in.");
+            redirectAttributes.addAttribute("success", "Account created! Please sign in.");
+
             return "redirect:/auth/login";
         } catch (RuntimeException ex) {
             model.addAttribute("error", ex.getMessage());

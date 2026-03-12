@@ -39,6 +39,7 @@ public class SlaEngine {
    * For CRITICAL priority, it will also mark as SLA breached and an email notification will be sent to the admin.
    */
   @Scheduled(fixedRateString = "${app.sla.sla-breach-check-interval}")
+  @org.springframework.transaction.annotation.Transactional
   public void trackResponseSla() {
     int page = 0;
     int size = 200;
@@ -121,7 +122,7 @@ public class SlaEngine {
     return switch (current) {
       case LOW -> Priority.MEDIUM;
       case MEDIUM -> Priority.HIGH;
-      case HIGH -> Priority.HIGH; // No escalation beyond HIGH
+      case HIGH -> Priority.CRITICAL; // No escalation beyond HIGH
       case CRITICAL -> Priority.CRITICAL;  // Alert Admin by email
     };
   }

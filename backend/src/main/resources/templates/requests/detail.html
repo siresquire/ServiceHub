@@ -4,124 +4,58 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ServiceHub — Request #<span th:text="${ticket.id}">1</span></title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <th:block th:replace="~{fragments/layout :: styles}"></th:block>
     <style>
-        :root{--sb:#1a1f2e;--bg:#f0f2f5;--w:#fff;--teal:#0fbf8a;--teal-bg:#e8faf4;
-            --amber:#f59e0b;--amber-bg:#fff8ec;--blue:#3b82f6;--blue-bg:#eff6ff;
-            --red:#ef4444;--red-bg:#fff1f1;--green:#22c55e;--green-bg:#f0fdf4;
-            --txt:#1e293b;--muted:#94a3b8;--bdr:#e2e8f0;--sw:215px;--font:'DM Sans',sans-serif;}
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        html,body{overflow-x:hidden;}
-        body{font-family:var(--font);background:var(--bg);color:var(--txt);display:flex;min-height:100vh;}
-        .sidebar{width:var(--sw);background:var(--sb);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:200;transition:transform .25s ease;overflow-y:auto;}
-        .logo{display:flex;align-items:center;gap:10px;padding:20px 18px 16px;}
-        .logo-icon{width:32px;height:32px;min-width:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:800;}
-        .logo-text{font-size:15px;font-weight:700;color:#fff;}
-        .nav-sep{font-size:10px;font-weight:600;letter-spacing:1px;color:#3d4a5c;text-transform:uppercase;padding:12px 18px 4px;}
-        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:500;color:#8892a4;text-decoration:none;transition:all .12s;}
-        .nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
-        .nav-item.active{color:var(--teal);background:rgba(15,191,138,.1);}
-        .nav-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
-        .sf{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px;}
-        .sa{width:30px;height:30px;min-width:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
-        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;}
-        .overlay.show{display:block;}
-        .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - var(--sw));}
-        .topbar{display:flex;align-items:center;padding:0 20px;height:56px;background:var(--w);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:8px;}
-        .menu-btn{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--txt);flex-shrink:0;}
-        .tb-wrap{flex:1;min-width:0;}
-        .tb-title{font-size:15px;font-weight:700;}
-        .tb-sub{font-size:11px;color:var(--muted);}
-        .btn-primary{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;white-space:nowrap;}
-        .btn-primary:hover{background:#0da87a;}
-        .t-av{width:32px;height:32px;min-width:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
-        .content{padding:20px;flex:1;}
-        .detail-card{background:var(--w);border:1px solid var(--bdr);border-radius:12px;padding:24px;margin-bottom:18px;}
-        .detail-title{font-size:20px;font-weight:700;margin-bottom:8px;}
-        .detail-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:12px;color:var(--muted);}
-        .detail-body{font-size:14px;line-height:1.6;color:#475569;}
-        .pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
-        .p-open{background:var(--blue-bg);color:var(--blue);}
-        .p-prog{background:var(--amber-bg);color:var(--amber);}
-        .p-done{background:var(--green-bg);color:var(--green);}
-        .p-hi{background:var(--red-bg);color:var(--red);}
-        .p-med{background:var(--amber-bg);color:var(--amber);}
-        .p-lo{background:var(--teal-bg);color:var(--teal);}
-        .action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
-        .act-btn{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);}
-        .btn-assign{background:var(--teal-bg);color:var(--teal);}
-        .btn-assign:hover{background:var(--teal);color:#fff;}
-        .btn-progress{background:var(--amber-bg);color:var(--amber);}
-        .btn-progress:hover{background:var(--amber);color:#fff;}
-        .btn-resolve{background:var(--green-bg);color:var(--green);}
-        .btn-resolve:hover{background:var(--green);color:#fff;}
-        @media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.main{margin-left:0;max-width:100vw;}.menu-btn{display:flex;}.content{padding:12px;}}
+        .detail-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 18px; }
+        .detail-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .detail-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--muted); }
+        .detail-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .detail-meta i { font-size: 13px; }
+        .detail-body { font-size: 14px; line-height: 1.7; color: #475569; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+        .detail-status { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
     </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<aside class="sidebar" id="sidebar">
-    <div class="logo"><div class="logo-icon">S</div><span class="logo-text">ServiceHub</span></div>
-    <div class="nav-sep">Menu</div>
-    <a class="nav-item" th:href="${user.role.name() == 'ADMIN'} ? @{/admin/dashboard} : (${user.role.name() == 'AGENT'} ? @{/agent/dashboard} : @{/user/dashboard})"><span class="nav-icon">⊞</span> Dashboard</a>
-    <a class="nav-item" th:href="${user.role.name() == 'ADMIN'} ? @{/admin/tickets} : (${user.role.name() == 'AGENT'} ? @{/agent/tickets} : @{/user/tickets})"><span class="nav-icon">🎫</span> Tickets</a>
-    <a class="nav-item active" href="#"><span class="nav-icon">📄</span> Request Detail</a>
-    <div class="sf">
-        <div class="sa" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'ME'}">ME</div>
-        <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:#fff;" th:text="${user != null ? user.fullName : 'User'}">User</div>
-            <div style="font-size:11px;color:#8892a4;" th:text="${user != null ? user.role : ''}">User</div>
-        </div>
-        <form th:action="@{/auth/logout}" method="post" style="display:inline;">
-            <button type="submit" style="background:none;border:none;color:#8892a4;font-size:14px;cursor:pointer;">⇒</button>
-        </form>
-    </div>
-</aside>
+<th:block th:replace="~{fragments/layout :: sidebar}"></th:block>
 
 <main class="main">
-    <header class="topbar">
-        <button class="menu-btn" onclick="openSidebar()">☰</button>
-        <div class="tb-wrap">
-            <div class="tb-title">Request #<span th:text="${ticket.id}">1</span></div>
-            <div class="tb-sub" th:text="${ticket.title}">Ticket title</div>
-        </div>
-        <div class="tb-actions">
-            <a class="btn-primary" th:href="${user.role.name() == 'ADMIN'} ? @{/admin/tickets} : (${user.role.name() == 'AGENT'} ? @{/agent/tickets} : @{/user/tickets})">← Back to Tickets</a>
-            <div class="t-av" th:text="${user != null ? user.fullName.substring(0,2).toUpperCase() : 'ME'}">ME</div>
-        </div>
-    </header>
+    <header th:replace="~{fragments/layout :: topbar('Request Detail', ticket.title)}"></header>
 
     <div class="content">
         <div class="detail-card">
             <div class="detail-title" th:text="${ticket.title}">Ticket title</div>
             <div class="detail-meta">
-                <span>#<span th:text="${ticket.id}">1</span></span>
-                <span th:text="${ticket.category}">Category</span>
-                <span th:text="${ticket.departmentName != null ? ticket.departmentName : 'Unassigned'}">Department</span>
-                <span th:text="${ticket.requesterName}">Requester</span>
-                <span th:text="${ticket.assignedToName != null ? ticket.assignedToName : 'Unassigned'}">Assignee</span>
-                <span th:text="${ticket.createdAt != null ? #temporals.format(ticket.createdAt,'MMM dd, yyyy HH:mm') : ''}">Created</span>
+                <span><i class="bi bi-hash"></i> <span th:text="${ticket.id}">1</span></span>
+                <span><i class="bi bi-tag"></i> <span th:text="${ticket.category}">Category</span></span>
+                <span><i class="bi bi-building"></i> <span th:text="${ticket.departmentName != null ? ticket.departmentName : 'Unassigned'}">Department</span></span>
+                <span><i class="bi bi-person"></i> <span th:text="${ticket.requesterName}">Requester</span></span>
+                <span><i class="bi bi-person-check"></i> <span th:text="${ticket.assignedToName != null ? ticket.assignedToName : 'Unassigned'}">Assignee</span></span>
+                <span><i class="bi bi-calendar3"></i> <span th:text="${ticket.createdAt != null ? #temporals.format(ticket.createdAt,'MMM dd, yyyy HH:mm') : ''}">Created</span></span>
             </div>
             <div class="detail-body" th:text="${ticket.description}">Description</div>
-            <div style="margin-top:12px;">
+
+            <div class="detail-status">
                 <span class="pill" th:classappend="${ticket.status == 'OPEN'} ? 'p-open' : (${ticket.status == 'IN_PROGRESS'} ? 'p-prog' : 'p-done')" th:text="${ticket.status != null ? ticket.status.replace('_',' ') : 'OPEN'}">OPEN</span>
                 <span class="pill" th:classappend="${ticket.priority == 'HIGH' or ticket.priority == 'CRITICAL'} ? 'p-hi' : (${ticket.priority == 'MEDIUM'} ? 'p-med' : 'p-lo')" th:text="${ticket.priority}">MEDIUM</span>
-                <span th:if="${ticket.slaBreached}" style="color:var(--red);font-size:11px;font-weight:600;margin-left:8px;">⚠ SLA Breached</span>
+                <span th:if="${ticket.slaBreached}" class="sla-breach"><i class="bi bi-exclamation-triangle-fill"></i> SLA Breached</span>
             </div>
 
             <!-- Actions for AGENT/ADMIN -->
             <div class="action-bar" th:if="${user.role.name() == 'AGENT' or user.role.name() == 'ADMIN'}">
                 <button class="act-btn btn-assign" th:if="${ticket.assignedToName == null or ticket.assignedToName == ''}"
-                        onclick="assignToMe()">+ Assign to Me</button>
-                <button class="act-btn btn-progress" th:if="${ticket.status == 'OPEN' or ticket.status == 'ASSIGNED'}"
-                        onclick="updateStatus('IN_PROGRESS')">⚙ Start</button>
+                        onclick="assignToMe()"><i class="bi bi-person-plus"></i> Assign to Me</button>
+                <button class="act-btn btn-start" th:if="${ticket.status == 'OPEN' or ticket.status == 'ASSIGNED'}"
+                        onclick="updateStatus('IN_PROGRESS')"><i class="bi bi-play-fill"></i> Start</button>
                 <button class="act-btn btn-resolve" th:if="${ticket.status == 'IN_PROGRESS'}"
-                        onclick="updateStatus('RESOLVED')">✓ Resolve</button>
+                        onclick="updateStatus('RESOLVED')"><i class="bi bi-check-lg"></i> Resolve</button>
             </div>
         </div>
     </div>
 </main>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 
 <script th:inline="javascript">
     const ticketId = /*[[${ticket.id}]]*/ 0;
@@ -140,11 +74,8 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ newStatus: status })
         })
-            .then(r => { if (r.ok) location.reload(); else alert('Failed to update'); });
+        .then(r => { if (r.ok) location.reload(); else alert('Failed to update'); });
     }
-
-    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 </script>
 </body>
 </html>

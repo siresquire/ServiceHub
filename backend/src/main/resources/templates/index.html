@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ServiceHub — Effortless Service Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
     <style>
         :root {
             --primary: #0fbf8a;
@@ -18,7 +19,7 @@
             --font: 'Inter', sans-serif;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
         
         /* Navbar */
         .navbar {
@@ -35,13 +36,13 @@
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-        .logo-icon { width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px; }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px; }
         .logo-text { font-size: 18px; font-weight: 700; color: var(--secondary); }
         .nav-links { display: flex; gap: 30px; align-items: center; }
         .nav-links a { text-decoration: none; color: var(--text); font-size: 14px; font-weight: 500; transition: color 0.2s; }
         .nav-links a:hover { color: var(--primary); }
-        .btn-login { padding: 10px 24px; border-radius: 10px; background: var(--primary); color: #fff !important; font-weight: 600; transition: transform 0.2s, background 0.2s; }
-        .btn-login:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-login { padding: 10px 24px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff !important; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(15,191,138,0.2); }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(15,191,138,0.3); }
 
         /* Hero */
         .hero {
@@ -58,8 +59,8 @@
         .hero-content h1 { font-size: 56px; font-weight: 800; line-height: 1.1; color: var(--secondary); margin-bottom: 24px; letter-spacing: -1px; }
         .hero-content p { font-size: 18px; color: var(--text-light); margin-bottom: 40px; }
         .cta-group { display: flex; gap: 16px; }
-        .btn-main { padding: 14px 32px; border-radius: 12px; background: var(--primary); color: #fff; text-decoration: none; font-weight: 700; font-size: 16px; transition: all 0.2s; box-shadow: 0 10px 20px rgba(15, 191, 138, 0.2); }
-        .btn-main:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 15px 30px rgba(15, 191, 138, 0.3); }
+        .btn-main { padding: 14px 32px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; text-decoration: none; font-weight: 700; font-size: 16px; transition: all 0.2s; box-shadow: 0 10px 20px rgba(15, 191, 138, 0.2); }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(15, 191, 138, 0.3); }
         .btn-secondary { padding: 14px 32px; border-radius: 12px; background: var(--white); color: var(--secondary); border: 1px solid #e2e8f0; text-decoration: none; font-weight: 700; font-size: 16px; transition: all 0.2s; }
         .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
 
@@ -84,7 +85,8 @@
         .f-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto; }
         .f-card { padding: 40px; border-radius: 20px; background: #f8fafc; border: 1px solid transparent; transition: all 0.3s; }
         .f-card:hover { background: #fff; border-color: var(--primary); box-shadow: 0 20px 40px rgba(0,0,0,0.05); transform: translateY(-5px); }
-        .f-icon { width: 50px; height: 50px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .f-icon { width: 50px; height: 50px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); color: var(--primary); }
+        .f-icon i { font-size: 22px; }
         .f-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: var(--secondary); }
         .f-card p { font-size: 15px; color: var(--text-light); }
 
@@ -173,17 +175,17 @@
         </div>
         <div class="f-grid">
             <div class="f-card">
-                <div class="f-icon">🎫</div>
+                <div class="f-icon"><i class="bi bi-ticket-detailed"></i></div>
                 <h3>Smart Ticketing</h3>
                 <p>Submit and track service requests across departments with ease. Real-time status updates at every step.</p>
             </div>
             <div class="f-card">
-                <div class="f-icon">⏱</div>
+                <div class="f-icon"><i class="bi bi-clock-history"></i></div>
                 <h3>SLA Monitoring</h3>
                 <p>Never miss a deadline. Automatic alerts and escalations ensure requests are handled within defined timeframes.</p>
             </div>
             <div class="f-card">
-                <div class="f-icon">📊</div>
+                <div class="f-icon"><i class="bi bi-bar-chart-line-fill"></i></div>
                 <h3>Rich Analytics</h3>
                 <p>Gain insights into team performance, volume trends, and common issues with our visual reporting tools.</p>
             </div>

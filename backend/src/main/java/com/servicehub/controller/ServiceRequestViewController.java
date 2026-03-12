@@ -27,28 +27,26 @@ public class ServiceRequestViewController {
     @PostMapping("/submit")
     @PreAuthorize("hasRole('USER')")
     public String submitRequest(
-            @RequestParam String title,
-            @RequestParam(required = false) String description,
-            @RequestParam Long departmentId,
-            @RequestParam(defaultValue = "MEDIUM") String priority,
+            @ModelAttribute ServiceRequestDto dto,
             @AuthenticationPrincipal User user,
-            RedirectAttributes redirectAttributes,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
         try {
-            var dept = adminService.getDepartmentById(departmentId);
-            var dto = new ServiceRequestDto();
-            dto.setTitle(title);
-            dto.setDescription(description != null ? description : "");
-            dto.setCategory(dept.getCategory().name());
-            dto.setPriority(priority);
-            dto.setDepartmentId(departmentId);
+            if (dto.getDepartmentId() != null) {
+                var dept = adminService.getDepartmentById(dto.getDepartmentId());
+                dto.setCategory(dept.getCategory().name());
+            } else if (dto.getCategory() == null && user.getDepartment() != null) {
+                // Default to user's department if nothing specified
+                dto.setDepartmentId(user.getDepartment().getId());
+                dto.setCategory(user.getDepartment().getCategory().name());
+            }
 
             requestService.createRequest(dto, user);
-            redirectAttributes.addFlashAttribute("success", "Request submitted successfully!");
+            redirectAttributes.addAttribute("success", "Request submitted successfully!");
             return "redirect:/user/tickets";
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            redirectAttributes.addAttribute("error", ex.getMessage());
             return "redirect:/user/tickets#new";
         }
     }
+
 }

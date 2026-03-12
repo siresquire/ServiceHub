@@ -61,9 +61,9 @@
     </springProfile>
 
     <!-- ===================================================================
-         Profile: prod — JSON structured logging for log aggregation
+         Profile: prod/staging — JSON structured logging for log aggregation
          =================================================================== -->
-    <springProfile name="prod">
+    <springProfile name="prod, staging">
         <root level="WARN">
             <appender-ref ref="JSON_CONSOLE"/>
         </root>

@@ -9,6 +9,7 @@ import com.servicehub.model.enums.*;
 import com.servicehub.repository.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,9 @@ public class ServiceRequestService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final SlaPolicyService slaPolicyService;
-    private final EmailService emailService;
+    
+    @Autowired(required = false)
+    private EmailService emailService;
 
     /**
      * Retrieves all service requests with pagination, ordered by creation date descending.
@@ -141,12 +144,14 @@ public class ServiceRequestService {
         ServiceRequest savedRequest = requestRepository.save(req);
         ServiceRequestResponse response = ServiceRequestResponse.toResponse(savedRequest);
 
-        // Send email notification asynchronously
-        try {
-            emailService.sendStatusUpdateNotification(previousStatus, update.getNewStatus(), response);
-        } catch (Exception e) {
-            // Log error but don't fail the transaction
-            // Email sending is non-critical
+        // Send email notification asynchronously (only if EmailService is available)
+        if (emailService != null) {
+            try {
+                emailService.sendStatusUpdateNotification(previousStatus, update.getNewStatus(), response);
+            } catch (Exception e) {
+                // Log error but don't fail the transaction
+                // Email sending is non-critical
+            }
         }
 
         return response;

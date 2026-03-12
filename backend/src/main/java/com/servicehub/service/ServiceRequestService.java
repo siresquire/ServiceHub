@@ -83,7 +83,7 @@ public class ServiceRequestService {
     @Transactional
     public ServiceRequestResponse createRequest(ServiceRequestDto dto, User requester) {
         Department department = departmentRepository.findById(dto.getDepartmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found: " + dto.getDepartmentId()));
+                .orElseThrow(() -> new NotFoundException("Department not found: " + dto.getDepartmentId()));
         ServiceRequest req = ServiceRequest.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
@@ -92,7 +92,6 @@ public class ServiceRequestService {
                 .status(RequestStatus.OPEN)
                 .requester(requester)
                 .department(department)       // ← was missing
-//                .slaBreached(false)           // ← fixes NOT NULL constraint
                 .resolved(false)              // ← fixes NOT NULL constraint
                 .slaBreached(false)
                 .resolvedAt(null)

@@ -4,11 +4,13 @@ import com.servicehub.dto.ServerResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -28,6 +30,26 @@ public class GlobalExceptionHandler {
         }
 
         return ResponseEntity.badRequest().body(new ServerResponse<>("Invalid request parameter"));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ServerResponse<?>> handleValidationError(MethodArgumentNotValidException ex) {
+
+        log.warn("Validation error: {}", ex.getMessage());
+
+        List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> String.format("Field '%s': %s", error.getField(), error.getDefaultMessage()))
+                .toList();
+
+        String message = errors.isEmpty()
+                ? "Validation failed for request body"
+                : String.join("; ", errors);
+
+        return ResponseEntity
+                .badRequest()
+                .body(new ServerResponse<>(message));
     }
 
     @ExceptionHandler(InvalidServiceRequestTransition.class)
@@ -64,10 +86,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
 
-        log.error("Runtime exception occurred", ex.getMessage());
+        log.error("Runtime exception occurred {} {}", ex.getClass().getName(), ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                "status", 400,
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "status", 500,
                 "message", ex.getMessage(),
                 "timestamp", LocalDateTime.now().toString()
         ));
@@ -76,7 +98,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
 
-        log.error("Unexpected system error", ex.getMessage());
+        log.error("Unexpected system error, {} {}", ex.getClass().getName() ,ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                 "status", 500,

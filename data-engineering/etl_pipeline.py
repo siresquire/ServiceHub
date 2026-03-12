@@ -12,7 +12,7 @@ from Scripts.Utils import logger
 from Scripts.test_db import task_test_db_connection
 from Scripts.validate_sla_policies import task_validate_sla_policies
 
-OUTPUT_DIR = "output"
+OUTPUT_DIR = "exports"
 
 # ---------------------------------------------------------------------------
 # Schedule — override via environment variables if needed

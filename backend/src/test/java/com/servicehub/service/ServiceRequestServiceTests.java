@@ -50,9 +50,6 @@ class ServiceRequestServiceTests {
   @Mock
   private SlaPolicyService slaPolicyService;
 
-  @Mock
-  private EmailService emailService;
-
   @InjectMocks
   private ServiceRequestService serviceRequestService;
 
